@@ -1,28 +1,7 @@
 PIC_PINS = {
-    'PIC_RESET_ROW_N'   : ('G', 1), 
-    'PIC_RESET_COL_N'   : ('G', 0),
-    'PIC_RESET_GLOBAL_N': ('E', 6),
-    'PIC_STROBE_REG_N'  : ('B', 8),
-    'PIC_RESET_DELAY_N' : ('B', 7),
-    'PIC_ASSERT_COL'    : ('G', 12),
-    'PIC_ASSERT_ND'     : ('G', 13),
-    'PIC_ASSERT_REGS'   : ('G', 7),
-    'PIC_ASSERT_CD'     : ('E', 0),
-    'PIC_ASSERT_ML'     : ('F', 1),
-    'PIC_ASSERT_WL'     : ('B', 11),
-    'PIC_TCAM_TIA_SH_STRB'  : ('G', 8),
-    'PIC_PC'            : ('B', 10),
-    'DAC_LDAC_N'        : ('D', 0),
-    'DAC_TGP'           : ('D', 12),
-    'DAC_CLR_N'         : ('D', 9),
-    'ADC_CONVST'        : ('E', 1),
-    'ADC_EOC_N'         : ('A', 14),
-    'ADC_CS_N'          : ('A', 9),
-    'PIC_SA_LATCH'      : ('E', 7),
-    'PIC_TRIGGER'       : ('E', 4),
-    # TEMP
-    'ADC_RD_N'          : ('K', 2),
-    'ADC_WR_N'          : ('K', 1),
+    'COL_ROW_SEL'   : ('F', 12), 
+    'COL_WRITE_CONNECT'   : ('F', 12),
+    'ADC_OUT<1>'    : ('A',1),
 }
 
 DAC_CH = {
