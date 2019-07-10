@@ -1,6 +1,6 @@
 # A0_DUT
 
-README for setting up python environment and microcontroller 
+README for setting up python environment and microcontroller on host PC
 
 1) Install python 3 on host PC (https://www.python.org/). Use whatever IDE you like, but VS Code is pretty great and comes built in to HP laptops
 
