@@ -20,6 +20,7 @@ README for setting up python environment and microcontroller
   b. Use pipenv. Pipenv manages dependencies on a per-project basis. To install packages, change into the project’s directory (where ...A0_DUT\notebooks is located) and run:
 
     $ cd project_folder
+    $ pipenv install requests
 
   Pipenv will install the excellent Requests library and create a Pipfile for you in your project’s directory. The Pipfile is used to track which dependencies your project needs in case you need to re-install them, such as when you share your project with others. Then in commend line, run:
 
