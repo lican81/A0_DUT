@@ -16,7 +16,9 @@ README for setting up python environment and microcontroller on host PC
 
 5) Get all the packages you'll need to run the code. Two ways:
   a. In the github repository, there is a txt file with all modules, so just run:
+    
     $ pip install -r requirements.txt
+  
   b. Use pipenv. Pipenv manages dependencies on a per-project basis. To install packages, change into the project’s directory (where ...A0_DUT\notebooks is located) and run:
 
     $ cd project_folder
