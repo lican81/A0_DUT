@@ -22,13 +22,15 @@ README for setting up python environment and microcontroller on host PC
     $ cd project_folder
     $ pipenv install requests
 
-  Pipenv will install the excellent Requests library and create a Pipfile for you in your project’s directory. The Pipfile is used to track which dependencies your project needs in case you need to re-install them, such as when you share your project with others. Then in commend line, run:
+  Pipenv will install the excellent Requests library and create a Pipfile for you in your project’s directory. The Pipfile is         
+  used to track which dependencies your project needs in case you need to re-install them, such as when you share your project  
+  with others. Then in commend line, run:
 
     $ pipenv run python setup.py
 
   which will create a pipfile for the project
 
-Both should work, requirements.txt just needs to be kept up to date.
+  Both should work, requirements.txt just needs to be kept up to date.
 
 6) While in github repository location, run 'jupyter lab' and an interactive python notebook will open in the browser
 
