@@ -16,20 +16,18 @@ README for setting up python environment and microcontroller on host PC
 
 5) Get all the packages you'll need to run the code. Two ways:
 
-  a. In the github repository, there is a txt file with all modules, so just run:
+      a. In the github repository, there is a txt file with all modules, so just run:
     
-    $ pip install -r requirements.txt
+        $ pip install -r requirements.txt
   
-  b. Use pipenv. Pipenv manages dependencies on a per-project basis. To install packages, change into the project’s directory (where ...A0_DUT\notebooks is located) and run:
+      b. Use pipenv. Pipenv manages dependencies on a per-project basis. To install packages, change into the project’s directory (where ...A0_DUT\notebooks is located) and run:
 
-    $ cd project_folder
-    $ pipenv install requests
+        $ cd project_folder
+        $ pipenv install requests
 
-  Pipenv will install the excellent Requests library and create a Pipfile for you in your project’s directory. The Pipfile is         
-  used to track which dependencies your project needs in case you need to re-install them, such as when you share your project  
-  with others. Then in commend line, run:
+      Pipenv will install the excellent Requests library and create a Pipfile for you in your project’s directory. The Pipfile is used to track which dependencies your project needs in case you need to re-install them, such as when you share your project   with others. Then in commend line, run:
 
-    $ pipenv run python setup.py
+        $ pipenv run python setup.py
 
   which will create a pipfile for the project
 
