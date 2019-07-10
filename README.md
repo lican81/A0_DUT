@@ -29,9 +29,9 @@ README for setting up python environment and microcontroller on host PC
 
         $ pipenv run python setup.py
 
-  which will create a pipfile for the project
+      which will create a pipfile for the project
 
-  Both should work, requirements.txt just needs to be kept up to date.
+  Both a,b should work, requirements.txt just needs to be kept up to date.
   
   Optional: if you want the jupyterlab variable inspector (matlab-like, see https://github.com/lckr/jupyterlab-variableInspector    /blob/master/README.md), you'll also need to do the following:
     
