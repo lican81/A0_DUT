@@ -31,6 +31,9 @@ README for setting up python environment and microcontroller on host PC
   which will create a pipfile for the project
 
   Both should work, requirements.txt just needs to be kept up to date.
+  
+  Optional: if you want the jupyterlab variable inspector (matlab-like, see https://github.com/lckr/jupyterlab-variableInspector    /blob/master/README.md), you'll also need to do the following:
+    $ jupyter labextension install @lckr/jupyterlab_variableinspector
 
 6) While in github repository location, run 'jupyter lab' and an interactive python notebook will open in the browser
 
