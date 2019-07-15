@@ -8,9 +8,14 @@ README for setting up python environment and microcontroller on host PC
   a. NOTE: on the hpe network, we can frequently run into SSL firewall issues. if you're getting repeated SSL errors while using github or pip for installations, you need to use "pip install program --proxy=https://web-proxy.labs.hpecorp.net:8088"
   b. Not an issue generally on hpeinternet wifi.
 
-3) set up virtual environment for python (makes easy to manage installations)
-  a. https://docs.python-guide.org/dev/virtualenvs/#virtualenvironments-ref
-  b. install pipenv with "pip install pipenv"pi
+3) (Optional) set up virtual environment for python (makes easy to manage installations)
+  a. https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/
+  b. install venv package with (for windows Powershell only. Follow the above link for Linux/Mac)
+    $ py -m pip install --upgrade pip
+    $ py -m pip install --user virtualenv
+    $ py -m venv ~/.venvs/py37 (or other folder you chose)
+  c. activate the virtual environment
+    $ ~/.venvs/py37/Scripts/activate.ps1
 
 4) Pull code from this Github repository to your host PC, note the project folder location
 
