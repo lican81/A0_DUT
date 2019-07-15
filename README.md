@@ -11,11 +11,15 @@ README for setting up python environment and microcontroller on host PC
 3) (Optional) set up virtual environment for python (makes easy to manage installations)
   a. https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/
   b. install venv package with (for windows Powershell only. Follow the above link for Linux/Mac)
-    $ py -m pip install --upgrade pip
-    $ py -m pip install --user virtualenv
-    $ py -m venv ~/.venvs/py37 (or other folder you chose)
+  
+        $ py -m pip install --upgrade pip
+        $ py -m pip install --user virtualenv
+        $ py -m venv ~/.venvs/py37 
+    
   c. activate the virtual environment
-    $ ~/.venvs/py37/Scripts/activate.ps1
+  
+        $ ~/.venvs/py37/Scripts/activate.ps1
+    
 
 4) Pull code from this Github repository to your host PC, note the project folder location
 
