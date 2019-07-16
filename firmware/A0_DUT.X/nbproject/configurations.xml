@@ -4,6 +4,142 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <logicalFolder name="f2" displayName="app" projectFiles="true">
+        <logicalFolder name="f1" displayName="system_config" projectFiles="true">
+          <logicalFolder name="f1" displayName="default" projectFiles="true">
+            <logicalFolder name="f2" displayName="bsp" projectFiles="true">
+              <itemPath>../src/system_config/default/bsp/bsp.h</itemPath>
+            </logicalFolder>
+            <logicalFolder name="f1" displayName="framework" projectFiles="true">
+              <logicalFolder name="f1" displayName="driver" projectFiles="true">
+                <logicalFolder name="f1" displayName="adc" projectFiles="true">
+                  <itemPath>../src/system_config/default/framework/driver/adc/drv_adc_static.h</itemPath>
+                </logicalFolder>
+              </logicalFolder>
+              <logicalFolder name="f2" displayName="system" projectFiles="true">
+                <logicalFolder name="f1" displayName="devcon" projectFiles="true">
+                  <logicalFolder name="f1" displayName="src" projectFiles="true">
+                    <itemPath>../src/system_config/default/framework/system/devcon/src/sys_devcon_local.h</itemPath>
+                  </logicalFolder>
+                  <itemPath>../src/system_config/default/framework/system/devcon/sys_devcon.h</itemPath>
+                </logicalFolder>
+              </logicalFolder>
+            </logicalFolder>
+            <itemPath>../src/system_config/default/system_config.h</itemPath>
+            <itemPath>../src/system_config/default/system_definitions.h</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+        <itemPath>../src/app.h</itemPath>
+        <itemPath>../src/cmd.h</itemPath>
+        <itemPath>../src/usb_com.h</itemPath>
+        <itemPath>../src/dut_ports.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f1" displayName="framework" projectFiles="true">
+        <logicalFolder name="f1" displayName="driver" projectFiles="true">
+          <logicalFolder name="f1" displayName="tmr" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/driver/tmr/src/drv_tmr_variant_mapping.h</itemPath>
+              <itemPath>../../../../framework/driver/tmr/src/drv_tmr_local.h</itemPath>
+            </logicalFolder>
+            <itemPath>../../../../framework/driver/tmr/drv_tmr.h</itemPath>
+            <itemPath>../../../../framework/driver/tmr/drv_tmr_mapping.h</itemPath>
+            <itemPath>../../../../framework/driver/tmr/drv_tmr_compatibility.h</itemPath>
+            <itemPath>../../../../framework/driver/tmr/tmr_definitions_pic32m.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f2" displayName="usart" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/driver/usart/src/drv_usart_variant_mapping.h</itemPath>
+              <itemPath>../../../../framework/driver/usart/src/drv_usart_local.h</itemPath>
+            </logicalFolder>
+            <itemPath>../../../../framework/driver/usart/drv_usart.h</itemPath>
+            <itemPath>../../../../framework/driver/usart/drv_usart_definitions.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f3" displayName="usb" projectFiles="true">
+            <logicalFolder name="f1" displayName="usbhs" projectFiles="true">
+              <logicalFolder name="f1" displayName="src" projectFiles="true">
+                <itemPath>../../../../framework/driver/usb/usbhs/src/drv_usbhs_local.h</itemPath>
+                <itemPath>../../../../framework/driver/usb/usbhs/src/drv_usbhs_variant_mapping.h</itemPath>
+              </logicalFolder>
+              <itemPath>../../../../framework/driver/usb/usbhs/drv_usbhs.h</itemPath>
+            </logicalFolder>
+            <itemPath>../../../../framework/driver/usb/drv_usb.h</itemPath>
+          </logicalFolder>
+          <itemPath>../../../../framework/driver/driver.h</itemPath>
+          <itemPath>../../../../framework/driver/driver_common.h</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f3" displayName="osal" projectFiles="true">
+          <itemPath>../../../../framework/osal/osal.h</itemPath>
+          <itemPath>../../../../framework/osal/osal_definitions.h</itemPath>
+          <itemPath>../../../../framework/osal/osal_impl_basic.h</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f2" displayName="system" projectFiles="true">
+          <logicalFolder name="f4" displayName="clk" projectFiles="true">
+            <itemPath>../../../../framework/system/clk/sys_clk.h</itemPath>
+            <itemPath>../../../../framework/system/clk/sys_clk_compatibility.h</itemPath>
+            <itemPath>../../../../framework/system/clk/sys_clk_mapping.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f3" displayName="common" projectFiles="true">
+            <itemPath>../../../../framework/system/common/sys_common.h</itemPath>
+            <itemPath>../../../../framework/system/common/sys_module.h</itemPath>
+            <itemPath>../../../../framework/system/common/sys_buffer.h</itemPath>
+            <itemPath>../../../../framework/system/common/sys_queue.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f6" displayName="console" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/console/src/sys_console_local.h</itemPath>
+              <itemPath>../../../../framework/system/console/src/sys_console_uart.h</itemPath>
+            </logicalFolder>
+            <itemPath>../../../../framework/system/console/sys_console.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f7" displayName="debug" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/debug/src/sys_debug_local.h</itemPath>
+            </logicalFolder>
+            <itemPath>../../../../framework/system/debug/sys_debug.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f1" displayName="dma" projectFiles="true">
+            <itemPath>../../../../framework/system/dma/sys_dma.h</itemPath>
+            <itemPath>../../../../framework/system/dma/sys_dma_definitions.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f2" displayName="int" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/int/src/sys_int_private.h</itemPath>
+            </logicalFolder>
+            <itemPath>../../../../framework/system/int/sys_int.h</itemPath>
+            <itemPath>../../../../framework/system/int/sys_int_mapping.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f5" displayName="ports" projectFiles="true">
+            <itemPath>../../../../framework/system/ports/sys_ports.h</itemPath>
+            <itemPath>../../../../framework/system/ports/sys_ports_definitions.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="f8" displayName="tmr" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/tmr/src/sys_tmr_local.h</itemPath>
+            </logicalFolder>
+            <itemPath>../../../../framework/system/tmr/sys_tmr.h</itemPath>
+          </logicalFolder>
+          <itemPath>../../../../framework/system/system.h</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f4" displayName="usb" projectFiles="true">
+          <logicalFolder name="f1" displayName="src" projectFiles="true">
+            <itemPath>../../../../framework/usb/src/usb_device_function_driver.h</itemPath>
+            <itemPath>../../../../framework/usb/src/usb_device_local.h</itemPath>
+            <itemPath>../../../../framework/usb/src/usb_device_mapping.h</itemPath>
+            <itemPath>../../../../framework/usb/src/usb_device_cdc_local.h</itemPath>
+          </logicalFolder>
+          <itemPath>../../../../framework/usb/usb_common.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_chapter_9.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_hub.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_host_hub.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_host_client_driver.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_host.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_host_hub_interface.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_device.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_billboard.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_cdc.h</itemPath>
+          <itemPath>../../../../framework/usb/usb_device_cdc.h</itemPath>
+        </logicalFolder>
+      </logicalFolder>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -12,6 +148,115 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <logicalFolder name="f2" displayName="app" projectFiles="true">
+        <logicalFolder name="f1" displayName="system_config" projectFiles="true">
+          <logicalFolder name="f1" displayName="default" projectFiles="true">
+            <logicalFolder name="f2" displayName="bsp" projectFiles="true">
+              <itemPath>../src/system_config/default/bsp/bsp.c</itemPath>
+            </logicalFolder>
+            <logicalFolder name="f1" displayName="framework" projectFiles="true">
+              <logicalFolder name="f1" displayName="driver" projectFiles="true">
+                <logicalFolder name="f1" displayName="adc" projectFiles="true">
+                  <logicalFolder name="f1" displayName="src" projectFiles="true">
+                    <itemPath>../src/system_config/default/framework/driver/adc/src/drv_adc_static.c</itemPath>
+                  </logicalFolder>
+                </logicalFolder>
+              </logicalFolder>
+              <logicalFolder name="f2" displayName="system" projectFiles="true">
+                <logicalFolder name="f1" displayName="clk" projectFiles="true">
+                  <logicalFolder name="f1" displayName="src" projectFiles="true">
+                    <itemPath>../src/system_config/default/framework/system/clk/src/sys_clk_pic32mz.c</itemPath>
+                  </logicalFolder>
+                </logicalFolder>
+                <logicalFolder name="f2" displayName="devcon" projectFiles="true">
+                  <logicalFolder name="f1" displayName="src" projectFiles="true">
+                    <itemPath>../src/system_config/default/framework/system/devcon/src/sys_devcon.c</itemPath>
+                    <itemPath>../src/system_config/default/framework/system/devcon/src/sys_devcon_pic32mz.c</itemPath>
+                    <itemPath>../src/system_config/default/framework/system/devcon/src/sys_devcon_cache_pic32mz.S</itemPath>
+                    <itemPath>../src/system_config/default/framework/system/devcon/src/sys_devcon_cache.h</itemPath>
+                  </logicalFolder>
+                </logicalFolder>
+                <logicalFolder name="f3" displayName="ports" projectFiles="true">
+                  <logicalFolder name="f1" displayName="src" projectFiles="true">
+                    <itemPath>../src/system_config/default/framework/system/ports/src/sys_ports_static.c</itemPath>
+                  </logicalFolder>
+                </logicalFolder>
+              </logicalFolder>
+            </logicalFolder>
+            <itemPath>../src/system_config/default/system_init.c</itemPath>
+            <itemPath>../src/system_config/default/system_interrupt.c</itemPath>
+            <itemPath>../src/system_config/default/system_exceptions.c</itemPath>
+            <itemPath>../src/system_config/default/system_tasks.c</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+        <itemPath>../src/app.c</itemPath>
+        <itemPath>../src/main.c</itemPath>
+        <itemPath>../src/cmd.c</itemPath>
+        <itemPath>../src/usb_com.c</itemPath>
+        <itemPath>../src/dut_ports.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f1" displayName="framework" projectFiles="true">
+        <logicalFolder name="f1" displayName="driver" projectFiles="true">
+          <logicalFolder name="f1" displayName="tmr" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
+                <itemPath>../../../../framework/driver/tmr/src/dynamic/drv_tmr.c</itemPath>
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
+          <logicalFolder name="f2" displayName="usart" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
+                <itemPath>../../../../framework/driver/usart/src/dynamic/drv_usart.c</itemPath>
+                <itemPath>../../../../framework/driver/usart/src/dynamic/drv_usart_buffer_queue.c</itemPath>
+                <itemPath>../../../../framework/driver/usart/src/dynamic/drv_usart_read_write.c</itemPath>
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
+          <logicalFolder name="f3" displayName="usb" projectFiles="true">
+            <logicalFolder name="f1" displayName="usbhs" projectFiles="true">
+              <logicalFolder name="f1" displayName="src" projectFiles="true">
+                <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
+                  <itemPath>../../../../framework/driver/usb/usbhs/src/dynamic/drv_usbhs.c</itemPath>
+                  <itemPath>../../../../framework/driver/usb/usbhs/src/dynamic/drv_usbhs_device.c</itemPath>
+                </logicalFolder>
+              </logicalFolder>
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="f2" displayName="system" projectFiles="true">
+          <logicalFolder name="f1" displayName="console" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/console/src/sys_console.c</itemPath>
+              <itemPath>../../../../framework/system/console/src/sys_console_uart.c</itemPath>
+            </logicalFolder>
+          </logicalFolder>
+          <logicalFolder name="f2" displayName="debug" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/debug/src/sys_debug.c</itemPath>
+            </logicalFolder>
+          </logicalFolder>
+          <logicalFolder name="f3" displayName="int" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/int/src/sys_int_pic32.c</itemPath>
+            </logicalFolder>
+          </logicalFolder>
+          <logicalFolder name="f4" displayName="tmr" projectFiles="true">
+            <logicalFolder name="f1" displayName="src" projectFiles="true">
+              <itemPath>../../../../framework/system/tmr/src/sys_tmr.c</itemPath>
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="f3" displayName="usb" projectFiles="true">
+          <logicalFolder name="f1" displayName="src" projectFiles="true">
+            <logicalFolder name="f1" displayName="dynamic" projectFiles="true">
+              <itemPath>../../../../framework/usb/src/dynamic/usb_device.c</itemPath>
+              <itemPath>../../../../framework/usb/src/dynamic/usb_device_cdc.c</itemPath>
+              <itemPath>../../../../framework/usb/src/dynamic/usb_device_cdc_acm.c</itemPath>
+            </logicalFolder>
+          </logicalFolder>
+        </logicalFolder>
+      </logicalFolder>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -21,26 +266,30 @@
   </logicalFolder>
   <sourceRootList>
     <Elem>../src</Elem>
+    <Elem>../..</Elem>
+    <Elem>../src/default</Elem>
+    <Elem>../src/system_config/default</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
     <conf name="default" type="2">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <targetDevice>PIC32MZ2048ECM144</targetDevice>
+        <targetDevice>PIC32MZ2048EFH144</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>PICkit3PlatformTool</platformTool>
+        <platformTool>PKOBSKDEPlatformTool</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>1.42</languageToolchainVersion>
-        <platform>3</platform>
+        <platform>4</platform>
       </toolsSet>
       <packs>
-        <pack name="PIC32MZ-EC_DFP" vendor="Microchip" version="1.0.21"/>
+        <pack name="PIC32MZ-EF_DFP" vendor="Microchip" version="1.0.20"/>
       </packs>
       <compileType>
         <linkerTool>
           <linkerLibItems>
+            <linkerLibFileItem>../../../../bin/framework/peripheral/PIC32MZ2048EFH144_peripherals.a</linkerLibFileItem>
           </linkerLibItems>
         </linkerTool>
         <archiverTool>
@@ -69,7 +318,8 @@
         <property key="enable-symbols" value="true"/>
         <property key="enable-unroll-loops" value="false"/>
         <property key="exclude-floating-point" value="false"/>
-        <property key="extra-include-directories" value=""/>
+        <property key="extra-include-directories"
+                  value="../src;../src/system_config/default;../src/default;../../../../framework;../src/system_config/default/framework;../src/system_config/default/bsp"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="true"/>
@@ -88,6 +338,9 @@
       <C32-AR>
         <property key="additional-options-chop-files" value="false"/>
       </C32-AR>
+      <C32-AS>
+        <property key="generate-micro-compressed-code" value="false"/>
+      </C32-AS>
       <C32-LD>
         <property key="additional-options-use-response-files" value="false"/>
         <property key="enable-check-sections" value="false"/>
@@ -104,7 +357,7 @@
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-cross-reference-file" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
-        <property key="heap-size" value=""/>
+        <property key="heap-size" value="512"/>
         <property key="input-libraries" value=""/>
         <property key="linker-symbols" value=""/>
         <property key="map-file" value="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"/>
@@ -212,6 +465,9 @@
         <property key="programoptions.uselvpprogramming" value="false"/>
         <property key="voltagevalue" value="3.25"/>
       </PICkit3PlatformTool>
+      <PKOBSKDEPlatformTool>
+        <property key="firmware.download.all" value="false"/>
+      </PKOBSKDEPlatformTool>
     </conf>
   </confs>
 </configurationDescriptor>

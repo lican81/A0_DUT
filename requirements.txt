@@ -7,6 +7,8 @@ jupyter
 jupyterlab
 jupyter_contrib_nbextensions
 PyQt5
+dill
+scipy
 
 
 ####### example-requirements.txt #######
