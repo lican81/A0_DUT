@@ -31,6 +31,11 @@ void GPIO_Pin_Toggle( char portName, uint16_t pos );
 
 //void ADDR_REGS_Set(PORTS_DATA_TYPE value);
 //void DATAIN_Set(PORTS_DATA_TYPE value);
+
+void ROW_COL_DATA_Set(PORTS_DATA_TYPE value);
+void ROW_COL_BANK_Set(PORTS_DATA_TYPE value);
+void ADC_FIFO_EN_Set(PORTS_DATA_TYPE value);
+PORTS_DATA_TYPE ADC_OUT_Get(void);
 //
 //void DATAOUT_Set(PORTS_DATA_TYPE value);
 //PORTS_DATA_TYPE DATAOUT_Get(void);

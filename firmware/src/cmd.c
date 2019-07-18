@@ -46,8 +46,11 @@ void CMD_Initialize ( void )
 //    DRV_ADC3_Open();
 //    DRV_ADC4_Open();
     
-//    DRV_SPI0_Open( DRV_SPI_INDEX_0, DRV_IO_INTENT_EXCLUSIVE );
-//    DRV_SPI1_Open( DRV_SPI_INDEX_1, DRV_IO_INTENT_EXCLUSIVE );
+    DRV_SPI0_Open( DRV_SPI_INDEX_0, DRV_IO_INTENT_EXCLUSIVE );
+    SERIAL_CHAIN_SEL_0Off();
+    SERIAL_CHAIN_SEL_1Off();
+    
+    DRV_SPI1_Open( DRV_SPI_INDEX_1, DRV_IO_INTENT_EXCLUSIVE );
 //    DRV_SPI2_Open( DRV_SPI_INDEX_2, DRV_IO_INTENT_EXCLUSIVE );
     /* TODO: Initialize your application's state machine and other
      * parameters.
@@ -62,8 +65,8 @@ void CMD_Initialize ( void )
 
 
 
-//DRV_SPI_BUFFER_HANDLE spi_handle;
-//DRV_SPI_BUFFER_HANDLE spi_ongoing_channel;
+DRV_SPI_BUFFER_HANDLE spi_handle;
+DRV_SPI_BUFFER_HANDLE spi_ongoing_channel;
 
 void CMD_Tasks ( void )
 {
@@ -112,6 +115,9 @@ void CMD_Tasks ( void )
                     int pwm_width;
                     int pwm_period;
                     
+                    uint8_t ser_addr;
+                    int ser_len;
+                    
                     uint16_t adc_result[8];
                     
                     switch ( icmd ) 
@@ -152,41 +158,39 @@ void CMD_Tasks ( void )
                             cmdData.state = CMD_STATE_INIT;
                             break;
                             
-//                        case 203:
-//                        case 204:
-//                        case 205:
+                        case 203:
+                        case 204:
+                        case 205:
 //                        case 206:
-//                            /*
-//                             * 203: gpio_addr_write()
-//                             * 204: gpio_datain_write()
-//                             * 206: gpio_dataio_write()
-//                             * 207: gpio_dataio__dir_write()
-//                             * 
-//                             */
-//                            ptr = strtok(NULL, ",");
-//                            portValue = atoi(ptr);
-//                            
-//                            switch ( icmd ) {
-//                                case 203: ADDR_REGS_Set(portValue); break;
-//                                case 204: DATAIN_Set(portValue); break;
-//                                case 205: DATAOUT_Set(portValue); break;
-//                                case 206: DATAOUT_DirectionInputSet(portValue); break;
-//                            }
-//                            
-//                            cmdData.state = CMD_STATE_INIT;
-//                            break;
-//                        case 207:
-//                            /*
-//                             * gpio_dataio_read()
-//                             * 
-//                             */
-//                            
-//                            portValue = DATAOUT_Get();
-//                            SYS_PRINT("\t Read value=%d\r\n", portValue);
-//                            USB_Write( (char *) &portValue, 4);
-//                            
-//                            cmdData.state = CMD_STATE_INIT;
-//                            break;
+                            /*
+                             * 203: 
+                             * 204: 
+                             * 205: 
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            switch ( icmd ) {
+                                case 203: ROW_COL_DATA_Set(portValue); break;
+                                case 204: ROW_COL_BANK_Set(portValue); break;
+                                case 205: ADC_FIFO_EN_Set(portValue); break;
+                            }
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break;
+                        case 207:
+                            /*
+                             * 
+                             * 
+                             */
+                            
+                            portValue = ADC_OUT_Get();
+                            SYS_PRINT("\t Read value=%d\r\n", portValue);
+                            USB_Write( (char *) &portValue, 4);
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break;
                         case 210: 
                             /*
                              * gpio_slewrate_select()
@@ -224,7 +228,58 @@ void CMD_Tasks ( void )
                             cmdData.state = CMD_STATE_INIT;
                             break;
                             
-                       
+                        case 214:
+                            /*
+                             * dac_write()
+                             */
+                            
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            SYS_PRINT("\t SPI: Sending data %x to DAC, size=4\r\n", portValue);
+
+                            // SPI 6 for DAC
+                            PIC_CSOn();
+                            PIC_CSOff();
+                            spi_handle = DRV_SPI1_BufferAddWrite( &portValue, 4, NULL, NULL); 
+
+                            spi_ongoing_channel = 1;
+                            cmdData.state = CMD_STATE_SPI;
+                            
+                            break;
+                            
+                        case 215:
+                            /*
+                             * serial_write()
+                             */
+                            
+                            ptr = strtok(NULL, ",");
+                            ser_addr = atoi(ptr) & 0x3; // address
+                            
+                            ptr = strtok(NULL, ",");
+                            ser_len = atoi(ptr); 
+                            
+                            ptr = strtok(NULL, ",");
+                            SYS_PRINT("\t Sending data '%s' with addr=%x, size=%d\r\n", ptr, ser_addr, ser_len);
+                            
+//                            PLIB_PORTS_PinSet(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_14);
+//                            PLIB_PORTS_PinClear(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_14);
+                            if (ser_addr & 0x1) {
+                                SERIAL_CHAIN_SEL_0On();
+                            }
+                                
+                            if (ser_addr & 0x2) {
+                                SERIAL_CHAIN_SEL_1On();
+                            }
+                            
+                            spi_handle = DRV_SPI0_BufferAddWrite( ptr, ser_len, NULL, NULL);
+                            
+                            spi_ongoing_channel = 0;
+                            cmdData.state = CMD_STATE_SPI;
+                            
+                            break;
+                            
+                            
                         // Test commands
                         // Command start from 101 for fault tolerance
                         case 101:
@@ -253,6 +308,30 @@ void CMD_Tasks ( void )
                 }
             }
             
+            break;
+        }
+        case CMD_STATE_SPI:
+        {
+//            SYS_PRINT("\t SPI: Waiting for ch=%d \r\n", spi_ongoing_channel);
+            switch (spi_ongoing_channel) {
+                case 0:
+                    if (DRV_SPI0_BufferStatus(spi_handle) == DRV_SPI_BUFFER_EVENT_COMPLETE) {
+                        SERIAL_CHAIN_SEL_0Off();
+                        SERIAL_CHAIN_SEL_1Off();
+                        cmdData.state = CMD_STATE_INIT;
+                    }
+                    break;
+                case 1:
+                    if (DRV_SPI1_BufferStatus(spi_handle) == DRV_SPI_BUFFER_EVENT_COMPLETE) {
+                        PIC_CSOn();
+                        cmdData.state = CMD_STATE_INIT;
+                    }
+                    break;
+                default: 
+                    SYS_PRINT("\t Channel error, got ch=%d\r\n", spi_ongoing_channel);
+                    cmdData.state = CMD_STATE_INIT; 
+            }
+          
             break;
         }
         case CMD_STATE_SERVICE_TASKS:

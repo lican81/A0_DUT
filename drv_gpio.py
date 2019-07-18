@@ -42,14 +42,14 @@ def gpio_port_write(portName, data):
     # data:     The value to be written
 
     # Note: pins for the address bits, datain and dataio are hardcoded in firmware, called out via the '202', etc. function numbers
-    ser.write(b'201,'
-              + portName.encode() + b','
-              + str(data).encode() + b'\0')
+    ser.write(b'201,' +
+              portName.encode() + b',' +
+              str(data).encode() + b'\0')
 
 
 def gpio_port_read(portName):
-    ser.write(b'202,'
-              + portName.encode() + b'\0')
+    ser.write(b'202,' +
+              portName.encode() + b'\0')
 
     value = ser.read(4)
     value = struct.unpack('<I', value)
@@ -59,25 +59,25 @@ def gpio_port_read(portName):
 
 def gpio_slewrate_select(portName, mask, slewRate):
     # Slewrate 0-3, from the fastest to slowest
-    ser.write(b'210,'
-              + portName.encode() + b','
-              + str(mask).encode() + b','
-              + str(slewRate).encode() + b'\0')
+    ser.write(b'210,' +
+              portName.encode() + b',' +
+              str(mask).encode() + b',' +
+              str(slewRate).encode() + b'\0')
 
 
-# def gpio_addr_write(regAddress):
-#     ser.write(b'203,'
-#               + str(regAddress).encode() + b'\0')
+def gpio_row_col_data_write(data):
+    ser.write(b'203,' +
+              str(data).encode() + b'\0')
 
 
-# def gpio_datain_write(regValue):
-#     ser.write(b'204,'
-#               + str(regValue).encode() + b'\0')
+def gpio_row_col_bank_write(data):
+    ser.write(b'204,' +
+              str(data).encode() + b'\0')
 
 
-# def gpio_dataio_write(regValue):
-#     ser.write(b'205,'
-#               + str(regValue).encode() + b'\0')
+def gpio_adc_fifo_en_write(data):
+    ser.write(b'205,' +
+              str(data).encode() + b'\0')
 
 
 # def gpio_dataio_dir_write(regDirectionMask):
@@ -88,13 +88,13 @@ def gpio_slewrate_select(portName, mask, slewRate):
 #               + str(regDirectionMask).encode() + b'\0')
 
 
-# def gpio_dataio_read():
-#     ser.write(b'207\0')
+def gpio_adc_read():
+    ser.write(b'207\0')
 
-#     value = ser.read(4)
-#     value = struct.unpack('<I', value)
+    value = ser.read(4)
+    value = struct.unpack('<I', value)
 
-#     return value[0]
+    return value[0]
 
 
 def gpio_pin_set(portName, pinPos):
@@ -147,18 +147,27 @@ def gpio_pin_is_high(portName, pinPos):
 #     return data
 
 
-# def spi_write(channel, data):
-#     '''
-#     There are 3 SPI channels configured. 
-#     ch1->SPI/SPO/SCK1, ch1->SPI/SPO/SCK5, ch2->SPI/SPO/SCK6 (DAC), 
-#     '''
-#     data = struct.pack('<I', data)
-#     data = struct.unpack('>I', data)[0]
+def spi_dac_write(data):
+    '''
+    DAC spi channel=1
+    '''
+    data = struct.pack('<I', data)
+    data = struct.unpack('>I', data)[0]
 
-#     ser.write(b'208,' +
-#               str(channel).encode() + b',' +
-#               str(data).encode() + b'\0')
+    ser.write(b'214,' +
+              str(data).encode() + b'\0')
 
+
+def spi_serial_write(addr, data):
+    print(b'215,' +
+          str(addr).encode() + b',' +
+          str(len(data)).encode() + b',' +
+          data + b'\0')
+
+    ser.write(b'215,' +
+              str(addr).encode() + b',' +
+              str(len(data)).encode() + b',' +
+              data + b'\0')
 
 # def spi_read(channel, data):
 #     pass
@@ -176,7 +185,7 @@ def gpio_pin_is_high(portName, pinPos):
 
 #     PIC_READ is continuous pulse, so setting the width = 0 stops the PWM.
 
-#     The unit for the period and width parameter is 10 ns. 
+#     The unit for the period and width parameter is 10 ns.
 #     The maximum value for both is 0xffff (16-bit timer) for now, i.e. 655,350 ns.
 #     '''
 #     ser.write(b'209,' +

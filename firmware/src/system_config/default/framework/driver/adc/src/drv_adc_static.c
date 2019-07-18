@@ -114,7 +114,7 @@ void DRV_ADC_Initialize(void)
     PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_0, DEVADC0);
      PLIB_ADCHS_ChannelSetup(
      DRV_ADC_ID_1,
-     ADCHS_CHANNEL_0,
+     ADCHS_CHANNEL_1,
      ADCHS_DATA_RESOLUTION_12BIT,
      1,
      1,
@@ -123,7 +123,7 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelTriggerSampleSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
+                         ADCHS_CHANNEL_1,
                          ADCHS_CHANNEL_UNSYNC_TRIGGER_UNSYNC_SAMPLING
                          ))
                          { while(1);}
@@ -133,31 +133,30 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelInputSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
-                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN0
+                         ADCHS_CHANNEL_1,
+                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN1
                          ))
                          { while(1);}
 
 
-
      PLIB_ADCHS_AnalogInputModeSelect(
                DRV_ADC_ID_1,
-               ADCHS_AN0,
+               ADCHS_AN1,
                ADCHS_INPUT_MODE_SINGLE_ENDED_UNIPOLAR
                );
 
-     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN0 );
+     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN1 );
 
      PLIB_ADCHS_AnalogInputTriggerSourceSelect(
                DRV_ADC_ID_1,
-               ADCHS_CLASS12_AN0,
+               ADCHS_CLASS12_AN1,
                ADCHS_TRIGGER_SOURCE_GLOBAL_SOFTWARE_EDGE
      );
-    if (DEVADC0 != 0xFFFFFFFF)
-    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_0, DEVADC0);
+    if (DEVADC1 != 0xFFFFFFFF)
+    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_1, DEVADC1);
      PLIB_ADCHS_ChannelSetup(
      DRV_ADC_ID_1,
-     ADCHS_CHANNEL_0,
+     ADCHS_CHANNEL_2,
      ADCHS_DATA_RESOLUTION_12BIT,
      1,
      1,
@@ -166,7 +165,7 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelTriggerSampleSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
+                         ADCHS_CHANNEL_2,
                          ADCHS_CHANNEL_UNSYNC_TRIGGER_UNSYNC_SAMPLING
                          ))
                          { while(1);}
@@ -176,31 +175,30 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelInputSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
-                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN0
+                         ADCHS_CHANNEL_2,
+                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN2
                          ))
                          { while(1);}
 
 
-
      PLIB_ADCHS_AnalogInputModeSelect(
                DRV_ADC_ID_1,
-               ADCHS_AN0,
+               ADCHS_AN2,
                ADCHS_INPUT_MODE_SINGLE_ENDED_UNIPOLAR
                );
 
-     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN0 );
+     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN2 );
 
      PLIB_ADCHS_AnalogInputTriggerSourceSelect(
                DRV_ADC_ID_1,
-               ADCHS_CLASS12_AN0,
+               ADCHS_CLASS12_AN2,
                ADCHS_TRIGGER_SOURCE_GLOBAL_SOFTWARE_EDGE
      );
-    if (DEVADC0 != 0xFFFFFFFF)
-    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_0, DEVADC0);
+    if (DEVADC2 != 0xFFFFFFFF)
+    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_2, DEVADC2);
      PLIB_ADCHS_ChannelSetup(
      DRV_ADC_ID_1,
-     ADCHS_CHANNEL_0,
+     ADCHS_CHANNEL_3,
      ADCHS_DATA_RESOLUTION_12BIT,
      1,
      1,
@@ -209,7 +207,7 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelTriggerSampleSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
+                         ADCHS_CHANNEL_3,
                          ADCHS_CHANNEL_UNSYNC_TRIGGER_UNSYNC_SAMPLING
                          ))
                          { while(1);}
@@ -219,31 +217,30 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelInputSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
-                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN0
+                         ADCHS_CHANNEL_3,
+                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN3
                          ))
                          { while(1);}
 
 
-
      PLIB_ADCHS_AnalogInputModeSelect(
                DRV_ADC_ID_1,
-               ADCHS_AN0,
+               ADCHS_AN3,
                ADCHS_INPUT_MODE_SINGLE_ENDED_UNIPOLAR
                );
 
-     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN0 );
+     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN3 );
 
      PLIB_ADCHS_AnalogInputTriggerSourceSelect(
                DRV_ADC_ID_1,
-               ADCHS_CLASS12_AN0,
+               ADCHS_CLASS12_AN3,
                ADCHS_TRIGGER_SOURCE_GLOBAL_SOFTWARE_EDGE
      );
-    if (DEVADC0 != 0xFFFFFFFF)
-    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_0, DEVADC0);
+    if (DEVADC3 != 0xFFFFFFFF)
+    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_3, DEVADC3);
      PLIB_ADCHS_ChannelSetup(
      DRV_ADC_ID_1,
-     ADCHS_CHANNEL_0,
+     ADCHS_CHANNEL_4,
      ADCHS_DATA_RESOLUTION_12BIT,
      1,
      1,
@@ -252,7 +249,7 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelTriggerSampleSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
+                         ADCHS_CHANNEL_4,
                          ADCHS_CHANNEL_UNSYNC_TRIGGER_UNSYNC_SAMPLING
                          ))
                          { while(1);}
@@ -262,28 +259,27 @@ void DRV_ADC_Initialize(void)
 
      if(false == PLIB_ADCHS_ChannelInputSelect(
                          DRV_ADC_ID_1,
-                         ADCHS_CHANNEL_0,
-                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN0
+                         ADCHS_CHANNEL_4,
+                         (ADCHS_CHANNEL_INP_SEL)ADCHS_DEFAULT_CLASS1_AN4
                          ))
                          { while(1);}
 
 
-
      PLIB_ADCHS_AnalogInputModeSelect(
                DRV_ADC_ID_1,
-               ADCHS_AN0,
+               ADCHS_AN4,
                ADCHS_INPUT_MODE_SINGLE_ENDED_UNIPOLAR
                );
 
-     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN0 );
+     PLIB_ADCHS_AnalogInputEdgeTriggerSet( DRV_ADC_ID_1, ADCHS_CLASS12_AN4 );
 
      PLIB_ADCHS_AnalogInputTriggerSourceSelect(
                DRV_ADC_ID_1,
-               ADCHS_CLASS12_AN0,
+               ADCHS_CLASS12_AN4,
                ADCHS_TRIGGER_SOURCE_GLOBAL_SOFTWARE_EDGE
      );
-    if (DEVADC0 != 0xFFFFFFFF)
-    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_0, DEVADC0);
+    if (DEVADC4 != 0xFFFFFFFF)
+    PLIB_ADCHS_ChannelConfigurationSet(DRV_ADC_ID_1, ADCHS_CHANNEL_4, DEVADC4);
 
 
 
@@ -321,56 +317,56 @@ void DRV_ADC_Initialize(void)
      PLIB_ADCHS_ChannelAnalogFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_1
      );
      
      /* Wait for the modules to be ready */
      while(!PLIB_ADCHS_ChannelIsReady
           (     
                DRV_ADC_ID_1,
-               ADCHS_CHANNEL_0
+               ADCHS_CHANNEL_1
           )
      );
      /* Enable analog feature for the specified channel */
      PLIB_ADCHS_ChannelAnalogFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_2
      );
      
      /* Wait for the modules to be ready */
      while(!PLIB_ADCHS_ChannelIsReady
           (     
                DRV_ADC_ID_1,
-               ADCHS_CHANNEL_0
+               ADCHS_CHANNEL_2
           )
      );
      /* Enable analog feature for the specified channel */
      PLIB_ADCHS_ChannelAnalogFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_3
      );
      
      /* Wait for the modules to be ready */
      while(!PLIB_ADCHS_ChannelIsReady
           (     
                DRV_ADC_ID_1,
-               ADCHS_CHANNEL_0
+               ADCHS_CHANNEL_3
           )
      );
      /* Enable analog feature for the specified channel */
      PLIB_ADCHS_ChannelAnalogFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_4
      );
      
      /* Wait for the modules to be ready */
      while(!PLIB_ADCHS_ChannelIsReady
           (     
                DRV_ADC_ID_1,
-               ADCHS_CHANNEL_0
+               ADCHS_CHANNEL_4
           )
      );
      
@@ -410,7 +406,7 @@ inline void DRV_ADC1_Open(void)
      PLIB_ADCHS_ChannelDigitalFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_1
      );
 }
 
@@ -420,7 +416,7 @@ inline void DRV_ADC1_Close(void)
      PLIB_ADCHS_ChannelDigitalFeatureDisable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_1
      );
 }
 inline void DRV_ADC2_Open(void)
@@ -429,7 +425,7 @@ inline void DRV_ADC2_Open(void)
      PLIB_ADCHS_ChannelDigitalFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_2
      );
 }
 
@@ -439,7 +435,7 @@ inline void DRV_ADC2_Close(void)
      PLIB_ADCHS_ChannelDigitalFeatureDisable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_2
      );
 }
 inline void DRV_ADC3_Open(void)
@@ -448,7 +444,7 @@ inline void DRV_ADC3_Open(void)
      PLIB_ADCHS_ChannelDigitalFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_3
      );
 }
 
@@ -458,7 +454,7 @@ inline void DRV_ADC3_Close(void)
      PLIB_ADCHS_ChannelDigitalFeatureDisable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_3
      );
 }
 inline void DRV_ADC4_Open(void)
@@ -467,7 +463,7 @@ inline void DRV_ADC4_Open(void)
      PLIB_ADCHS_ChannelDigitalFeatureEnable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_4
      );
 }
 
@@ -477,7 +473,7 @@ inline void DRV_ADC4_Close(void)
      PLIB_ADCHS_ChannelDigitalFeatureDisable
      (
           DRV_ADC_ID_1,
-          ADCHS_CHANNEL_0
+          ADCHS_CHANNEL_4
      );
 }
 

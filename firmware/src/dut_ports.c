@@ -41,6 +41,38 @@ PORTS_BIT_POS ROW_COL_DATA_PINS[16] = {
     ROW_COL_DATA_15_PIN
 };
 
+PORTS_CHANNEL ADC_OUT_PORTS[13] = {
+    ADC_OUT_0_PORT,
+    ADC_OUT_1_PORT,
+    ADC_OUT_2_PORT,
+    ADC_OUT_3_PORT,
+    ADC_OUT_4_PORT,
+    ADC_OUT_5_PORT,
+    ADC_OUT_6_PORT,
+    ADC_OUT_7_PORT,
+    ADC_OUT_8_PORT,
+    ADC_OUT_9_PORT,
+    ADC_OUT_10_PORT,
+    ADC_OUT_11_PORT,
+    ADC_OUT_12_PORT
+};
+
+PORTS_BIT_POS ADC_OUT_PINS[13] = {
+    ADC_OUT_0_PIN,
+    ADC_OUT_1_PIN,
+    ADC_OUT_2_PIN,
+    ADC_OUT_3_PIN,
+    ADC_OUT_4_PIN,
+    ADC_OUT_5_PIN,
+    ADC_OUT_6_PIN,
+    ADC_OUT_7_PIN,
+    ADC_OUT_8_PIN,
+    ADC_OUT_9_PIN,
+    ADC_OUT_10_PIN,
+    ADC_OUT_11_PIN,
+    ADC_OUT_12_PIN
+};
+
 
 int portName2Channel( char portName ) {
     int portChannel = portName - 'A';
@@ -106,6 +138,46 @@ uint32_t GPIO_Read( char portName ) {
 
     SYS_PRINT("\t Reading from %c, port_id=%d\r\n", portName, portChannel);
     return PLIB_PORTS_Read(PORTS_ID_0, portChannel);
+}
+
+
+void ROW_COL_DATA_Set(PORTS_DATA_TYPE value) {
+    SYS_PRINT("\t Setting ROW_COL_DATA value %x\r\n", value);
+    
+    int i;
+    for (i=0; i<16; i++) {
+        PLIB_PORTS_PinWrite(PORTS_ID_0, ROW_COL_DATA_PORTS[i], ROW_COL_DATA_PINS[i], value&(0x1<<i));
+    }
+}
+
+void ROW_COL_BANK_Set(PORTS_DATA_TYPE value) {
+    // K0, K1, K2, K3
+    SYS_PRINT("\t Setting ROW_COL_BANK value %x (raw=%x)\r\n", value, value & 0x000f);
+    
+    // Only lowest four bits get written
+    PLIB_PORTS_Write( PORTS_ID_0, PORT_CHANNEL_K, value & 0x000f);
+}
+
+void ADC_FIFO_EN_Set(PORTS_DATA_TYPE value) {
+    // K4, K5, K6, K7
+    SYS_PRINT("\t Setting ROW_COL_BANK value %x (raw=%x)\r\n", value, (value<<4) & 0x00f0);
+    
+    // Only lowest four bits get written
+    PLIB_PORTS_Write( PORTS_ID_0, PORT_CHANNEL_K, (value<<4) & 0x00f0);
+}
+
+
+PORTS_DATA_TYPE ADC_OUT_Get(void){   
+    PORTS_DATA_TYPE value_dataout = 0;
+    
+    int i;
+    for (i=0; i<12; i++) {
+        // Will replace with PinGet to read PORTs directly
+        value_dataout = value_dataout | (PLIB_PORTS_PinGet(PORTS_ID_0, ADC_OUT_PORTS[i], ADC_OUT_PINS[i]) << i);
+    }
+    
+    SYS_PRINT("\t Read ADC_OUT value %x\r\n", value_dataout);
+    return value_dataout;
 }
 
 

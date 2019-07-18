@@ -105,7 +105,32 @@ void __ISR(_TIMER_1_VECTOR, ipl1AUTO) IntHandlerDrvTmrInstance0(void)
 {
     DRV_TMR_Tasks(sysObj.drvTmr0);
 }
- void __ISR(_USB_VECTOR, ipl4AUTO) _IntHandlerUSBInstance0(void)
+ 
+void __ISR(_SPI1_RX_VECTOR, ipl1AUTO) _IntHandlerSPIRxInstance0(void)
+{
+    DRV_SPI_Tasks(sysObj.spiObjectIdx0);
+}
+void __ISR(_SPI1_TX_VECTOR, ipl1AUTO) _IntHandlerSPITxInstance0(void)
+{
+    DRV_SPI_Tasks(sysObj.spiObjectIdx0);
+}
+void __ISR(_SPI1_FAULT_VECTOR, ipl1AUTO) _IntHandlerSPIFaultInstance0(void)
+{
+    DRV_SPI_Tasks(sysObj.spiObjectIdx0);
+}
+void __ISR(_SPI6_RX_VECTOR, ipl1AUTO) _IntHandlerSPIRxInstance1(void)
+{
+    DRV_SPI_Tasks(sysObj.spiObjectIdx1);
+}
+void __ISR(_SPI6_TX_VECTOR, ipl1AUTO) _IntHandlerSPITxInstance1(void)
+{
+    DRV_SPI_Tasks(sysObj.spiObjectIdx1);
+}
+void __ISR(_SPI6_FAULT_VECTOR, ipl1AUTO) _IntHandlerSPIFaultInstance1(void)
+{
+    DRV_SPI_Tasks(sysObj.spiObjectIdx1);
+}
+void __ISR(_USB_VECTOR, ipl4AUTO) _IntHandlerUSBInstance0(void)
 {
     DRV_USBHS_Tasks_ISR(sysObj.drvUSBObject);
 }

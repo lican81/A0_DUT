@@ -90,6 +90,8 @@ extern "C" {
 #define SYS_CLK_BUS_PERIPHERAL_5            100000000ul
 #define SYS_CLK_BUS_PERIPHERAL_7            200000000ul
 #define SYS_CLK_BUS_PERIPHERAL_8            100000000ul
+#define SYS_CLK_BUS_REFERENCE_1             50000000ul
+#define SYS_CLK_BUS_REFERENCE_3             50000000ul
 #define SYS_CLK_CONFIG_PRIMARY_XTAL         24000000ul
 #define SYS_CLK_CONFIG_SECONDARY_XTAL       32768ul
    
@@ -118,7 +120,7 @@ extern "C" {
 #define SYS_PORT_C_CNPD         0x0000
 #define SYS_PORT_C_CNEN         0x0000
 
-#define SYS_PORT_D_ANSEL        0x1900
+#define SYS_PORT_D_ANSEL        0x0100
 #define SYS_PORT_D_TRIS         0x193E
 #define SYS_PORT_D_LAT          0x0000
 #define SYS_PORT_D_ODC          0x0000
@@ -134,7 +136,7 @@ extern "C" {
 #define SYS_PORT_E_CNPD         0x0000
 #define SYS_PORT_E_CNEN         0x0000
 
-#define SYS_PORT_F_ANSEL        0xCEE8
+#define SYS_PORT_F_ANSEL        0xCEC0
 #define SYS_PORT_F_TRIS         0xCEE8
 #define SYS_PORT_F_LAT          0x0000
 #define SYS_PORT_F_ODC          0x0000
@@ -150,7 +152,7 @@ extern "C" {
 #define SYS_PORT_G_CNPD         0x0000
 #define SYS_PORT_G_CNEN         0x0002
 
-#define SYS_PORT_H_ANSEL        0x6130
+#define SYS_PORT_H_ANSEL        0x0030
 #define SYS_PORT_H_TRIS         0x6130
 #define SYS_PORT_H_LAT          0x0000
 #define SYS_PORT_H_ODC          0x0000
@@ -158,7 +160,7 @@ extern "C" {
 #define SYS_PORT_H_CNPD         0x0000
 #define SYS_PORT_H_CNEN         0x0000
 
-#define SYS_PORT_J_ANSEL        0x0F02
+#define SYS_PORT_J_ANSEL        0x0B00
 #define SYS_PORT_J_TRIS         0x0F02
 #define SYS_PORT_J_LAT          0x0000
 #define SYS_PORT_J_ODC          0x0000
@@ -211,6 +213,26 @@ extern "C" {
 // Section: Driver Configuration
 // *****************************************************************************
 // *****************************************************************************
+
+/*** SPI Driver Configuration ***/
+#define DRV_SPI_NUMBER_OF_MODULES		6
+/*** Driver Compilation and static configuration options. ***/
+/*** Select SPI compilation units.***/
+#define DRV_SPI_POLLED 				0
+#define DRV_SPI_ISR 				1
+#define DRV_SPI_MASTER 				1
+#define DRV_SPI_SLAVE 				0
+#define DRV_SPI_RM 					0
+#define DRV_SPI_EBM 				1
+#define DRV_SPI_8BIT 				1
+#define DRV_SPI_16BIT 				0
+#define DRV_SPI_32BIT 				0
+#define DRV_SPI_DMA 				0
+
+/*** SPI Driver Static Allocation Options ***/
+#define DRV_SPI_INSTANCES_NUMBER 		2
+#define DRV_SPI_CLIENTS_NUMBER 			2
+#define DRV_SPI_ELEMENTS_PER_QUEUE 		10
 /*** Timer Driver Configuration ***/
 #define DRV_TMR_INTERRUPT_MODE             true
 #define DRV_TMR_INSTANCES_NUMBER           1
@@ -609,13 +631,6 @@ extern "C" {
 #define NRESET_DPE_ENGINEOff() PLIB_PORTS_PinClear(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_13)
 #define NRESET_DPE_ENGINEStateGet() PLIB_PORTS_PinGetLatched(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_13)
 #define NRESET_DPE_ENGINEStateSet(Value) PLIB_PORTS_PinWrite(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_13, Value)
-
-/*** Functions for CK_ARRAY pin ***/
-#define CK_ARRAYToggle() PLIB_PORTS_PinToggle(PORTS_ID_0, PORT_CHANNEL_F, PORTS_BIT_POS_0)
-#define CK_ARRAYOn() PLIB_PORTS_PinSet(PORTS_ID_0, PORT_CHANNEL_F, PORTS_BIT_POS_0)
-#define CK_ARRAYOff() PLIB_PORTS_PinClear(PORTS_ID_0, PORT_CHANNEL_F, PORTS_BIT_POS_0)
-#define CK_ARRAYStateGet() PLIB_PORTS_PinGetLatched(PORTS_ID_0, PORT_CHANNEL_F, PORTS_BIT_POS_0)
-#define CK_ARRAYStateSet(Value) PLIB_PORTS_PinWrite(PORTS_ID_0, PORT_CHANNEL_F, PORTS_BIT_POS_0, Value)
 
 /*** Functions for AMP_EN pin ***/
 #define AMP_ENToggle() PLIB_PORTS_PinToggle(PORTS_ID_0, PORT_CHANNEL_F, PORTS_BIT_POS_1)

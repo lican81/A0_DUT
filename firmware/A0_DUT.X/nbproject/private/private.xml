@@ -7,10 +7,8 @@
             <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/main.c</file>
             <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_ports.h</file>
             <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/app.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/app.h</file>
             <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/cmd.h</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/A0_DUT.X/nbproject/Makefile-default.mk</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default/system_config.h</file>
+            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default/system_init.c</file>
             <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_ports.c</file>
         </group>
     </open-files>
