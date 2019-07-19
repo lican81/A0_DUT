@@ -40,11 +40,11 @@ void CMD_Initialize ( void )
     // Pull the PINs high to prevent excessive current sink to the PIC
 //    default_highpins();
     
-//    DRV_ADC0_Open();
-//    DRV_ADC1_Open();
-//    DRV_ADC2_Open();
-//    DRV_ADC3_Open();
-//    DRV_ADC4_Open();
+    DRV_ADC0_Open();
+    DRV_ADC1_Open();
+    DRV_ADC2_Open();
+    DRV_ADC3_Open();
+    DRV_ADC4_Open();
     
     DRV_SPI0_Open( DRV_SPI_INDEX_0, DRV_IO_INTENT_EXCLUSIVE );
     SERIAL_CHAIN_SEL_0Off();
@@ -279,6 +279,15 @@ void CMD_Tasks ( void )
                             
                             break;
                             
+                        case 216:
+                            /*
+                             * pic_adc_read()
+                             */
+                            
+                            DRV_ADC_Start();
+                            SYS_PRINT("\t ADC started\r\n");
+                            cmdData.state = CMD_STATE_ADC;
+                            break; 
                             
                         // Test commands
                         // Command start from 101 for fault tolerance
@@ -332,6 +341,36 @@ void CMD_Tasks ( void )
                     cmdData.state = CMD_STATE_INIT; 
             }
           
+            break;
+        }
+        case CMD_STATE_ADC:
+        {
+            int NUM_ADC = 5;
+            
+            uint32_t adc_read[NUM_ADC];
+            
+            int n_adc_completed = 0;
+            
+            int i;
+            for (i=0; i<NUM_ADC; i++) {
+             
+                if ( !(n_adc_completed & (0x1<<i) ) && 
+                    DRV_ADC_SamplesAvailable(i) ) {
+                    adc_read[i] = DRV_ADC_SamplesRead(i);
+                    
+                    n_adc_completed = n_adc_completed | (0x1<<i);
+                    
+                    SYS_PRINT("\t ADC_%d = %x, n_adc=%x\r\n", 
+                            i, adc_read[i], n_adc_completed );
+                }
+            }
+
+            if (n_adc_completed == 0x1f ) {
+                // Done reading
+                USB_Write( (char *) adc_read, 4*NUM_ADC );
+                cmdData.state = CMD_STATE_INIT;
+            }
+            
             break;
         }
         case CMD_STATE_SERVICE_TASKS:

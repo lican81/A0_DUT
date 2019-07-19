@@ -159,18 +159,29 @@ def spi_dac_write(data):
 
 
 def spi_serial_write(addr, data):
-    print(b'215,' +
-          str(addr).encode() + b',' +
-          str(len(data)).encode() + b',' +
-          data + b'\0')
+    # print(b'215,' +
+    #       str(addr).encode() + b',' +
+    #       str(len(data)).encode() + b',' +
+    #       data + b'\0')
 
     ser.write(b'215,' +
               str(addr).encode() + b',' +
               str(len(data)).encode() + b',' +
               data + b'\0')
 
-# def spi_read(channel, data):
-#     pass
+
+def pic_adc_read():
+    ser.write(b'216' + b'\0')
+    line = ser.read(4 * 5)
+
+    value = np.array( struct.unpack('<' + 'I' * 5, line) )
+    voltages = value * 3.3 / 0x0fff
+
+    # for voltage in voltages:
+    #     print(f'voltage = {voltage:.2f}V')
+
+    return voltages
+
 
 
 # def pwm_start(channel, width, period):

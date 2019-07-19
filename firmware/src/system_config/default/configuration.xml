@@ -378,7 +378,7 @@
         <Name dnOrder="0">system_init.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default</Path>
         <Checksum dnOrder="2">532D4CD62F0BD639FD6AB3AE7DC33414</Checksum>
-        <ProjectFileChecksum dnOrder="3">D4669442488BDF4E4C34ED18BAD84C43</ProjectFileChecksum>
+        <ProjectFileChecksum dnOrder="3">967EAF5EA005C808B94E08A45F73C7F3</ProjectFileChecksum>
       </Template>
       <Template dnOrder="12">
         <Name dnOrder="0">main.c</Name>
@@ -442,7 +442,7 @@
         <Name dnOrder="0">system_tasks.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default</Path>
         <Checksum dnOrder="2">BD5710B5856EB2CD58ADD8C66CB89A8C</Checksum>
-        <ProjectFileChecksum dnOrder="3">EA522BEFDA0F3CF016DD7840D894BB3C</ProjectFileChecksum>
+        <ProjectFileChecksum dnOrder="3">903E644FC62D72DB1EE3CFFAF808C229</ProjectFileChecksum>
       </Template>
       <Template dnOrder="25">
         <Name dnOrder="0">system_config.h</Name>
@@ -466,11 +466,11 @@
     </Templates>
     <CompilerItems dnOrder="2">
       <C32 dnOrder="0">
-        <Include dnOrder="0" value="/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src"/>
-        <Include dnOrder="1" value="/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default"/>
-        <Include dnOrder="2" value="/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/default"/>
-        <Include dnOrder="3" value="/Users/canli/microchip/harmony/v2_06/framework"/>
-        <Include dnOrder="4" value="/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default/framework"/>
+        <Include dnOrder="0" value="C:\microchip\harmony\v2_06\apps\A0_DUT\firmware\src"/>
+        <Include dnOrder="1" value="C:\microchip\harmony\v2_06\apps\A0_DUT\firmware\src\system_config\default"/>
+        <Include dnOrder="2" value="C:\microchip\harmony\v2_06\apps\A0_DUT\firmware\src\default"/>
+        <Include dnOrder="3" value="C:\microchip\harmony\v2_06\framework"/>
+        <Include dnOrder="4" value="C:\microchip\harmony\v2_06\apps\A0_DUT\firmware\src\system_config\default\framework"/>
         <Include dnOrder="5" value="../src/system_config/default/bsp"/>
       </C32>
     </CompilerItems>
