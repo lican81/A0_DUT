@@ -19,7 +19,11 @@ README for setting up python environment and microcontroller on host PC
   c. activate the virtual environment
   
         $ ~/.venvs/py37/Scripts/activate.ps1
-  d. In vscode (after you've installed the Python extension), open settings (file->preferences->settings) and search for python or venv. You should eventually get to a settings.json file that vs code tells you to edit. in this file type python.pythonpath = "file location" for your virual environment.
+        
+  d. In vscode (after you've installed the Python extension), open settings (file->preferences->settings) and search for python or venv. You should eventually get to a settings.json file that vs code tells you to edit. in this file type 
+  $ "python.pythonPath" : "C:\\Users\\localuser\\...." 
+  
+  where inside the " " should be the python.exe file location for your virual environment. e.g. "C:\\Users\\localuser\\~\\.venvs\\py37\\Scripts\\python.exe"
     
 
 4) Pull code from this Github repository to your host PC, note the project folder location
