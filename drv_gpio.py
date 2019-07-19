@@ -66,16 +66,19 @@ def gpio_slewrate_select(portName, mask, slewRate):
 
 
 def gpio_row_col_data_write(data):
+    # Writes data to all ROW_COL_DATA<15..0> PIC pins
     ser.write(b'203,' +
               str(data).encode() + b'\0')
 
 
 def gpio_row_col_bank_write(data):
+    # Writes data to all ROW_COL_BANK<3..0> PIC pins
     ser.write(b'204,' +
               str(data).encode() + b'\0')
 
 
 def gpio_adc_fifo_en_write(data):
+    # Writes data to all ACD_FIFO_EN<3..0> PIC pins
     ser.write(b'205,' +
               str(data).encode() + b'\0')
 
@@ -89,6 +92,7 @@ def gpio_adc_fifo_en_write(data):
 
 
 def gpio_adc_read():
+    # ADC bus read of ADC_OUT<12..0> from DPE A0 
     ser.write(b'207\0')
 
     value = ser.read(4)
