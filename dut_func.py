@@ -91,15 +91,18 @@ def power_on():
     # Q for Jacqui: VDD_SuperT=See Table 1 -> is this 'Plane VPP'?
     
     while True:
-            if P_POWER_GOOD==0: continue
+            powergoodhigh = drv.gpio_pin_is_high(*PIC_PINS['PWR_GOOD'])
+            if powergoodhigh==False: continue
             else:
                 time.sleep(100) # want to delay (1ms)
                 break
 
-    ALL_VREFS = See Table 1
+    # ALL_VREFS = See Table 1 in Cookbook documentation
     dac_set('VREF_ARRAY',0.5)
+    dac_set('VREF_TIA',0.5)
+    dac_set('VREF_SH',0.5)
 
-    # Initialize clocks -> to be written! CK_ARRAY and ADC_CK
+    # Initialize clocks -> TO BE WRITTEN! CK_ARRAY and ADC_CK
 
 
     time.sleep(10) # want to delay 10us
