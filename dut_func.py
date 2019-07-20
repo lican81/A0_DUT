@@ -13,61 +13,35 @@ def disconnect():
     drv.disconnect()
 
 def pads_defaults():
-    portName, pinPos = PIC_PINS['CONNECT_COLUMN_T']
-    drv.gpio_pin_reset(portName, pinPos)
-    # time.sleep(1)
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(1)
     drv.gpio_row_col_data_write(0x0)  # Writes 0 to ROW_COL_DATA<15..0> pins
-    portName, pinPos = PIC_PINS['COL_ROW_SEL']
-    drv.gpio_pin_reset(portName, pinPos)
+    drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
     drv.gpio_row_col_bank_write(0b0000) # Writes 0 to ROW_COL_BANK<3..0> pins
-    portName, pinPos = PIC_PINS['LATCH_CLK_DATA']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['ARRAY_EN<0>']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['ARRAY_EN<1>']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['ARRAY_EN<2>']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['NFORCE_SAFE0']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['NFORCE_SAFE1']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['NFORCE_SAFE2']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['READ_BIT']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['READ_DPE']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['COL_WRITE_CONNECT']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['CONNECT_TIA']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['DPE_PULSE']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['AGC_PULSE']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['DPE_INTERNAL_EN']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['AGC_INTERNAL_EN']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['DPE_EXT_OVERRIDE_EN ']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['DPE_EXTERNAL_PULSE']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['DPE_EXT_SH']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['WRITE_FWD']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['WRT_INTERNAL_EN']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['WRT_PULSE']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['WRITE_SEL_EXT']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['WRITE_ADD_CAP']
-    drv.gpio_pin_reset(portName, pinPos)
-    portName, pinPos = PIC_PINS['ADC_FIFO_ADVANCE']
-    drv.gpio_pin_reset(portName, pinPos)
+    drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+    drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<0>'])
+    drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<1>'])
+    drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<2>'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    drv.gpio_pin_reset(*PIC_PINS['READ_BIT'])
+    drv.gpio_pin_reset(*PIC_PINS['READ_DPE'])
+    drv.gpio_pin_reset(*PIC_PINS['COL_WRITE_CONNECT'])
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_TIA'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_PULSE'])
+    drv.gpio_pin_reset(*PIC_PINS['AGC_PULSE'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_INTERNAL_EN'])
+    drv.gpio_pin_reset(*PIC_PINS['AGC_INTERNAL_EN'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_OVERRIDE_EN '])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXTERNAL_PULSE'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_SH'])
+    drv.gpio_pin_reset(*PIC_PINS['WRITE_FWD'])
+    drv.gpio_pin_reset(*PIC_PINS['WRT_INTERNAL_EN'])
+    drv.gpio_pin_reset(*PIC_PINS['WRT_PULSE'])
+    drv.gpio_pin_reset(*PIC_PINS['WRITE_SEL_EXT'])
+    drv.gpio_pin_reset(*PIC_PINS['WRITE_ADD_CAP'])
+    drv.gpio_pin_reset(*PIC_PINS['ADC_FIFO_ADVANCE'])
     drv.gpio_adc_fifo_en_write(0b0000) # Writes to ADC_FIFO_EN<3..0> pins
     drv.gpio_pin_reset(*PIC_PINS['ADC_SEL_EXTERNAL'])
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_BUS_IN'])
