@@ -24,7 +24,7 @@ ser = None
 def connect(new_serial=None):
     global ser
 
-    if new_serial == None:
+    if new_serial is None:
         ser = serial.Serial(serUSB, baudrate, timeout=1)
         print('Serial port openned.')
 
@@ -92,7 +92,7 @@ def gpio_adc_fifo_en_write(data):
 
 
 def gpio_adc_read():
-    # ADC bus read of ADC_OUT<12..0> from DPE A0 
+    # ADC bus read of ADC_OUT<12..0> from DPE A0
     ser.write(b'207\0')
 
     value = ser.read(4)
@@ -184,7 +184,7 @@ def pic_adc_read():
     ser.write(b'216' + b'\0')
     line = ser.read(4 * 5)
 
-    value = np.array( struct.unpack('<' + 'I' * 5, line) )
+    value = np.array(struct.unpack('<' + 'I' * 5, line))
     voltages = value * 3.3 / 0x0fff
 
     # for voltage in voltages:
@@ -192,6 +192,25 @@ def pic_adc_read():
 
     return voltages
 
+
+def clk_start(channel):
+    '''
+    Start the REFCLKOx
+    Example: clk_start('ADC_CK')
+    '''
+    ch = REFCLKO[channel]
+    ser.write(b'217,' +
+              str(ch).encode())
+
+
+def clk_stop(channel):
+    '''
+    Stop the REFCLKOx
+    Example: clk_stop('ADC_CK')
+    '''
+    ch = REFCLKO[channel]
+    ser.write(b'218,' +
+              str(ch).encode()
 
 
 # def pwm_start(channel, width, period):

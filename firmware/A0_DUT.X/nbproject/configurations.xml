@@ -42,6 +42,7 @@
         <itemPath>../src/cmd.h</itemPath>
         <itemPath>../src/usb_com.h</itemPath>
         <itemPath>../src/dut_ports.h</itemPath>
+        <itemPath>../src/dut_func.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="framework" projectFiles="true">
         <logicalFolder name="f1" displayName="driver" projectFiles="true">
@@ -226,6 +227,7 @@
         <itemPath>../src/cmd.c</itemPath>
         <itemPath>../src/usb_com.c</itemPath>
         <itemPath>../src/dut_ports.c</itemPath>
+        <itemPath>../src/dut_func.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f1" displayName="framework" projectFiles="true">
         <logicalFolder name="f1" displayName="driver" projectFiles="true">
@@ -301,9 +303,6 @@
     <Elem>../..</Elem>
     <Elem>../src/default</Elem>
     <Elem>../src/system_config/default</Elem>
-    <Elem>..\src</Elem>
-    <Elem>..\src\default</Elem>
-    <Elem>..\src\system_config\default</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -315,8 +314,8 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>PKOBSKDEPlatformTool</platformTool>
         <languageToolchain>XC32</languageToolchain>
-        <languageToolchainVersion>2.20</languageToolchainVersion>
-        <platform>3</platform>
+        <languageToolchainVersion>2.15</languageToolchainVersion>
+        <platform>4</platform>
       </toolsSet>
       <packs>
         <pack name="PIC32MZ-EF_DFP" vendor="Microchip" version="1.0.20"/>

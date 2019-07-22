@@ -125,3 +125,8 @@ DAC_SPAN = {
     0b011:  (-10, 10),
     0b100:  (-2.5, 2.5),
 }
+
+REFCLKO = {
+    'CK_ARRAY': 0,  # REFCLKO1
+    'ADC_CK':   2,  # REFCLKO3
+}
