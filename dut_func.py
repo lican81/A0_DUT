@@ -114,15 +114,12 @@ def vrefs_off():
 def poweron_scan_control():
     pads_defaults()
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_CK_IN'])
-
-    drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL0'])
-    drv.gpio_pin_set(*PIC_PINS['SERIAL_CHAIN_SEL1'])
     
     # P_SERIAL_CK_IN number of clock pulses = number of bits read in using P_SERIAL_BUS_IN # Number of clock pulses must exactly equal the number of scan bits being read in 
 	#for pulse in P_SERIAL_CK_IN clock pulses:
     #    P_SERIAL_BUS_IN data latched in # Refer to Figure 2 for timing diagram and to Table 3 for recommended initial values to use during power on
     data = bytes([0b00000010, 0b00000001, 0b00100000, 0b00000000,0b00110000, 0b01000000,0b00010000])
-    drv.spi_serial_write(1, data)
+    drv.spi_serial_write(1, data) # addr 1 here means SERIAL_CHAIN_SEL0 is 1 and _SEL1 is 0
     
 
 def power_off():
