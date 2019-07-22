@@ -31,8 +31,8 @@ def pads_defaults():
     drv.gpio_pin_reset(*PIC_PINS['AGC_PULSE'])
     drv.gpio_pin_reset(*PIC_PINS['DPE_INTERNAL_EN'])
     drv.gpio_pin_reset(*PIC_PINS['AGC_INTERNAL_EN'])
-    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_OVERRIDE_EN '])
-    drv.gpio_pin_reset(*PIC_PINS['DPE_EXTERNAL_PULSE'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_OVERRIDE_EN'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_PULSE'])
     drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_SH'])
     drv.gpio_pin_reset(*PIC_PINS['WRITE_FWD'])
     drv.gpio_pin_reset(*PIC_PINS['WRT_INTERNAL_EN'])
@@ -174,7 +174,7 @@ def dac_init(span=0b010):
     0   0   0   0-5 V
     0   0   1   0-10
     0   1   0   -5 ~ +5V
-    0   1   1  *-
+    0   1   1   -10 ~ + 10
     1   0   0   -2.5 ~ +2.5
 
     See DAC_SPAN in misc.py
