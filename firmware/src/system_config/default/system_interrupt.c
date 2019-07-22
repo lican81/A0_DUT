@@ -93,12 +93,7 @@ void __ISR(_UART2_FAULT_VECTOR, ipl1AUTO) _IntHandlerDrvUsartErrorInstance0(void
  
 
  
-    void __ISR(_CHANGE_NOTICE_G_VECTOR, ipl1AUTO) _IntHandlerChangeNotification_PortG(void)
-{
-    
-    PLIB_INT_SourceFlagClear(INT_ID_0,INT_SOURCE_CHANGE_NOTICE_G);
-}
-
+ 
  
 
 void __ISR(_TIMER_1_VECTOR, ipl1AUTO) IntHandlerDrvTmrInstance0(void)
