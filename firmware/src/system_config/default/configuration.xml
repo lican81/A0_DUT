@@ -387,7 +387,7 @@
       <Template dnOrder="13">
         <Name dnOrder="0">drv_spi_static.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default/framework/driver/spi/static/src</Path>
-        <Checksum dnOrder="2">2816E285D840E953E12B35D24E272A2B</Checksum>
+        <Checksum dnOrder="2">AE32DE128A70C2FDBC1DDFDD28895F87</Checksum>
       </Template>
       <Template dnOrder="14">
         <Name dnOrder="0">system_definitions.h</Name>
@@ -447,7 +447,7 @@
       <Template dnOrder="25">
         <Name dnOrder="0">system_config.h</Name>
         <Path dnOrder="1">Header&amp;#160;Files/app/system_config/default</Path>
-        <Checksum dnOrder="2">17CA49E76078C34DD8EE30F3D0871C4D</Checksum>
+        <Checksum dnOrder="2">DBD526CC085E234D480E55824BFE890D</Checksum>
       </Template>
       <Template dnOrder="26">
         <Name dnOrder="0">app.h</Name>
@@ -456,7 +456,7 @@
       <Template dnOrder="27">
         <Name dnOrder="0">sys_clk_pic32mz.c</Name>
         <Path dnOrder="1">Source&amp;#160;Files/app/system_config/default/framework/system/clk/src</Path>
-        <Checksum dnOrder="2">861A3766DD3E1C146E1C68B1FD004F29</Checksum>
+        <Checksum dnOrder="2">023A8B4C8C9388678A4F1A00A6DD464C</Checksum>
       </Template>
       <Template dnOrder="28">
         <Name dnOrder="0">drv_spi_static_sys_queue.c</Name>

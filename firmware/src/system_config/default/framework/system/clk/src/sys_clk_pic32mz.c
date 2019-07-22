@@ -123,7 +123,7 @@ void SYS_CLK_Initialize( const SYS_CLK_INIT const * clkInit )
     /* ROSEL System Clock SYSCLK */
     PLIB_OSC_ReferenceOscBaseClockSelect ( OSC_ID_0, OSC_REFERENCE_1, 0 );
     /* RODIV */
-    PLIB_OSC_ReferenceOscDivisorValueSet ( OSC_ID_0, OSC_REFERENCE_1, 2 );
+    PLIB_OSC_ReferenceOscDivisorValueSet ( OSC_ID_0, OSC_REFERENCE_1, 20 );
     /* ROTRIM */
     PLIB_OSC_ReferenceOscTrimSet ( OSC_ID_0, OSC_REFERENCE_1, 0 );
 
@@ -139,7 +139,7 @@ void SYS_CLK_Initialize( const SYS_CLK_INIT const * clkInit )
     /* ROSEL System Clock SYSCLK */
     PLIB_OSC_ReferenceOscBaseClockSelect ( OSC_ID_0, OSC_REFERENCE_3, 0 );
     /* RODIV */
-    PLIB_OSC_ReferenceOscDivisorValueSet ( OSC_ID_0, OSC_REFERENCE_3, 2 );
+    PLIB_OSC_ReferenceOscDivisorValueSet ( OSC_ID_0, OSC_REFERENCE_3, 20 );
     /* ROTRIM */
     PLIB_OSC_ReferenceOscTrimSet ( OSC_ID_0, OSC_REFERENCE_3, 0 );
 
