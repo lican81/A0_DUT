@@ -4,8 +4,6 @@ import time
 import numpy as np
 
 
-
-
 def connect(new_serial=None):
     drv.connect(new_serial)
 
@@ -53,6 +51,9 @@ def pads_defaults():
 powered_on = 0
 
 def power_on():
+    # NOTE - this function is for documentation ONLY right now! 
+    # Some physical switches on board are required for power on procedure
+    
     # Refer to Figure 1 for timing diagram
     # Q for Jacqui: Bring up microcontroller power? VDD_ microcontroller = See Table 1
 	time.sleep(1) # want to delay 1us
@@ -62,7 +63,7 @@ def power_on():
 
     # Switch from ground to VDD here after probing to make sure VDD is at the desired value and stable from the DUT
 
-    # Q for Jacqui: VDD_SuperT=See Table 1 -> is this 'Plane VPP'?
+    # Q for Jacqui: VDD_SuperT=See Table 1 -> is this 'Plane VPP'? NOPE: this is the switch on the board!!
     
     while True:
             powergoodhigh = drv.gpio_pin_is_high(*PIC_PINS['PWR_GOOD'])
@@ -72,28 +73,70 @@ def power_on():
                 break
 
     # ALL_VREFS = See Table 1 in Cookbook documentation
-    dac_set('VREF_ARRAY',0.5)
-    dac_set('VREF_TIA',0.5)
-    dac_set('VREF_SH',0.5)
+    vrefs_defaults()
 
     # Initialize clocks -> TO BE WRITTEN! CK_ARRAY and ADC_CK
-
 
     time.sleep(10) # want to delay 10us
     reset_chip()
     time.sleep(1) #delay(1 P_CK_ARRAY clock period)
-    scan_control() # Make sure to use the switch in scan_control() to follow during power on specifically
+    poweron_scan_control() # Make sure to use the switch in scan_control() to follow during power on specifically
     reset_dpe()
 
     # Identify globally that chip has been powered on
     global powered_on
     powered_on = 1
 
-def scan_control():
-    pass
+def vrefs_defaults():
+    dac_set('DAC_VREF_ARRAY',0.5)
+    dac_set('P_VREF_TIA',0.5)
+    dac_set('P_VREF_SH',2.5)
+    dac_set('PLANE_VPP',0.3)
+    dac_set('DAC_VP_PAD',0)
+    dac_set('P_TVDD', 5)
+    dac_set('P_VAGC_0', 1)
+    dac_set('P_VAGC_1', 4)
+    dac_set('DAC_VREF_HI_CMP', 4)
+    dac_set('P_ADC_EXT_TEST_IN', 0)
+    
+def vrefs_off():
+    dac_set('DAC_VREF_ARRAY',0)
+    dac_set('P_VREF_TIA',0)
+    dac_set('P_VREF_SH',0
+    dac_set('PLANE_VPP',0)
+    dac_set('DAC_VP_PAD',0)
+    dac_set('P_TVDD', 0
+    dac_set('P_VAGC_0', 0
+    dac_set('P_VAGC_1', 0
+    dac_set('DAC_VREF_HI_CMP', 0
+    dac_set('P_ADC_EXT_TEST_IN', 0)
+
+def poweron_scan_control():
+    pads_defaults()
+    drv.gpio_pin_reset(*PIC_PINS['SERIAL_CK_IN'])
+
+    drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL0'])
+    drv.gpio_pin_set(*PIC_PINS['SERIAL_CHAIN_SEL1'])
+    
+    # P_SERIAL_CK_IN number of clock pulses = number of bits read in using P_SERIAL_BUS_IN # Number of clock pulses must exactly equal the number of scan bits being read in 
+	#for pulse in P_SERIAL_CK_IN clock pulses:
+    #    P_SERIAL_BUS_IN data latched in # Refer to Figure 2 for timing diagram and to Table 3 for recommended initial values to use during power on
+    data = bytes([0b00000010, 0b00000001, 0b00100000, 0b00000000,0b00110000, 0b01000000,0b00010000])
+    drv.spi_serial_write(1, data)
+    
 
 def power_off():
-    pass
+    drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
+    time.sleep(1) # want to delay 1 CK_array CP
+    drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
+    time.sleep(10)# want to delay 10s  
+    
+    # STILL TO BE WRITTEN in drv_gpio
+    drv.clk_stop('ADC_CK')
+    drv.clk_stop('CK_ARRAY')
+               
+    vrefs_off()
+    
     global powered_on
     powered_on = 0
 
@@ -114,8 +157,6 @@ def reset_dpe():
     drv.gpio_pin_reset(portName, pinPos)
 	time.sleep(1) # want to delay 1us
 	drv.gpio_pin_set(portName, pinPos)
-
-
 
 
 def dac_init(span=0b010):
