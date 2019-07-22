@@ -288,6 +288,35 @@ void CMD_Tasks ( void )
                             SYS_PRINT("\t ADC started\r\n");
                             cmdData.state = CMD_STATE_ADC;
                             break; 
+                        case 217:
+                            /*
+                             * clk_start()
+                             */
+                            
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            SYS_PRINT("\t Starting REFCLKO%d\r\n", portValue+1);
+                            // 
+                            PLIB_OSC_ReferenceOutputEnable ( OSC_ID_0, portValue );
+//                            PLIB_OSC_ReferenceOutputEnable ( OSC_ID_0, OSC_REFERENCE_3 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+                        case 218:
+                            /*
+                             * clk_stop()
+                             */
+                            
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            SYS_PRINT("\t Stopping REFCLKO%d\r\n", portValue+1);
+                            
+                            PLIB_OSC_ReferenceOutputDisable( OSC_ID_0, portValue );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
                             
                         // Test commands
                         // Command start from 101 for fault tolerance
