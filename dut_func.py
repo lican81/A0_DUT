@@ -112,6 +112,12 @@ def vrefs_off():
     dac_set('P_VAGC_1', 0
     dac_set('DAC_VREF_HI_CMP', 0
     dac_set('P_ADC_EXT_TEST_IN', 0)
+    dac_set('P_AMP_VREF', 0)
+    dac_set('P_AMP_INPUT', 0)
+    dac_set('DAC_SPARE1', 0)
+    dac_set('DAC_SPARE2', 0)    
+    dac_set('DAC_DRIVE_VN', 0)
+    dac_set('DAC_SCHOTTKY', 0)
 
 def poweron_scan_control():
     pads_defaults()
