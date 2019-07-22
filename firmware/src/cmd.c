@@ -298,7 +298,7 @@ void CMD_Tasks ( void )
                             
                             SYS_PRINT("\t Starting REFCLKO%d\r\n", portValue+1);
                             // 
-                            PLIB_OSC_ReferenceOutputEnable ( OSC_ID_0, portValue );
+                            PLIB_OSC_ReferenceOutputEnable( OSC_ID_0, portValue );
 //                            PLIB_OSC_ReferenceOutputEnable ( OSC_ID_0, OSC_REFERENCE_3 );
                             
                             cmdData.state = CMD_STATE_INIT;

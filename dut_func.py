@@ -51,12 +51,12 @@ def pads_defaults():
 powered_on = 0
 
 def power_on():
-    # NOTE - this function is for documentation ONLY right now! 
+    # this function is for documentation ONLY right now! 
     # Some physical switches on board are required for power on procedure
     
     # Refer to Figure 1 for timing diagram
     # Q for Jacqui: Bring up microcontroller power? VDD_ microcontroller = See Table 1
-	time.sleep(1) # want to delay 1us
+    time.sleep(1) # want to delay 1us
     drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
     drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
     pads_defaults()
@@ -104,13 +104,13 @@ def vrefs_defaults():
 def vrefs_off():
     dac_set('DAC_VREF_ARRAY',0)
     dac_set('P_VREF_TIA',0)
-    dac_set('P_VREF_SH',0
+    dac_set('P_VREF_SH',0)
     dac_set('PLANE_VPP',0)
     dac_set('DAC_VP_PAD',0)
-    dac_set('P_TVDD', 0
-    dac_set('P_VAGC_0', 0
-    dac_set('P_VAGC_1', 0
-    dac_set('DAC_VREF_HI_CMP', 0
+    dac_set('P_TVDD', 0)
+    dac_set('P_VAGC_0', 0)
+    dac_set('P_VAGC_1', 0)
+    dac_set('DAC_VREF_HI_CMP', 0)
     dac_set('P_ADC_EXT_TEST_IN', 0)
 
 def poweron_scan_control():
@@ -150,14 +150,14 @@ def reset_chip():
     drv.gpio_pin_set(portName, pinPos)
 
 def reset_dpe():
-	# Resets control counters, ADC flip flops, FIFO, and control shadow registers
-	if powered_on == 0:
-	    power_on()
+    # Resets control counters, ADC flip flops, FIFO, and control shadow registers
+    if powered_on == 0:
+        power_on()
 
     portName, pinPos = PIC_PINS['NRESET_DPE_ENGINE']
     drv.gpio_pin_reset(portName, pinPos)
-	time.sleep(1) # want to delay 1us
-	drv.gpio_pin_set(portName, pinPos)
+    time.sleep(1) # want to delay 1us
+    drv.gpio_pin_set(portName, pinPos)
 
 
 def dac_init(span=0b010):
@@ -219,4 +219,4 @@ def dac_set(channel, voltage):
 
     drv.spi_dac_write(data)
 
-
+dac_set.is_init = False

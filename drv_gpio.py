@@ -200,7 +200,7 @@ def clk_start(channel):
     '''
     ch = REFCLKO[channel]
     ser.write(b'217,' +
-              str(ch).encode())
+              str(ch).encode() + b'\0')
 
 
 def clk_stop(channel):
@@ -210,7 +210,7 @@ def clk_stop(channel):
     '''
     ch = REFCLKO[channel]
     ser.write(b'218,' +
-              str(ch).encode()
+              str(ch).encode() + b'\0')
 
 
 # def pwm_start(channel, width, period):
@@ -247,3 +247,4 @@ def clk_stop(channel):
 # async def adc_int_read(channel):
 #     # Use interupt in the microcontroller
 #     pass
+
