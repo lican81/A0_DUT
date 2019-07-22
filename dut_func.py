@@ -76,7 +76,9 @@ def power_on():
     vrefs_defaults()
 
     # Initialize clocks -> TO BE WRITTEN! CK_ARRAY and ADC_CK
-
+    drv.clk_start('ADC_CLK')
+    drv.clk_start('CK_ARRAY')
+    
     time.sleep(10) # want to delay 10us
     reset_chip()
     time.sleep(1) #delay(1 P_CK_ARRAY clock period)
