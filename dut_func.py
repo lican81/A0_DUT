@@ -3,6 +3,11 @@ import drv_gpio as drv
 import time
 import numpy as np
 
+powered_on = False
+dpe_reseted = False
+tia_scanned = False
+adc_calibrated = False
+vectors_loaded = False
 
 def connect(new_serial=None):
     drv.connect(new_serial)
@@ -12,7 +17,7 @@ def disconnect():
 
 def pads_defaults():
     drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
-    time.sleep(1)
+    time.sleep(1e-6)
     drv.gpio_row_col_data_write(0x0)  # Writes 0 to ROW_COL_DATA<15..0> pins
     drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
     drv.gpio_row_col_bank_write(0b0000) # Writes 0 to ROW_COL_BANK<3..0> pins
@@ -48,15 +53,13 @@ def pads_defaults():
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL0'])
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL1'])
 
-powered_on = 0
-
 def power_on():
     # this function is for documentation ONLY right now! 
     # Some physical switches on board are required for power on procedure
     
     # Refer to Figure 1 for timing diagram
     # Q for Jacqui: Bring up microcontroller power? VDD_ microcontroller = See Table 1
-    time.sleep(1) # want to delay 1us
+    time.sleep(1e-6) # want to delay 1us
     drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
     drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
     pads_defaults()
@@ -66,11 +69,10 @@ def power_on():
     # Q for Jacqui: VDD_SuperT=See Table 1 -> is this 'Plane VPP'? NOPE: this is the switch on the board!!
     
     while True:
-            powergoodhigh = drv.gpio_pin_is_high(*PIC_PINS['PWR_GOOD'])
-            if powergoodhigh==False: continue
-            else:
-                time.sleep(100) # want to delay (1ms)
-                break
+        powergoodhigh = drv.gpio_pin_is_high(*PIC_PINS['PWR_GOOD'])
+        if powergoodhigh:
+            time.sleep(1e-3) # want to delay (1ms)
+            break
 
     # ALL_VREFS = See Table 1 in Cookbook documentation
     vrefs_defaults()
@@ -79,15 +81,15 @@ def power_on():
     drv.clk_start('ADC_CLK')
     drv.clk_start('CK_ARRAY')
     
-    time.sleep(10) # want to delay 10us
+    time.sleep(1e-5) # want to delay 10us
     reset_chip()
-    time.sleep(1) #delay(1 P_CK_ARRAY clock period)
+    time.sleep(2e-8) #delay(1 P_CK_ARRAY clock period)
     poweron_scan_control() # Make sure to use the switch in scan_control() to follow during power on specifically
     reset_dpe()
 
     # Identify globally that chip has been powered on
     global powered_on
-    powered_on = 1
+    powered_on = True
 
 def vrefs_defaults():
     dac_set('DAC_VREF_ARRAY',0.5)
@@ -132,39 +134,35 @@ def poweron_scan_control():
 
 def power_off():
     drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
-    time.sleep(1) # want to delay 1 CK_array CP
+    time.sleep(2e-8) # want to delay 1 CK_array CP
     drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
-    time.sleep(10)# want to delay 10s  
+    time.sleep(1e-5)# want to delay 10us  
     
     # STILL TO BE WRITTEN in drv_gpio
     drv.clk_stop('ADC_CK')
-    drv.clk_stop('CK_ARRAY')
-               
+    drv.clk_stop('CK_ARRAY')        
     vrefs_off()
-    
     global powered_on
-    powered_on = 0
+    powered_on = False
 
 def reset_chip():
     # Resets all scanned in values, TIA enables, and row and column vector registers
-    if powered_on == 0:
+    if ~powered_on:
         power_on()
         
-    portName, pinPos = PIC_PINS['NRESET_FULL_CHIP']
-    drv.gpio_pin_reset(portName, pinPos)
-    time.sleep(1) # want to delay 1us
-    drv.gpio_pin_set(portName, pinPos)
+    drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
+    time.sleep(1e-6) # want to delay 1us
+    drv.gpio_pin_set(*PIC_PINS['NRESET_FULL_CHIP'])
 
 def reset_dpe():
     # Resets control counters, ADC flip flops, FIFO, and control shadow registers
-    if powered_on == 0:
+    if ~powered_on:
         power_on()
-
-    portName, pinPos = PIC_PINS['NRESET_DPE_ENGINE']
-    drv.gpio_pin_reset(portName, pinPos)
-    time.sleep(1) # want to delay 1us
-    drv.gpio_pin_set(portName, pinPos)
-
+    drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
+    time.sleep(1e-6) # want to delay 1us
+    drv.gpio_pin_set(*PIC_PINS['NRESET_DPE_ENGINE'])
+    global dpe_reseted
+    dpe_reseted = True
 
 def dac_init(span=0b010):
     '''
@@ -179,16 +177,13 @@ def dac_init(span=0b010):
 
     See DAC_SPAN in misc.py
     '''
-    portName, pinPos = PIC_PINS['PIC_LDAC']
-    drv.gpio_pin_set(portName, pinPos)
+    drv.gpio_pin_set(*PIC_PINS['PIC_LDAC'])
 
-    portName, pinPos = PIC_PINS['PIC_TGP']
-    drv.gpio_pin_set(portName, pinPos)
+    drv.gpio_pin_set(*PIC_PINS['PIC_TGP'])
 
-    portName, pinPos = PIC_PINS['PIC_CLR']
-    drv.gpio_pin_reset(portName, pinPos)
+    drv.gpio_pin_reset(*PIC_PINS['PIC_CLR'])
     # time.sleep(1)
-    drv.gpio_pin_set(portName, pinPos)
+    drv.gpio_pin_set(*PIC_PINS['PIC_CLR'])
 
     cmd = 0b1110
     # address = 0b0000
@@ -209,7 +204,7 @@ def dac_set(channel, voltage):
     # print(f'DAC: setting ch={channel} to vol={voltage}')
     '''
     '''
-    if dac_set.is_init == False:
+    if ~dac_set.is_init:
         dac_init(span = 0b010)
 
     cmd = 0b0011
@@ -226,3 +221,81 @@ def dac_set(channel, voltage):
     drv.spi_dac_write(data)
 
 dac_set.is_init = False
+
+# def scan_control():
+#     if ~powered_on:
+#         power_on()
+#         reset_dpe()
+#     pads_defaults()
+
+def calibrate_adc():
+    if ~powered_on:
+        power_on()
+    if ~dpe_reseted:
+        reset_dpe()
+    pads_defaults()
+    drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
+    drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
+    dac_set('P_ADC_EXT_TEST_IN', 1.5)       # voltage = 1.5 as an example, I wonder whether we should put it as a parameter of the function
+    time.sleep(1e-6)        # delay(t_sel_ext or t_ext_inp), min = 2CK
+    drv.gpio_pin_set(*PIC_PINS['ADC_SEL_EXTERNAL'])
+    #time.sleep(1e-6)       # delay(t_en_overide_sh), min = 0CK
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_OVERIDE_EN'])
+    time.sleep(1e-6)        # delay(t_fire_sh), min = 3CK
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
+    time.sleep(1e-6)        # delay(3 P_ADC_CK periods)
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_SH'])
+    while True:
+        if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
+            break
+    download_fifo()
+    pads_defaults()
+    reset_dpe()
+
+def calibrate_tia():
+    if ~powered_on:
+        power_on()
+    if ~dpe_reseted:
+        reset_dpe()
+    if ~tia_scanned:
+        scan_tia()
+    if ~adc_calibrated:
+        calibrate_adc()
+    if ~vectors_loaded:
+        load_vectors()
+    pads_defaults()
+    #VP_PAD
+    drv.gpio_pin_set(*PIC_PINS['WRITE_SEL_EXT'])
+    time.sleep(5e-7)        # delay(t_cntl_setup), min = 3TCK
+    drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
+    drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
+    time.sleep(5e-7)        # delay(t_cal_start), min = 2TCK
+    drv.gpio_pin_set(*PIC_PINS['COL_WRITE_CONNECT'])
+    time.sleep(5e-7)        # delay(t_opamp), min = 500ns
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
+    while True:
+        if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
+            break
+    time.sleep(5e-7)        #delay(t_end_cal), min = 2TCK
+    download_fifo()
+    drv.gpio_pin_reset(*PIC_PINS['COL_WRITE_CONNECT'])
+    time.sleep(5e-7)        #delay(t_disconnect), min = 2TCK
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_TIA'])
+    time.sleep(5e-7)        #delay(t_array_cell), min = 2TCK
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    pads_defaults()
+    reset_dpe()
+
+def load_vectors(array, cor, bank, data):
+    if ~powered_on:
+        power_on()
+    if ~dpe_reseted:
+        reset_dpe()
+    pads_defaults()
+    
+
+
