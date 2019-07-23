@@ -262,8 +262,8 @@ def calibrate_tia():
         scan_tia()
     if ~adc_calibrated:
         calibrate_adc()
-    if ~vectors_loaded:
-        load_vectors()
+    #if ~vectors_loaded:
+        #load_vectors()
     pads_defaults()
     #VP_PAD
     drv.gpio_pin_set(*PIC_PINS['WRITE_SEL_EXT'])
@@ -290,12 +290,60 @@ def calibrate_tia():
     pads_defaults()
     reset_dpe()
 
-def load_vectors(array, cor, bank, data):
+def load_vectors(array, roc, data):
+    # array: a list which contains the arrays you want to enable, i.e. [0, 1]: enable array0 and 1
+    # roc: a list which choose colume or row for the corresponding array, 0: row, 1: colume
+    # the sizes of 'array' and 'roc' must be the same
+    # data: 
     if ~powered_on:
         power_on()
     if ~dpe_reseted:
         reset_dpe()
     pads_defaults()
+    N = len(array)
+    for a in range(0, N-1):
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+        if roc[a] == 1:
+            drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
+        elif roc[a] == 0:
+            drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
+        else:
+            print('error, roc = 0 or 1')
+            return
+        drv.gpio_row_col_bank_write(0b1000)
+        drv.gpio_row_col_data_write(hex(data[N*a]))
+        time.sleep(1e-7)
+        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+        time.sleep(1e-7)
+        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+
+        drv.gpio_row_col_bank_write(0b0100)
+        drv.gpio_row_col_data_write(hex(data[N*a+1]))
+        time.sleep(1e-7)
+        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+        time.sleep(1e-7)
+        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+
+        drv.gpio_row_col_bank_write(0b0010)
+        drv.gpio_row_col_data_write(hex(data[N*a+2]))
+        time.sleep(1e-7)
+        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+        time.sleep(1e-7)
+        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+
+        drv.gpio_row_col_bank_write(0b0001)
+        drv.gpio_row_col_data_write(hex(data[N*a+3]))
+        time.sleep(1e-7)
+        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+        time.sleep(1e-7)
+        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+
+        drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+    pads_defaults()
+    reset_dpe()
+
+
+
     
 
 
