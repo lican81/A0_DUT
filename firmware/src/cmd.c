@@ -7,6 +7,10 @@ CMD_DATA cmdData;
 uint8_t __attribute__ ((aligned (16))) txData[]  = "Testing 8-bit SPI!";
 uint8_t txDataSize = sizeof(txData);
 
+//uint8_t __attribute__ ((aligned (16))) rxData[512];
+uint8_t rxData[512];
+uint8_t rxDataSize;
+
 //void default_highpins() {
 //    // The pins prevent high current from the pull-up transistors of level transistors
 //    RRPROG_D1On();
@@ -295,11 +299,16 @@ void CMD_Tasks ( void )
                             switch ( icmd ) {
                                 case 215:
                                     spi_handle = DRV_SPI0_BufferAddWrite( ptr, ser_len, NULL, NULL);
+                                    spi_ongoing_channel = 0;
+                                    
                                     break;
                                 case 219:
+                                    spi_handle = DRV_SPI0_BufferAddWriteRead2(ptr, ser_len, rxData, ser_len, NULL, NULL, NULL);
+                                    rxDataSize = ser_len;
+                                    spi_ongoing_channel = 0 | (0x1<<8);
+                                    
                                     break;
-                            
-                            spi_ongoing_channel = 0;
+                            }
                             cmdData.state = CMD_STATE_SPI;
                             
                             break;
@@ -375,12 +384,18 @@ void CMD_Tasks ( void )
         }
         case CMD_STATE_SPI:
         {
-//            SYS_PRINT("\t SPI: Waiting for ch=%d \r\n", spi_ongoing_channel);
-            switch (spi_ongoing_channel) {
+            SYS_PRINT("\t SPI: Waiting for ch=%d \r\n", spi_ongoing_channel);
+            switch (spi_ongoing_channel & 0xff ) {
                 case 0:
                     if (DRV_SPI0_BufferStatus(spi_handle) == DRV_SPI_BUFFER_EVENT_COMPLETE) {
                         SERIAL_CHAIN_SEL_0On();
                         SERIAL_CHAIN_SEL_1On();
+                        
+                        if (spi_ongoing_channel & 0xff00 ) {
+                            SYS_PRINT("\t SPI: Sending data back size=%d \r\n", rxDataSize);
+                            USB_Write( (char *) rxData, rxDataSize );
+                        }
+                        
                         cmdData.state = CMD_STATE_INIT;
                     }
                     break;
