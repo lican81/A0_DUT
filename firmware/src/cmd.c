@@ -264,13 +264,31 @@ void CMD_Tasks ( void )
                             
 //                            PLIB_PORTS_PinSet(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_14);
 //                            PLIB_PORTS_PinClear(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_14);
-                            if (ser_addr & 0x1) {
-                                SERIAL_CHAIN_SEL_0On();
+                            switch (ser_addr) {
+                                case 0b00:
+                                    SERIAL_CHAIN_SEL_0Off();
+                                    SERIAL_CHAIN_SEL_1Off();
+                                    break;
+                                case 0b01:
+                                    SERIAL_CHAIN_SEL_0On();
+                                    SERIAL_CHAIN_SEL_1Off();
+                                    break;
+                                case 0b10:
+                                    SERIAL_CHAIN_SEL_0Off();
+                                    SERIAL_CHAIN_SEL_1On();
+                                    break;
+                                default:
+                                    SERIAL_CHAIN_SEL_0On();
+                                    SERIAL_CHAIN_SEL_1On();
+                                    SYS_PRINT("\t Wrong address!!!");
                             }
-                                
-                            if (ser_addr & 0x2) {
-                                SERIAL_CHAIN_SEL_1On();
-                            }
+//                            if (! (ser_addr & 0x1)) {
+//                                SERIAL_CHAIN_SEL_0Off();
+//                            }
+//                                
+//                            if (! (ser_addr & 0x2) ) {
+//                                SERIAL_CHAIN_SEL_1Off();
+//                            }
                             
                             spi_handle = DRV_SPI0_BufferAddWrite( ptr, ser_len, NULL, NULL);
                             
@@ -354,8 +372,8 @@ void CMD_Tasks ( void )
             switch (spi_ongoing_channel) {
                 case 0:
                     if (DRV_SPI0_BufferStatus(spi_handle) == DRV_SPI_BUFFER_EVENT_COMPLETE) {
-                        SERIAL_CHAIN_SEL_0Off();
-                        SERIAL_CHAIN_SEL_1Off();
+                        SERIAL_CHAIN_SEL_0On();
+                        SERIAL_CHAIN_SEL_1On();
                         cmdData.state = CMD_STATE_INIT;
                     }
                     break;
