@@ -97,7 +97,8 @@ void CMD_Tasks ( void )
                 if (*cmdData.usb_buf_rx != NULL){
                 
                     // Received something, suppose it is a string.
-                    memcpy( cmdData.cmd, cmdData.usb_buf_rx, strlen(cmdData.usb_buf_rx) +1);
+//                    memcpy( cmdData.cmd, cmdData.usb_buf_rx, strlen(cmdData.usb_buf_rx) +1);
+                    memcpy( cmdData.cmd, cmdData.usb_buf_rx, 512);
                     SYS_PRINT("Received: %s\r\n", cmdData.cmd );
 
                     char *ptr = strtok( cmdData.cmd, "," );
@@ -249,6 +250,7 @@ void CMD_Tasks ( void )
                             break;
                             
                         case 215:
+                        case 219:
                             /*
                              * serial_write()
                              */
@@ -290,7 +292,12 @@ void CMD_Tasks ( void )
 //                                SERIAL_CHAIN_SEL_1Off();
 //                            }
                             
-                            spi_handle = DRV_SPI0_BufferAddWrite( ptr, ser_len, NULL, NULL);
+                            switch ( icmd ) {
+                                case 215:
+                                    spi_handle = DRV_SPI0_BufferAddWrite( ptr, ser_len, NULL, NULL);
+                                    break;
+                                case 219:
+                                    break;
                             
                             spi_ongoing_channel = 0;
                             cmdData.state = CMD_STATE_SPI;
