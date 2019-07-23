@@ -167,7 +167,7 @@ def spi_serial_write(addr, data):
     # if 1, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 0
     # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1
     # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1
-    # DEFAULt IS SERIAL_CHAIN_SEL) and 1 are low when not explicitly addressed
+    # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
     
     # print(b'215,' +
     #       str(addr).encode() + b',' +
