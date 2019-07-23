@@ -152,7 +152,7 @@ def reset_chip():
         
     portName, pinPos = PIC_PINS['NRESET_FULL_CHIP']
     drv.gpio_pin_reset(portName, pinPos)
-    time.sleep(1) # want to delay 1us
+    time.sleep(0.1) # want to delay 1us
     drv.gpio_pin_set(portName, pinPos)
 
 def reset_dpe():
