@@ -130,7 +130,7 @@ def poweron_scan_control():
 	#for pulse in P_SERIAL_CK_IN clock pulses:
     #    P_SERIAL_BUS_IN data latched in # Refer to Figure 2 for timing diagram and to Table 3 for recommended initial values to use during power on
     data = bytes([0b01000000, 0b10000000, 0b00000100, 0b00000000, 0b00110000, 0b01000000,0b00001000])
-    drv.spi_serial_write(1, data) # addr 1 here means SERIAL_CHAIN_SEL0 is 1 and _SEL1 is 0
+    drv.spi_serial_write(2, data) # addr 1 here means SERIAL_CHAIN_SEL0 is 1 and _SEL1 is 0
     
 
 def power_off():
@@ -242,7 +242,7 @@ def calibrate_adc():
     time.sleep(1e-6)        # delay(t_sel_ext or t_ext_inp), min = 2CK
     drv.gpio_pin_set(*PIC_PINS['ADC_SEL_EXTERNAL'])
     #time.sleep(1e-6)       # delay(t_en_overide_sh), min = 0CK
-    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_OVERIDE_EN'])
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_OVERRIDE_EN'])
     time.sleep(1e-6)        # delay(t_fire_sh), min = 3CK
     drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
     time.sleep(1e-6)        # delay(3 P_ADC_CK periods)

@@ -126,6 +126,23 @@ def gpio_pin_is_high(portName, pinPos):
     return (1 << pinPos) & portValue != 0
 
 
+def gpio_pin_set_input(portName, pinPos):
+    '''
+    Set Pin direction as input
+    '''
+    ser.write(b'230,'
+              + portName.encode() + b','
+              + str(pinPos).encode() + b'\0')
+
+def gpio_pin_set_output(portName, pinPos):
+    '''
+    Set Pin direction as output
+    '''
+    ser.write(b'231,'
+              + portName.encode() + b','
+              + str(pinPos).encode() + b'\0')
+
+
 # def register_write(addr, data):
 #     gpio_addr_write(addr)  # safer to write register bits first incase dataio is being pointed to -> PIC_STROBE_REG_N is always propogating through the address decoder circuit so good practice to change 'path' before changing signal
 
@@ -163,10 +180,10 @@ def spi_dac_write(data):
 
 
 def spi_serial_write(addr, data):
-    # if 0, SERIAL_CHAIN_SEL0 and SEL1 are 0
-    # if 1, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 0
-    # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1
-    # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1
+    # if 0, SERIAL_CHAIN_SEL0 and SEL1 are 0 # Bottom TIA scan chain
+    # if 1, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 0 # TIA settings (top TIA scan chain)
+    # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1 # Control block
+    # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1 # No scan chain (empty)
     # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
     
     # print(b'215,' +
@@ -178,6 +195,30 @@ def spi_serial_write(addr, data):
               str(addr).encode() + b',' +
               str(len(data)).encode() + b',' +
               data + b'\0')
+
+def spi_serial_write_and_read(addr, data):
+    # if 0, SERIAL_CHAIN_SEL0 and SEL1 are 0
+    # if 1, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 0
+    # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1
+    # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1
+    # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
+    
+    # print(b'215,' +
+    #       str(addr).encode() + b',' +
+    #       str(len(data)).encode() + b',' +
+    #       data + b'\0')
+
+    sz_data = len(data)
+
+    ser.write(b'219,' +
+              str(addr).encode() + b',' +
+              str(sz_data).encode() + b',' +
+              data + b'\0')
+
+    line = ser.read(4 * sz_data )
+
+    # values = np.array(struct.unpack('<' + 'I' * sz_data, line))
+    return line   
 
 
 def pic_adc_read():
