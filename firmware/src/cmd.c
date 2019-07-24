@@ -355,6 +355,28 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+                        case 220:
+                            /*
+                             * clk_config()
+                             */
+                            
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            int clk_base = atoi(ptr);
+                            ptr = strtok(NULL, ",");
+                            int clk_div = atoi(ptr);
+                            
+                            SYS_PRINT("\t Setting REFCLKO%d, base=%d, div=%d\r\n", portValue+1, clk_base, clk_div);
+                            
+                            /* ROSEL System Clock SYSCLK */
+                            PLIB_OSC_ReferenceOscBaseClockSelect ( OSC_ID_0, portValue, clk_base );
+                            /* RODIV */
+                            PLIB_OSC_ReferenceOscDivisorValueSet ( OSC_ID_0, portValue, clk_div );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
                             
                         // Test commands
                         // Command start from 101 for fault tolerance
