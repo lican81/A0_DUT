@@ -167,7 +167,7 @@ def spi_serial_write(addr, data):
     # if 1, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 0
     # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1
     # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1
-    # DEFAULt IS SERIAL_CHAIN_SEL) and 1 are low when not explicitly addressed
+    # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
     
     # print(b'215,' +
     #       str(addr).encode() + b',' +
@@ -178,6 +178,30 @@ def spi_serial_write(addr, data):
               str(addr).encode() + b',' +
               str(len(data)).encode() + b',' +
               data + b'\0')
+
+def spi_serial_write_and_read(addr, data):
+    # if 0, SERIAL_CHAIN_SEL0 and SEL1 are 0
+    # if 1, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 0
+    # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1
+    # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1
+    # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
+    
+    # print(b'215,' +
+    #       str(addr).encode() + b',' +
+    #       str(len(data)).encode() + b',' +
+    #       data + b'\0')
+
+    sz_data = len(data)
+
+    ser.write(b'219,' +
+              str(addr).encode() + b',' +
+              str(sz_data).encode() + b',' +
+              data + b'\0')
+
+    line = ser.read(4 * sz_data )
+
+    # values = np.array(struct.unpack('<' + 'I' * sz_data, line))
+    return line   
 
 
 def pic_adc_read():
