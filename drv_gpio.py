@@ -126,6 +126,23 @@ def gpio_pin_is_high(portName, pinPos):
     return (1 << pinPos) & portValue != 0
 
 
+def gpio_pin_set_input(portName, pinPos):
+    '''
+    Set Pin direction as input
+    '''
+    ser.write(b'230,'
+              + portName.encode() + b','
+              + str(pinPos).encode() + b'\0')
+
+def gpio_pin_set_output(portName, pinPos):
+    '''
+    Set Pin direction as output
+    '''
+    ser.write(b'231,'
+              + portName.encode() + b','
+              + str(pinPos).encode() + b'\0')
+
+
 # def register_write(addr, data):
 #     gpio_addr_write(addr)  # safer to write register bits first incase dataio is being pointed to -> PIC_STROBE_REG_N is always propogating through the address decoder circuit so good practice to change 'path' before changing signal
 
