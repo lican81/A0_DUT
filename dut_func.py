@@ -37,8 +37,8 @@ def pads_defaults():
     drv.gpio_pin_reset(*PIC_PINS['AGC_PULSE'])
     drv.gpio_pin_reset(*PIC_PINS['DPE_INTERNAL_EN'])
     drv.gpio_pin_reset(*PIC_PINS['AGC_INTERNAL_EN'])
-    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_OVERRIDE_EN '])
-    drv.gpio_pin_reset(*PIC_PINS['DPE_EXTERNAL_PULSE'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_OVERRIDE_EN'])
+    drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_PULSE'])
     drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_SH'])
     drv.gpio_pin_reset(*PIC_PINS['WRITE_FWD'])
     drv.gpio_pin_reset(*PIC_PINS['WRT_INTERNAL_EN'])
@@ -155,14 +155,6 @@ def reset_chip():
     time.sleep(1e-6) # want to delay 1us
     drv.gpio_pin_set(*PIC_PINS['NRESET_FULL_CHIP'])
 
-    global powered_on, dpe_reseted, tia_scanned, control_scanned, adc_calibrated, vectors_loaded, tia_calibrated
-    powered_on = False
-    dpe_reseted = False
-    tia_scanned = False
-    control_scanned = False
-    adc_calibrated = False
-    tia_calibrated = False
-
 def reset_dpe():
     # Resets control counters, ADC flip flops, FIFO, and control shadow registers
     if ~powered_on:
@@ -181,7 +173,7 @@ def dac_init(span=0b010):
     0   0   0   0-5 V
     0   0   1   0-10
     0   1   0   -5 ~ +5V
-    0   1   1  *-
+    0   1   1   -10 ~ + 10
     1   0   0   -2.5 ~ +2.5
 
     See DAC_SPAN in misc.py
@@ -213,7 +205,7 @@ def dac_set(channel, voltage):
     # print(f'DAC: setting ch={channel} to vol={voltage}')
     '''
     '''
-    if ~dac_set.is_init:
+    if dac_set.is_init == False:
         dac_init(span = 0b010)
 
     cmd = 0b0011
@@ -271,22 +263,23 @@ def calibrate_tia():
         scan_tia()
     if ~adc_calibrated:
         calibrate_adc()
-    load_vectors()      # load all row and colume vectors to zero
+    #if ~vectors_loaded:
+        #load_vectors()
     pads_defaults()
-
+    #VP_PAD
     drv.gpio_pin_set(*PIC_PINS['WRITE_SEL_EXT'])
-    time.sleep(3e-7)        # delay(t_cntl_setup), min = 3TCK
+    time.sleep(5e-7)        # delay(t_cntl_setup), min = 3TCK
     drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
     drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
     drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
-    time.sleep(2e-7)        # delay(t_cal_start), min = 2TCK
+    time.sleep(5e-7)        # delay(t_cal_start), min = 2TCK
     drv.gpio_pin_set(*PIC_PINS['COL_WRITE_CONNECT'])
     time.sleep(5e-7)        # delay(t_opamp), min = 500ns
     drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
     while True:
         if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
             break
-    time.sleep(2e-7)        #delay(t_end_cal), min = 2TCK
+    time.sleep(5e-7)        #delay(t_end_cal), min = 2TCK
     download_fifo()
     drv.gpio_pin_reset(*PIC_PINS['COL_WRITE_CONNECT'])
     time.sleep(5e-7)        #delay(t_disconnect), min = 2TCK
@@ -310,18 +303,20 @@ def load_vectors(array, data):
     pads_defaults()
     if isinstance(array, list):
         N = len(array)
-        for a in range(0, N-1):
+        for a in range(0, N):
             drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
             drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
-            for b in range(0, 3):
+            for b in range(0, 4):
+                addr = bin(1)
                 drv.gpio_row_col_bank_write(addr)
                 drv.gpio_row_col_data_write(data[N*a+b])
                 time.sleep(1e-7)
                 drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
                 time.sleep(1e-7)
                 drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+                addr = addr << 1
             drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
-            for b in range(4, 7):
+            for b in range(4, 8):
                 addr = bin(1)
                 drv.gpio_row_col_bank_write(addr)
                 drv.gpio_row_col_data_write(data[N*a+b])
@@ -336,7 +331,7 @@ def load_vectors(array, data):
         drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<1>'])
         drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<2>'])
         drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
-        for b in range(0, 3):
+        for b in range(0, 4):
             addr = bin(1)
             drv.gpio_row_col_bank_write(addr)
             drv.gpio_row_col_data_write(data[b])
@@ -346,7 +341,7 @@ def load_vectors(array, data):
             drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
             addr = addr << 1
         drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
-        for b in range(4, 7):
+        for b in range(4, 8):
             addr = bin(1)
             drv.gpio_row_col_bank_write(addr)
             drv.gpio_row_col_data_write(data[b])
@@ -358,7 +353,7 @@ def load_vectors(array, data):
     elif (array == 0) or (array == 1) or (array == 2):
         drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array)])
         drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
-        for b in range(0, 3):
+        for b in range(0, 4):
             addr = bin(1)
             drv.gpio_row_col_bank_write(addr)
             drv.gpio_row_col_data_write(data[b])
@@ -368,7 +363,7 @@ def load_vectors(array, data):
             drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
             addr = addr << 1
         drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
-        for b in range(4, 7):
+        for b in range(4, 8):
             addr = bin(1)
             drv.gpio_row_col_bank_write(addr)
             drv.gpio_row_col_data_write(data[b])
@@ -383,32 +378,108 @@ def load_vectors(array, data):
     pads_defaults()
     reset_dpe()
 
-def data_generate(row, colume):
-    data = [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
-    row_bank = row//16
+def data_generate(index):
+    # index: a list, which contains the row and colume you want to write. If index = 1, the output is all 1
+    # i.e. For the same array: [0, 2]: row 0 and col 2, [0, 2, 3, 6]: row 0 and col2, row 3 and col 6
+    # for different array: [[0, 2], [3, 6]]
+    if index == 1:
+        data = [0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff]
+        return data
+    elif isinstance(index, list):
+        if isinstance(index[0], list):
+            N = len(index)
+            data = []
+            for a in range(0, N):
+                data = data+[0, 0, 0, 0, 0, 0, 0, 0]
+            for a in range(0, N):
+                M = len(index[a])//2
+                for b in range(0, M):
+                    # row data
+                    row_dic = {0: 2, 1: 0, 2: 1, 3: 3}
+                    bank_row = row_dic[index[a][2*b]//16]
+                    if index[a][2*b]%2 == 1 and  index[a][2*b] < 32:
+                        bit = index[a][2*b]%16//2
+                        if data[8*a+bank_row] >> (bit + 8) == 0:
+                            data[8*a+bank_row] = data[8*a+bank_row] + (1 << (bit + 8))
+                    elif index[a][2*b]%2 == 0 and  index[a][2*b] < 32:
+                        bit = index[a][2*b]%16//2
+                        if data[8*a+bank_row] >> bit == 0:
+                            data[8*a+bank_row] = data[8*a+bank_row] + (1 << bit)
+                    elif index[a][2*b]%2 == 1 and  index[a][2*b] >= 32:
+                        bit = index[a][2*b]%16//2
+                        if data[8*a+bank_row] >> (15-bit) == 0:
+                            data[8*a+bank_row] = data[8*a+bank_row] + (1 << (15 - bit))
+                    elif index[a][2*b]%2 == 0 and  index[a][2*b] >= 32:
+                        bit = index[a][2*b]%16//2
+                        if data[8*a+bank_row] >> (7-bit) == 0:
+                            data[8*a+bank_row] = data[8*a+bank_row] + (1 << (7 - bit))
+                    # colume data
+                    bank_col = 2*(index[a][2*b+1]//32) + (index[a][2*b+1]%2)
+                    if index[a][2*b+1] < 32:
+                        bit = 15 - (index[a][2*b+1]//2)
+                        if data[8*a+bank_col+4] >> bit == 0:
+                            data[8*a+bank_col+4] = data[8*a+bank_col+4] + (1 << bit)
+                    elif index[a][2*b+1] >= 32:
+                        bit = (index[a][2*b+1]-32)//2
+                        if data[8*a+bank_col+4] >> bit == 0:
+                            data[8*a+bank_col+4] = data[8*a+bank_col+4] + (1 << bit)
+            return data
+        elif isinstance(index[0], int):
+            data = [0, 0, 0, 0, 0, 0, 0, 0]
+            M = len(index)//2
+            for b in range(0, M):
+                # row data
+                row_dic = {0: 2, 1: 0, 2: 1, 3: 3}
+                bank_row = row_dic[index[2*b]//16]
+                if index[2*b]%2 == 1 and  index[2*b] < 32:
+                    bit = index[2*b]%16//2
+                    if data[bank_row] >> (bit + 8) == 0:
+                        data[bank_row] = data[bank_row] + (1 << (bit + 8))
+                elif index[2*b]%2 == 0 and  index[2*b] < 32:
+                    bit = index[2*b]%16//2
+                    if data[bank_row] >> bit == 0:
+                        data[bank_row] = data[bank_row] + (1 << bit)
+                elif index[2*b]%2 == 1 and  index[2*b] >= 32:
+                    bit = index[2*b]%16//2
+                    if data[bank_row] >> (15-bit) == 0:
+                        data[bank_row] = data[bank_row] + (1 << (15 - bit))
+                elif index[2*b]%2 == 0 and  index[2*b] >= 32:
+                    bit = index[2*b]%16//2
+                    if data[bank_row] >> (7-bit) == 0:
+                        data[bank_row] = data[bank_row] + (1 << (7 - bit))
+                # colume data
+                bank_col = 2*(index[2*b+1]//32) + (index[2*b+1]%2)
+                if index[2*b+1] < 32:
+                    bit = 15 - (index[2*b+1]//2)
+                    if data[bank_col+4] >> bit == 0:
+                        data[bank_col+4] = data[bank_col+4] + (1 << bit)
+                elif index[2*b+1] >= 32:
+                    bit = (index[2*b+1]-32)//2
+                    if data[bank_col+4] >> bit == 0:
+                        data[bank_col+4] = data[bank_col+4] + (1 << bit)
+            return data
 
-
-def download_fifo(fifo):
+def download_fifo(fifo_en):
     # fifo: an int ([0, 11]) which indicates which fifo you want to download. If you want to download all of them, fifo = 12
     pads_defaults()
-    if fifo < 12:
-        drv.gpio_adc_fifo_en_write(bin(fifo))
+    if fifo_en < 12:
+        drv.gpio_adc_fifo_en_write(bin(11-fifo_en))
         time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
-        array_num = (fifo % 6)//2
+        array_num = (fifo_en % 6)//2
         drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array_num)])
-        for a in range(15, 0):
+        for b in range(15, -1, -1):
             time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
             drv.gpio_pin_set(*PIC_PINS['ADC_FIFO_ADVANCE'])
             time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
             drv.gpio_pin_reset(*PIC_PINS['ADC_FIFO_ADVANCE'])
             time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
-    elif fifo == 12:
-        for a in range(0, 11):
-            drv.gpio_adc_fifo_en_write(bin(a))
+    elif fifo_en == 12:
+        for a in range(0, 12):
+            drv.gpio_adc_fifo_en_write(bin(11-a))
             time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
             array_num = (a % 6)//2
             drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array_num)])
-            for b in range(15, 0):
+            for b in range(15, -1, -1):
                 time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
                 drv.gpio_pin_set(*PIC_PINS['ADC_FIFO_ADVANCE'])
                 time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
@@ -420,7 +491,7 @@ def download_fifo(fifo):
     pads_defaults()
     reset_dpe()
 
-def read():
+def read(array, index):
     if ~powered_on:
         power_on()
     if ~control_scanned:
@@ -431,15 +502,8 @@ def read():
         calibrate_adc()
     if ~tia_calibrated:
         calibrate_tia()
+    data = data_generate(index)
+    load_vectors(array, data)
+    time.sleep(2e-7)
+    drv.gpio_pin_set(*PIC_PINS['DPE_INTERNAL_EN'])
     
-    
-    
-
-
-
-
-
-
-
-
-
