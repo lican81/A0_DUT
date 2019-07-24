@@ -219,6 +219,8 @@ void CMD_Tasks ( void )
                         case 211:
                         case 212:
                         case 213:
+                        case 230:
+                        case 231:
                             ptr = strtok(NULL, ",");
                             portName = *ptr;
                             
@@ -229,6 +231,8 @@ void CMD_Tasks ( void )
                                 case 211: GPIO_Pin_Set(portName, pinPos); break;
                                 case 212: GPIO_Pin_Clear(portName, pinPos); break;
                                 case 213: GPIO_Pin_Toggle(portName, pinPos); break;
+                                case 230: GPIO_PinDirection_InputSet(portName, pinPos); break;
+                                case 231: GPIO_PinDirection_OutputSet(portName, pinPos); break;
                             }
                             cmdData.state = CMD_STATE_INIT;
                             break;

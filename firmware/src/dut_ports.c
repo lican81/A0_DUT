@@ -112,6 +112,16 @@ void GPIO_Pin_Toggle( char portName, uint16_t pos ){
     PLIB_PORTS_PinToggle(PORTS_ID_0, portChannel, pos);
 }
 
+void GPIO_PinDirection_InputSet( char portName, uint16_t pos ){
+    int portChannel = portName2Channel(portName);
+    PLIB_PORTS_PinDirectionInputSet(PORTS_ID_0, portChannel, pos );
+}
+
+void GPIO_PinDirection_OutputSet( char portName, uint16_t pos ){
+    int portChannel = portName2Channel(portName);
+    PLIB_PORTS_PinDirectionOutputSet(PORTS_ID_0, portChannel, pos );
+}
+
 // Ref
 //typedef enum {
 //
