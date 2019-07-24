@@ -204,7 +204,7 @@ def dac_set(channel, voltage):
     # print(f'DAC: setting ch={channel} to vol={voltage}')
     '''
     '''
-    if ~dac_set.is_init:
+    if dac_set.is_init == False:
         dac_init(span = 0b010)
 
     cmd = 0b0011
