@@ -6,8 +6,9 @@ import numpy as np
 powered_on = False
 dpe_reseted = False
 tia_scanned = False
+control_scanned = False
 adc_calibrated = False
-vectors_loaded = False
+tia_calibrated = False
 
 def connect(new_serial=None):
     drv.connect(new_serial)
@@ -154,6 +155,14 @@ def reset_chip():
     time.sleep(1e-6) # want to delay 1us
     drv.gpio_pin_set(*PIC_PINS['NRESET_FULL_CHIP'])
 
+    global powered_on, dpe_reseted, tia_scanned, control_scanned, adc_calibrated, vectors_loaded, tia_calibrated
+    powered_on = False
+    dpe_reseted = False
+    tia_scanned = False
+    control_scanned = False
+    adc_calibrated = False
+    tia_calibrated = False
+
 def reset_dpe():
     # Resets control counters, ADC flip flops, FIFO, and control shadow registers
     if ~powered_on:
@@ -262,23 +271,22 @@ def calibrate_tia():
         scan_tia()
     if ~adc_calibrated:
         calibrate_adc()
-    #if ~vectors_loaded:
-        #load_vectors()
+    load_vectors()      # load all row and colume vectors to zero
     pads_defaults()
-    #VP_PAD
+
     drv.gpio_pin_set(*PIC_PINS['WRITE_SEL_EXT'])
-    time.sleep(5e-7)        # delay(t_cntl_setup), min = 3TCK
+    time.sleep(3e-7)        # delay(t_cntl_setup), min = 3TCK
     drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
     drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
     drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
-    time.sleep(5e-7)        # delay(t_cal_start), min = 2TCK
+    time.sleep(2e-7)        # delay(t_cal_start), min = 2TCK
     drv.gpio_pin_set(*PIC_PINS['COL_WRITE_CONNECT'])
     time.sleep(5e-7)        # delay(t_opamp), min = 500ns
     drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
     while True:
         if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
             break
-    time.sleep(5e-7)        #delay(t_end_cal), min = 2TCK
+    time.sleep(2e-7)        #delay(t_end_cal), min = 2TCK
     download_fifo()
     drv.gpio_pin_reset(*PIC_PINS['COL_WRITE_CONNECT'])
     time.sleep(5e-7)        #delay(t_disconnect), min = 2TCK
@@ -290,60 +298,148 @@ def calibrate_tia():
     pads_defaults()
     reset_dpe()
 
-def load_vectors(array, roc, data):
-    # array: a list which contains the arrays you want to enable, i.e. [0, 1]: enable array0 and 1
-    # roc: a list which choose colume or row for the corresponding array, 0: row, 1: colume
-    # the sizes of 'array' and 'roc' must be the same
-    # data: 
+def load_vectors(array, data):
+    # array: a list or an int which contains the arrays you want to enable, i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays
+    # data: a list which contains at (8, 16, 24) elements, each element is an hex int in the range of [0x0000, 0xffff], every four elements form a 64-bit vector...
+    # every eight elements form the vectors for an array, the first four form row vector, second four form colume vector.
+    # from left to right
     if ~powered_on:
         power_on()
     if ~dpe_reseted:
         reset_dpe()
     pads_defaults()
-    N = len(array)
-    for a in range(0, N-1):
-        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
-        if roc[a] == 1:
-            drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
-        elif roc[a] == 0:
+    if isinstance(array, list):
+        N = len(array)
+        for a in range(0, N-1):
+            drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
             drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
-        else:
-            print('error, roc = 0 or 1')
-            return
-        drv.gpio_row_col_bank_write(0b1000)
-        drv.gpio_row_col_data_write(hex(data[N*a]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_row_col_bank_write(0b0100)
-        drv.gpio_row_col_data_write(hex(data[N*a+1]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_row_col_bank_write(0b0010)
-        drv.gpio_row_col_data_write(hex(data[N*a+2]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_row_col_bank_write(0b0001)
-        drv.gpio_row_col_data_write(hex(data[N*a+3]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+            for b in range(0, 3):
+                drv.gpio_row_col_bank_write(addr)
+                drv.gpio_row_col_data_write(data[N*a+b])
+                time.sleep(1e-7)
+                drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+                time.sleep(1e-7)
+                drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
+            for b in range(4, 7):
+                addr = bin(1)
+                drv.gpio_row_col_bank_write(addr)
+                drv.gpio_row_col_data_write(data[N*a+b])
+                time.sleep(1e-7)
+                drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+                time.sleep(1e-7)
+                drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+                addr = addr << 1
+            drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+    elif array == 3:
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<0>'])
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<1>'])
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<2>'])
+        drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
+        for b in range(0, 3):
+            addr = bin(1)
+            drv.gpio_row_col_bank_write(addr)
+            drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+        drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
+        for b in range(4, 7):
+            addr = bin(1)
+            drv.gpio_row_col_bank_write(addr)
+            drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+    elif (array == 0) or (array == 1) or (array == 2):
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array)])
+        drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
+        for b in range(0, 3):
+            addr = bin(1)
+            drv.gpio_row_col_bank_write(addr)
+            drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+        drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
+        for b in range(4, 7):
+            addr = bin(1)
+            drv.gpio_row_col_bank_write(addr)
+            drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+    else:
+        print("Input error, please see the instruction")
+        return
     pads_defaults()
     reset_dpe()
 
+def data_generate(row, colume):
+    data = [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
+    row_bank = row//16
 
 
+def download_fifo(fifo):
+    # fifo: an int ([0, 11]) which indicates which fifo you want to download. If you want to download all of them, fifo = 12
+    pads_defaults()
+    if fifo < 12:
+        drv.gpio_adc_fifo_en_write(bin(fifo))
+        time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+        array_num = (fifo % 6)//2
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array_num)])
+        for a in range(15, 0):
+            time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+            drv.gpio_pin_set(*PIC_PINS['ADC_FIFO_ADVANCE'])
+            time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+            drv.gpio_pin_reset(*PIC_PINS['ADC_FIFO_ADVANCE'])
+            time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+    elif fifo == 12:
+        for a in range(0, 11):
+            drv.gpio_adc_fifo_en_write(bin(a))
+            time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+            array_num = (a % 6)//2
+            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array_num)])
+            for b in range(15, 0):
+                time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+                drv.gpio_pin_set(*PIC_PINS['ADC_FIFO_ADVANCE'])
+                time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+                drv.gpio_pin_reset(*PIC_PINS['ADC_FIFO_ADVANCE'])
+                time.sleep(2e-7)        # delay(2 P_ADC_CK periods)
+    else:
+        print("Input error, fifo must be an int in the range [0, 12]")
+        return
+    pads_defaults()
+    reset_dpe()
+
+def read():
+    if ~powered_on:
+        power_on()
+    if ~control_scanned:
+        scan_control()
+    if ~tia_scanned:
+        scan_tia()
+    if ~adc_calibrated:
+        calibrate_adc()
+    if ~tia_calibrated:
+        calibrate_tia()
     
+    
+    
+
+
+
+
+
+
+
 
 
