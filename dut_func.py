@@ -274,6 +274,8 @@ def calibrate_tia():
     time.sleep(5e-7)        # delay(t_cal_start), min = 2TCK
     drv.gpio_pin_set(*PIC_PINS['COL_WRITE_CONNECT'])
     time.sleep(5e-7)        # delay(t_opamp), min = 500ns
+    drv.gpio_pin_set(*PIC_PINS['CONNECT_TIA'])
+    time.sleep(5e-7)   
     drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
     while True:
         if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):

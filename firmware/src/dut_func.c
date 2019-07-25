@@ -32,7 +32,7 @@ void I2C_Write(uint8_t addr, uint32_t data)
     BSP_DelayUs(T_DLY);
     
     for (i=17; i--; i>=0) {
-        if (addr & (1<<i) ) {
+        if (data & (1<<i) ) {
             PICIC2_SDAOn();
             SYS_PRINT("1");
         } else {

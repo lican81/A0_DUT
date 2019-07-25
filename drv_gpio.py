@@ -253,6 +253,25 @@ def clk_stop(channel):
     ser.write(b'218,' +
               str(ch).encode() + b'\0')
 
+def clk_config(channel, base=0, divisor=20):
+    '''
+    Change the clock frequency
+    '''
+    freq = 200000.0 / (2 * (divisor + base / 512.0))
+    print(f'Setting freq={freq}kHz')
+
+    ch = REFCLKO[channel]
+    ser.write(b'220,' +
+              str(ch).encode() + b',' +
+              str(base).encode() + b',' +
+              str(divisor).encode() + b'\0')
+
+
+def i2c_write_pseudo(addr, data):
+    ser.write(b'221,' +
+        str(addr).encode() +  b',' +
+        str(data).encode() + b'\0' )
+
 
 # def pwm_start(channel, width, period):
 #     '''
