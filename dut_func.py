@@ -513,13 +513,14 @@ def download_fifo(fifo_en=12):
 
 def read(array, index, dpe_read=False, useAGC=False):
     '''
-    Read one or more single device, or dpe_read, if you want dpe_read, make sure you load the desired vectors before dpe read.\n
-    array (int or list): which array(s) you want to read, array = 0, 1, 2 for single array, = [0, 1]... for multiple arrays, or = 3 for all arrays.\n
-    index (int or list): which device(s) you want to read, i.e. index = [0, 0] if you want to read device in row0, col0.\n
-        = [0, 0, 1, 2] if you want to read two devices: [0, 0] and [1, 2].
-    Notice that you can not read two devices in the same col at the same time.\n
-    dpe_read (bool): = True if you want dpe read. If you want dpe read, make sure you load desired vectors before executing read.\n
-    useAGC (bool): = True if you want to use AGC.
+    Read one or more single device, or dpe_read, if you want dpe_read, make sure you load the desired vectors before dpe read.\
+    array (int or list): which array(s) you want to read, array = 0, 1, 2 for single array, = [0, 1] etc. for multiple arrays,\
+        or = 3 for all arrays.\
+    index (int or list): which device(s) you want to read, i.e. index = [0, 0] if you want to read device in row0, col0.\
+        = [0, 0, 1, 2] if you want to read two devices: [0, 0] and [1, 2].\
+    Notice that you can not read two devices in the same col at the same time.\
+    dpe_read (bool): = True if you want dpe read. If you want dpe read, make sure you load desired vectors before executing read.\
+    useAGC (bool): = True if you want to use AGC.\
     '''
     if ~powered_on:
         power_on()
