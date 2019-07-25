@@ -377,7 +377,23 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+                        case 221:
+                            /*
+                             * i2c_write(addr, data)
+                             */
+                            ptr = strtok(NULL, ",");
+                            ser_addr = atoi(ptr); // address
                             
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr); // data
+                            
+//                            ptr = strtok(NULL, ",");
+                            SYS_PRINT("\t CMD: Sending data %x to addr=%x\r\n", portValue, ser_addr);
+                            
+                            I2C_Write(ser_addr, portValue);
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
                         // Test commands
                         // Command start from 101 for fault tolerance
                         case 101:

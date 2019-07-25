@@ -24,7 +24,7 @@ extern "C" {
 #define READ_CORE_TIMER()                 _CP0_GET_COUNT()          // Read the MIPS Core Timer
 
 void BSP_DelayUs(uint16_t microseconds);
-
+void I2C_Write(uint8_t addr, uint32_t data);
 
 
 #ifdef	__cplusplus
