@@ -294,9 +294,11 @@ def calibrate_tia():
     reset_dpe()
 
 def load_vectors(array, data):
-    # array: a list or an int which contains the arrays you want to enable, i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays
-    # data: a list which contains at 8 elements, each element is an hex int in the range of [0x0000, 0xffff], every four elements form a 64-bit vector...
-    # from left to right, corresponds to bank[0] to bank[3]
+    '''
+    array: a list or an int which contains the arrays you want to enable, i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays
+    data: a list which contains at 8 elements, each element is an hex int in the range of [0x0000, 0xffff], every four elements form a 64-bit vector...
+    from left to right, corresponds to bank[0] to bank[3]
+    '''
     if ~powered_on:
         power_on()
     if ~dpe_reseted:
@@ -388,8 +390,10 @@ def load_vectors(array, data):
     reset_dpe()
 
 def data_generate_sparse(index):
-    # index: a list, which contains the row and colume you want to write.
-    # i.e. [0, 2]: row0 and col2, [0, 2, 3, 6]: row0 and col2, row3 and col6
+    '''
+    index: a list, which contains the row and colume you want to write. Every two elements represent one device.
+    i.e. [0, 2]: row0 and col2, [0, 2, 3, 6]: row0 and col2, row3 and col6
+    '''
     data = [0, 0, 0, 0, 0, 0, 0, 0]
     M = len(index)//2
     for b in range(0, M):
@@ -425,7 +429,9 @@ def data_generate_sparse(index):
     return data
    
 def data_generate_vector(row_vector, col_vector):
-    # row_vector and col_vector in the form of [0x****, 0x****, 0x****, 0x****], left to right: higher bit to lower bit
+    '''
+    row_vector and col_vector in the form of [0x****, 0x****, 0x****, 0x****], left to right: higher bit to lower bit
+    '''
     data = [0, 0, 0, 0, 0, 0, 0, 0]
     # row vector
     row_dic = {0: 2, 1: 0, 2: 1, 3: 3}
@@ -459,7 +465,19 @@ def data_generate_vector(row_vector, col_vector):
     return data
 
 def download_fifo(fifo_en):
-    # fifo: an int ([0, 11]) which indicates which fifo you want to download. If you want to download all of them, fifo = 12
+    '''
+    fifo_en: an int ([0, 11]) which indicates which fifo you want to download. If you want to download all of them, fifo_en = 12\n
+    'fifo_en'	'array'	  'array loc.'	'loc. within array'
+    11	2	Left	Upper left
+    10	2	Left	Upper right
+    9	1	Middle	Upper left
+    8	1	Middle	Upper right
+    7	0	Right	Upper left
+    6	0	Right	Upper right
+    5	2	Left	Lower left
+    4	2	Left	Lower right
+    3	1	Middle	Lower left
+    '''
     pads_defaults()
     if fifo_en < 12:
         drv.gpio_adc_fifo_en_write(11-fifo_en)
@@ -491,7 +509,10 @@ def download_fifo(fifo_en):
     pads_defaults()
     reset_dpe()
 
-def read(array, data, dpe_read):
+def read(array, index, dpe_read, useAGC):
+    '''
+    read 
+    '''
     if ~powered_on:
         power_on()
     if ~control_scanned:
@@ -502,8 +523,11 @@ def read(array, data, dpe_read):
         calibrate_adc()
     if ~tia_calibrated:
         calibrate_tia()
-    if dpe_read:
-        load_vectors(3, 1)
+    if ~dpe_read:
+        data = data_generate_sparse(index)
+        load_vectors(array, data)        
+    else:
+        print('please make sure the desired vector is loaded')
     time.sleep(2e-7)
     drv.gpio_pin_set(*PIC_PINS['DPE_INTERNAL_EN'])
     drv.gpio_pin_set(*PIC_PINS['READ_BIT'])
@@ -520,14 +544,32 @@ def read(array, data, dpe_read):
         drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
     elif isinstance(array, list):
         for a in array:
-            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array)])
+            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(a)])
     time.sleep(1e-7)
     drv.gpio_pin_set(*PIC_PINS['CONNECT_TIA'])
     time.sleep(2e-7)
     drv.gpio_pin_set(*PIC_PINS['CONNECT_COLUMN_T'])
     time.sleep(2e-7)
+    if useAGC:
+        drv.gpio_pin_set(*PIC_PINS['AGC_PULSE'])
+        time.sleep(2e-7)        # delay(tr_pw)
+        drv.gpio_pin_reset(*PIC_PINS['AGC_PULSE'])
+    else:
+        drv.gpio_pin_set(*PIC_PINS['DPE_PULSE'])
+        time.sleep(2e-7)        # delay(tr_pw)
+        drv.gpio_pin_reset(*PIC_PINS['DPE_PULSE'])
+    while True:
+        if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
+            time.sleep(2e-7)       # delay(tr_T_P)
+    download_fifo(12)
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(tr_tia_T)
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_TIA'])
+    time.sleep(1e-7)        # delay(tr_nfs_tia)
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    time.sleep(1e-7)        # delay(tr_rb_nfs)
+    pads_defaults()
+    reset_dpe()
 
-
-
-
-    
