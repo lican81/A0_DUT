@@ -293,11 +293,12 @@ def calibrate_tia():
     pads_defaults()
     reset_dpe()
 
-def load_vectors(array, data):
+def load_vectors(array=3, data=1):
     '''
-    array: a list or an int which contains the arrays you want to enable, i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays
-    data: a list which contains at 8 elements, each element is an hex int in the range of [0x0000, 0xffff], every four elements form a 64-bit vector...
-    from left to right, corresponds to bank[0] to bank[3]
+    array: a list or an int which contains the arrays you want to enable, \n
+        i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays
+    data: a list which contains at 8 elements, each element is an hex int in the range of [0x0000, 0xffff],\n
+        every four elements form a 64-bit vector from left to right, corresponds to bank[0] to bank[3] 
     '''
     if ~powered_on:
         power_on()
@@ -464,7 +465,7 @@ def data_generate_vector(row_vector, col_vector):
                 data[7]= data[7] + (1 << b+8*(a-2))
     return data
 
-def download_fifo(fifo_en):
+def download_fifo(fifo_en=12):
     '''
     fifo_en: an int ([0, 11]) which indicates which fifo you want to download. If you want to download all of them, fifo_en = 12\n
     'fifo_en'	'array'	  'array loc.'	'loc. within array'
@@ -476,7 +477,8 @@ def download_fifo(fifo_en):
     6	0	Right	Upper right
     5	2	Left	Lower left
     4	2	Left	Lower right
-    3	1	Middle	Lower left
+    3	1	Middle	Lower left\n
+    Default: download all fifo
     '''
     pads_defaults()
     if fifo_en < 12:
@@ -509,9 +511,15 @@ def download_fifo(fifo_en):
     pads_defaults()
     reset_dpe()
 
-def read(array, index, dpe_read, useAGC):
+def read(array, index, dpe_read=False, useAGC=False):
     '''
-    read 
+    Read one or more single device, or dpe_read, if you want dpe_read, make sure you load the desired vectors before dpe read.\n
+    array (int or list): which array(s) you want to read, array = 0, 1, 2 for single array, = [0, 1]... for multiple arrays, or = 3 for all arrays.\n
+    index (int or list): which device(s) you want to read, i.e. index = [0, 0] if you want to read device in row0, col0.\n
+        = [0, 0, 1, 2] if you want to read two devices: [0, 0] and [1, 2].
+    Notice that you can not read two devices in the same col at the same time.\n
+    dpe_read (bool): = True if you want dpe read. If you want dpe read, make sure you load desired vectors before executing read.\n
+    useAGC (bool): = True if you want to use AGC.
     '''
     if ~powered_on:
         power_on()
@@ -573,3 +581,78 @@ def read(array, index, dpe_read, useAGC):
     pads_defaults()
     reset_dpe()
 
+def read_external(array, index, dpe_read=False):
+    '''
+    Read from external voltage source
+    array (int or list): which array(s) you want to read, array = 0, 1, 2 for single array, = [0, 1]... for multiple arrays, or = 3 for all arrays.\n
+    index (int or list): which device(s) you want to read, i.e. index = [0, 0] if you want to read device in row0, col0. = [0, 0, 1, 2]\n
+    if you want to read two devices: [0, 0] and [1, 2].
+    Notice that you can not read two devices in the same col at the same time.\n
+    dpe_read (bool): = True if you want dpe read. If you want dpe read, make sure you load desired vectors before executing read.
+    '''
+    if ~powered_on:
+        power_on()
+    if ~control_scanned:
+        scan_control()
+    if ~tia_scanned:
+        scan_tia()
+    if ~adc_calibrated():
+        calibrate_adc()
+    if ~tia_calibrated:
+        calibrate_tia()
+    if ~dpe_read:
+        data = data_generate_sparse(index)
+        load_vectors(array, data)        
+    else:
+        print('please make sure the desired vector is loaded')
+    time.sleep(2e-7)        # delay(tr_r_e)
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_OVERRIDE_EN'])
+    drv.gpio_pin_set(*PIC_PINS['READ_BIT'])
+    if dpe_read:
+        drv.gpio_pin_set(*PIC_PINS['READ_DPE'])
+    else:
+        drv.gpio_pin_reset(*PIC_PINS['READ_DPE'])
+    time.sleep(1e-7)
+    if array == 0 or array == 1 or array == 2:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array)])
+    elif array == 3:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
+    elif isinstance(array, list):
+        for a in array:
+            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(a)])
+    time.sleep(1e-7)        # delay(tr_nfs_tia)
+    drv.gpio_pin_set(*PIC_PINS['CONNECT_TIA'])
+    time.sleep(2e-7)        # delay(tr_tia_T)
+    drv.gpio_pin_set(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(tr_T_P)
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_PULSE'])
+    time.sleep(7e-7)        # delay(tr_access)
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
+    while True:
+        if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
+            time.sleep(2e-7)       # delay(tr_T_P)
+    download_fifo(12)
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(tr_tia_T)
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_TIA'])
+    time.sleep(1e-7)        # delay(tr_nfs_tia)
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    time.sleep(1e-7)        # delay(tr_rb_nfs)
+    pads_defaults()
+    reset_dpe()
+    
+def write_forward(array, index):
+    if ~powered_on:
+        power_on()
+    if ~control_scanned:
+        scan_control()
+    if ~tia_scanned:
+        scan_tia()
+    if ~adc_calibrated():
+        calibrate_adc()
+    if ~tia_calibrated:
+        calibrate_tia()

@@ -71,7 +71,7 @@ PIC_PINS = {
     'READ_BIT': ('A', 10),
     'ADC_OUT<2>': ('A', 2),
     'ADC_OUT<10>': ('H', 0),
-    'DPE_EXT_OVERIDE_EN': ('D', 10),
+    'DPE_EXT_OVERRIDE_EN': ('D', 10),
     'ADC_OUT<11>': ('H', 1),
     'ROW_COL_DATA<3>': ('H', 12),
     'WRT_INTERNAL_EN': ('B', 10),
