@@ -47,8 +47,9 @@ void I2C_Write(uint8_t addr, uint32_t data)
         BSP_DelayUs(T_DLY);
     }
     
+    BSP_DelayUs(T_DLY);
     PICIC2_SCLOn();
-    BSP_DelayUs(T_DLY * 2);
+    BSP_DelayUs(T_DLY);
     PICIC2_SDAOn();
       
     SYS_PRINT("\r\n I2C: Completed! \r\n");

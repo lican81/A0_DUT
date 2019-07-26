@@ -134,6 +134,7 @@ def gpio_pin_set_input(portName, pinPos):
               + portName.encode() + b','
               + str(pinPos).encode() + b'\0')
 
+
 def gpio_pin_set_output(portName, pinPos):
     '''
     Set Pin direction as output
@@ -185,7 +186,7 @@ def spi_serial_write(addr, data):
     # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1 # Control block
     # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1 # No scan chain (empty)
     # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
-    
+
     # print(b'215,' +
     #       str(addr).encode() + b',' +
     #       str(len(data)).encode() + b',' +
@@ -196,13 +197,14 @@ def spi_serial_write(addr, data):
               str(len(data)).encode() + b',' +
               data + b'\0')
 
+
 def spi_serial_write_and_read(addr, data):
     # if 0, SERIAL_CHAIN_SEL0 and SEL1 are 0
     # if 1, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 0
     # if 2, SERIAL_CHAIN_SEL0 is 0 and SEL1 is 1
     # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1
     # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
-    
+
     # print(b'215,' +
     #       str(addr).encode() + b',' +
     #       str(len(data)).encode() + b',' +
@@ -215,10 +217,10 @@ def spi_serial_write_and_read(addr, data):
               str(sz_data).encode() + b',' +
               data + b'\0')
 
-    line = ser.read(4 * sz_data )
+    line = ser.read(4 * sz_data)
 
     # values = np.array(struct.unpack('<' + 'I' * sz_data, line))
-    return line   
+    return line
 
 
 def pic_adc_read():
@@ -253,6 +255,7 @@ def clk_stop(channel):
     ser.write(b'218,' +
               str(ch).encode() + b'\0')
 
+
 def clk_config(channel, base=0, divisor=20):
     '''
     Change the clock frequency
@@ -269,8 +272,8 @@ def clk_config(channel, base=0, divisor=20):
 
 def i2c_write_pseudo(addr, data):
     ser.write(b'221,' +
-        str(addr).encode() +  b',' +
-        str(data).encode() + b'\0' )
+              str(addr).encode() + b',' +
+              str(data).encode() + b'\0')
 
 
 # def pwm_start(channel, width, period):
@@ -307,4 +310,3 @@ def i2c_write_pseudo(addr, data):
 # async def adc_int_read(channel):
 #     # Use interupt in the microcontroller
 #     pass
-
