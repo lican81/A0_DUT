@@ -296,9 +296,9 @@ def calibrate_tia():
 def load_vectors(array=3, data=1):
     '''
     array: a list or an int which contains the arrays you want to enable, \n
-        i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays
+        i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays\n
     data: a list which contains at 8 elements, each element is an hex int in the range of [0x0000, 0xffff],\n
-        every four elements form a 64-bit vector from left to right, corresponds to bank[0] to bank[3] 
+        every four elements form a 64-bit vector from left to right, corresponds to bank[0] to bank[3]\n
     '''
     if ~powered_on:
         power_on()
@@ -392,8 +392,8 @@ def load_vectors(array=3, data=1):
 
 def data_generate_sparse(index):
     '''
-    index: a list, which contains the row and colume you want to write. Every two elements represent one device.
-    i.e. [0, 2]: row0 and col2, [0, 2, 3, 6]: row0 and col2, row3 and col6
+    index: a list, which contains the row and colume you want to write. Every two elements represent one device.\n
+        i.e. [0, 2]: row0 and col2, [0, 2, 3, 6]: row0 and col2, row3 and col6
     '''
     data = [0, 0, 0, 0, 0, 0, 0, 0]
     M = len(index)//2
@@ -431,7 +431,8 @@ def data_generate_sparse(index):
    
 def data_generate_vector(row_vector, col_vector):
     '''
-    row_vector and col_vector in the form of [0x****, 0x****, 0x****, 0x****], left to right: higher bit to lower bit
+    row_vector and col_vector in the form of [0x****, 0x****, 0x****, 0x****],\n
+    left to right: higher bit to lower bit
     '''
     data = [0, 0, 0, 0, 0, 0, 0, 0]
     # row vector
@@ -467,7 +468,9 @@ def data_generate_vector(row_vector, col_vector):
 
 def download_fifo(fifo_en=12):
     '''
-    fifo_en: an int ([0, 11]) which indicates which fifo you want to download. If you want to download all of them, fifo_en = 12\n
+    fifo_en: an int ([0, 11]) which indicates which fifo you want to download.\n
+    If you want to download all of them, fifo_en = 12
+
     'fifo_en'	'array'	  'array loc.'	'loc. within array'
     11	2	Left	Upper left
     10	2	Left	Upper right
@@ -477,7 +480,8 @@ def download_fifo(fifo_en=12):
     6	0	Right	Upper right
     5	2	Left	Lower left
     4	2	Left	Lower right
-    3	1	Middle	Lower left\n
+    3	1	Middle	Lower left
+
     Default: download all fifo
     '''
     pads_defaults()
@@ -513,14 +517,14 @@ def download_fifo(fifo_en=12):
 
 def read(array, index, dpe_read=False, useAGC=False):
     '''
-    Read one or more single device, or dpe_read, if you want dpe_read, make sure you load the desired vectors before dpe read.\
-    array (int or list): which array(s) you want to read, array = 0, 1, 2 for single array, = [0, 1] etc. for multiple arrays,\
-        or = 3 for all arrays.\
-    index (int or list): which device(s) you want to read, i.e. index = [0, 0] if you want to read device in row0, col0.\
-        = [0, 0, 1, 2] if you want to read two devices: [0, 0] and [1, 2].\
-    Notice that you can not read two devices in the same col at the same time.\
-    dpe_read (bool): = True if you want dpe read. If you want dpe read, make sure you load desired vectors before executing read.\
-    useAGC (bool): = True if you want to use AGC.\
+    Read one or more single device, or dpe_read, if you want dpe_read, make sure you load the desired vectors before dpe read.\n
+    array (int or list): which array(s) you want to read, array = 0, 1, 2 for single array, = [0, 1] etc. for multiple arrays,\n
+        or = 3 for all arrays.\n
+    index (int or list): which device(s) you want to read, i.e. index = [0, 0] if you want to read device in row0, col0.\n
+        index = [0, 0, 1, 2] if you want to read two devices: [0, 0] and [1, 2].\n
+    Notice that you can not read two devices in the same col at the same time.\n
+    dpe_read (bool): = True if you want dpe read. If you want dpe read, make sure you load desired vectors before executing read.\n
+    useAGC (bool): = True if you want to use AGC.\n
     '''
     if ~powered_on:
         power_on()
@@ -646,7 +650,7 @@ def read_external(array, index, dpe_read=False):
     pads_defaults()
     reset_dpe()
     
-def write_forward(array, index):
+def write_forward(array, index, write_all=False, add_cap=False):
     if ~powered_on:
         power_on()
     if ~control_scanned:
@@ -657,3 +661,155 @@ def write_forward(array, index):
         calibrate_adc()
     if ~tia_calibrated:
         calibrate_tia()
+    if ~write_all:
+        data = data_generate_sparse(index)
+        load_vectors(array, data)
+    else:
+        print('Please make sure you have loaded desired vectors before excuting write process')
+    pads_defaults()
+    drv.gpio_pin_set(*PIC_PINS['WRT_INTERNAL_EN'])
+    if add_cap:
+        drv.gpio_pin_set(*PIC_PINS['WRITE_ADD_CAP'])
+    else:
+        drv.gpio_pin_reset(*PIC_PINS['WRITE_ADD_CAP'])
+    reset_dpe()
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['WRITE_FWD'])
+    time.sleep(2e-7)        # delay(del2)
+    if array == 0 or array == 1 or array == 2:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array)])
+    elif array == 3:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
+    elif isinstance(array, list):
+        for a in array:
+            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(a)])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['ROW_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['WRT_PULSE'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['WRT_PULSE'])
+    time.sleep(2e-6)        # delay(write pulse width + del1), how to determin 'write pulse widt'?
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['ROW_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    pads_defaults()
+    reset_dpe()
+
+def write_reverse(array, index, write_all=False, add_cap=False):
+    if ~powered_on:
+        power_on()
+    if ~control_scanned:
+        scan_control()
+    if ~tia_scanned:
+        scan_tia()
+    if ~adc_calibrated():
+        calibrate_adc()
+    if ~tia_calibrated:
+        calibrate_tia()
+    if ~write_all:
+        data = data_generate_sparse(index)
+        load_vectors(array, data)
+    else:
+        print('Please make sure you have loaded desired vectors before excuting write process')
+    pads_defaults()
+    drv.gpio_pin_set(*PIC_PINS['WRT_INTERNAL_EN'])
+    if add_cap:
+        drv.gpio_pin_set(*PIC_PINS['WRITE_ADD_CAP'])
+    else:
+        drv.gpio_pin_reset(*PIC_PINS['WRITE_ADD_CAP'])
+    reset_dpe()
+    time.sleep(2e-7)        # delay(del2)
+    if array == 0 or array == 1 or array == 2:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array)])
+    elif array == 3:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
+    elif isinstance(array, list):
+        for a in array:
+            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(a)])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['COL_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['WRT_PULSE'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['WRT_PULSE'])
+    time.sleep(2e-6)        # delay(write pulse width + del1), how to determin 'write pulse widt'?
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['COL_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    pads_defaults()
+    reset_dpe()
+
+def write_forward_external(array, index, write_all=False, add_cap=False, voltage):
+    if ~powered_on:
+        power_on()
+    if ~control_scanned:
+        scan_control()
+    if ~tia_scanned:
+        scan_tia()
+    if ~adc_calibrated():
+        calibrate_adc()
+    if ~tia_calibrated:
+        calibrate_tia()
+    if ~write_all:
+        data = data_generate_sparse(index)
+        load_vectors(array, data)
+    else:
+        print('Please make sure you have loaded desired vectors before excuting write process')
+    pads_defaults()
+    drv.gpio_pin_set(*PIC_PINS['WRT_INTERNAL_EN'])
+    if add_cap:
+        drv.gpio_pin_set(*PIC_PINS['WRITE_ADD_CAP'])
+    else:
+        drv.gpio_pin_reset(*PIC_PINS['WRITE_ADD_CAP'])
+    reset_dpe()
+    time.sleep(2e-7)        # delay(del2)
+    dac_set('DAC_VP_PAD', 0)
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['WRITE_FWD'])
+    time.sleep(2e-7)        # delay(del2)
+    if array == 0 or array == 1 or array == 2:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array)])
+    elif array == 3:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
+    elif isinstance(array, list):
+        for a in array:
+            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(a)])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['ROW_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    dac_set('DAC_VP_PAD', voltage)
+    time.sleep(1e-3)        # delay(as necessary to write)
+    dac_set('DAC_VP_PAD', 0)
+    time.sleep(2e-6)        # delay(write pulse width + del1), how to determin 'write pulse widt'?
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['ROW_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    pads_defaults()
+    reset_dpe()
+    
+    
