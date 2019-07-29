@@ -82,7 +82,32 @@ def gpio_adc_fifo_en_write(data):
     ser.write(b'205,' +
               str(data).encode() + b'\0')
 
+def gpio_array_en_write(data):
+    '''
+    Write ARRAY_EN<i> pins
+    Example: gpio_array_en_write(0b100) makes:
+        ARRAY_EN<2:0> = 100
+    Only take the lowest three bits in the data
+    '''
+    for i in range(3):
+        if (data & (0b1 <<i)):
+            gpio_pin_set(*PIC_PINS[f'ARRAY_EN<{i}>'])
+        else:
+            gpio_pin_reset(*PIC_PINS[f'ARRAY_EN<{i}>'])
 
+def gpio_nforce_safe_write(data):
+    '''
+    Write NFORCE_SAFE0i pins
+    Example: gpio_nforce_safe_write(0b100) makes:
+        NFORCE_SAFE<2:0> = 100
+    Only take the lowest three bits in the data
+    '''
+    for i in range(3):
+        if (data & (0b1 <<i)):
+            gpio_pin_set(*PIC_PINS[f'NFORCE_SAFE{i}'])
+        else:
+            gpio_pin_reset(*PIC_PINS[f'NFORCE_SAFE{i}'])
+    
 # def gpio_dataio_dir_write(regDirectionMask):
 #     # regDirectionMask = 0xffff for all input
 #     #                    0x0000 for all output
