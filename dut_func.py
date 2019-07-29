@@ -98,16 +98,16 @@ def power_on():
 
 
 def vrefs_defaults():
-    dac_set('DAC_VREF_ARRAY', 0.5)
-    dac_set('P_VREF_TIA', 0.5)
-    dac_set('P_VREF_SH', 2.5)
-    dac_set('PLANE_VPP', 0.3)
-    dac_set('DAC_VP_PAD', 0)
-    dac_set('P_TVDD', 5)
+    dac_set('DAC_VREF_ARRAY', 0.42)
+    dac_set('P_VREF_TIA', 0.42)
+    dac_set('P_VREF_SH', 2.42)
+    dac_set('PLANE_VPP', 0.22)
+    dac_set('DAC_VP_PAD', 2.5)
+    dac_set('P_TVDD', 1)
     dac_set('P_VAGC_0', 1)
-    dac_set('P_VAGC_1', 4)
-    dac_set('DAC_VREF_HI_CMP', 4)
-    dac_set('P_ADC_EXT_TEST_IN', 0)
+    dac_set('P_VAGC_1', 3.9)
+    dac_set('DAC_VREF_HI_CMP', 3.92)
+    dac_set('P_ADC_EXT_TEST_IN', 1)
 
 
 def vrefs_off():
@@ -131,7 +131,6 @@ def vrefs_off():
 
 def poweron_scan_control():
     pads_defaults()
-    drv.gpio_pin_reset(*PIC_PINS['SERIAL_CK_IN'])
 
     # P_SERIAL_CK_IN number of clock pulses = number of bits read in using P_SERIAL_BUS_IN # Number of clock pulses must exactly equal the number of scan bits being read in
     # for pulse in P_SERIAL_CK_IN clock pulses:
@@ -143,12 +142,12 @@ def poweron_scan_control():
 
 
 def power_off():
+    pads_defaults()
     drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
     time.sleep(2e-8)  # want to delay 1 CK_array CP
     drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
     time.sleep(1e-5)  # want to delay 10us
 
-    # STILL TO BE WRITTEN in drv_gpio
     drv.clk_stop('ADC_CK')
     drv.clk_stop('CK_ARRAY')
     vrefs_off()
@@ -268,7 +267,7 @@ def py_logic_analyzer():
     val = drv.gpio_pin_is_high(*PIC_PINS['DPE_EXT_SH'])
     print(int(val),"\tDPE_EXT_SH")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE'])
-    print(int(val),"\tADC_DONE<0>")
+    print(int(val),"\tADC_DONE")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_FIFO_ADVANCE'])
     print(int(val),"\tADC_FIFO_ADVANCE")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_FIFO_EN<0>'])
@@ -401,9 +400,17 @@ def load_vectors(array, roc, data):
 
 
 def cal_mux_sel(mux_sel, mux_addr):
+    '''
+    Select the path with calibrication muxes
+    mux_sel is used to choose between four muxes, value can be 0,1,2,3
+    mux_addr is the address within the mux, usually one-hot, but does not 
+        have to be. The one bit indicates the corresponding switch is ON. 
+    '''
+
     # Clear all muxes
     drv.gpio_pin_reset(*PIC_PINS['PICI2C_RESET'])
     drv.gpio_pin_set(*PIC_PINS['PICI2C_RESET'])
 
+    # Send I2C commands
     assert mux_sel >= 0 and mux_sel < 4
     drv.i2c_write_pseudo(mux_sel & 0b0100_1100, mux_addr)

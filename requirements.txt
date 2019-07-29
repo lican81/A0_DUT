@@ -9,6 +9,7 @@ jupyter_contrib_nbextensions
 PyQt5
 dill
 scipy
+bitstring
 
 
 ####### example-requirements.txt #######

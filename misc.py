@@ -97,6 +97,7 @@ PIC_PINS = {
     'NRESET_FULL_CHIP': ('E', 6),
     'LATCH_CLK_DATA': ('E', 7),
     'SERIAL_CHAIN_SEL1': ('C', 4),
+    'PICI2C_RESET': ('C', 14),
 }
 
 DAC_CH = {
