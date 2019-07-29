@@ -25,7 +25,7 @@ PIC_PINS = {
     'ADC_OUT<5>': ('A', 5),
     'DPE_EXT_PULSE': ('C', 1),
     'NFORCE_SAFE0': ('B', 9),
-    'PICIC2_SDA': ('F', 5),
+    'PICI2C_SDA': ('F', 5),
     'CONNECT_TIA': ('F', 4),
     'PIC_ADC_3': ('B', 8),
     'ROW_COL_DATA<14>': ('J', 14),
@@ -86,7 +86,7 @@ PIC_PINS = {
     'NFORCE_SAFE2': ('E', 2),
     'CK_ARRAY': ('F', 0),
     'WRT_PULSE': ('E', 1),
-    'PICIC2_SCL': ('D', 12),
+    'PICI2C_SCL': ('D', 12),
     'AGC_PULSE': ('E', 0),
     'NRESET_DPE_ENGINE': ('D', 13),
     'SERIAL_BUS_OUT': ('D', 2),
@@ -97,6 +97,7 @@ PIC_PINS = {
     'NRESET_FULL_CHIP': ('E', 6),
     'LATCH_CLK_DATA': ('E', 7),
     'SERIAL_CHAIN_SEL1': ('C', 4),
+    'PICI2C_RESET': ('C', 14),
 }
 
 DAC_CH = {
