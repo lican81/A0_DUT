@@ -403,8 +403,10 @@ def cal_mux_sel(mux_sel, mux_addr):
     '''
     Select the path with calibrication muxes
     mux_sel is used to choose between four muxes, value can be 0,1,2,3
-    mux_addr is the address within the mux, usually one-hot, but does not 
-        have to be. The one bit indicates the corresponding switch is ON. 
+    mux_addr is the address within the mux, it is converted to a one-hot 
+        vector to chose only one output. 
+        But does not have to be in case we will want to select multiple 
+        outputs at the same time.
     '''
 
     # Clear all muxes
@@ -413,4 +415,4 @@ def cal_mux_sel(mux_sel, mux_addr):
 
     # Send I2C commands
     assert mux_sel >= 0 and mux_sel < 4
-    drv.i2c_write_pseudo(mux_sel & 0b0100_1100, mux_addr)
+    drv.i2c_write_pseudo(mux_sel & 0b0100_1100, 1<<mux_addr)
