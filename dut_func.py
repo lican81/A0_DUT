@@ -10,7 +10,6 @@ tia_scanned = False
 adc_calibrated = False
 vectors_loaded = False
 
-dac_set.is_init = False
 
 def connect(new_serial=None):
     drv.connect(new_serial)
@@ -58,19 +57,19 @@ def pads_defaults():
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL0'])
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL1'])
 
-def power_on_PIC():
+def ground_PIC():
     # Procedure on PIC BEFORE connectinh/powering on A0.
     dac_init()
     vrefs_off()
     pads_defaults()
-    drv.clk_stop('ADC_CLK')
+    drv.clk_stop('ADC_CK')
     drv.clk_stop('CK_ARRAY')
     drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
     drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
     drv.gpio_pin_reset(*PIC_PINS['PWR_GOOD'])
 
 
-def power_on_A0():
+def power_on():
     # NOTE: Some physical switches on board are required for power on procedure
     # Refer to Figure 1 of cookbook for timing diagram
     time.sleep(1e-6)  # want to delay 1us
@@ -83,7 +82,7 @@ def power_on_A0():
     # ALL_VREFS = See Table 1 in Cookbook documentation
     vrefs_defaults()
     # Initialize clocks
-    drv.clk_start('ADC_CLK')
+    drv.clk_start('ADC_CK')
     drv.clk_start('CK_ARRAY')
     time.sleep(1e-5)  # want to delay 10us
     reset_chip()
@@ -107,9 +106,9 @@ def vrefs_defaults():
     dac_set('P_VAGC_1', 3.9)
     dac_set('DAC_VREF_HI_CMP', 3.92)
     dac_set('P_ADC_EXT_TEST_IN', 1)
-    dut.dac_set('P_ADC_EXT_TEST_IN', 0)
-    dut.dac_set('P_AMP_VREF', 2.5)
-    dut.dac_set('P_AMP_INPUT', 2.5)
+    dac_set('P_ADC_EXT_TEST_IN', 0)
+    dac_set('P_AMP_VREF', 2.5)
+    dac_set('P_AMP_INPUT', 2.5)
 
 
 def vrefs_off():
@@ -139,8 +138,8 @@ def scan_control():
 
 
 def power_off():
-    dut.vrefs_off()
-    dut.pads_defaults()
+    vrefs_off()
+    pads_defaults()
     drv.clk_stop('CK_ARRAY')
     drv.clk_stop('ADC_CK')
     drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
@@ -200,7 +199,7 @@ def dac_init(span=0b010):
 
     vlim_lo, vlim_hi = DAC_SPAN[dac_set.span]
     print(f'DAC initialized to a span from {vlim_lo} V to {vlim_hi} V')
-
+    
 
 def dac_set(channel, voltage):
     # print(f'DAC: setting ch={channel} to vol={voltage}')
@@ -221,7 +220,8 @@ def dac_set(channel, voltage):
     # print(f'{data:08x}')
 
     drv.spi_dac_write(data)
-
+    
+dac_set.is_init = False
 
 
 def py_logic_analyzer():
@@ -277,8 +277,8 @@ def scan_tia(data):
     time.sleep(1e-6)
     drv.gpio_pin_set(*PIC_PINS['UPDATE_TIA_CONF'])
     drv.gpio_pin_reset(*PIC_PINS['UPDATE_TIA_CONF'])
-    global scan_tia
-    scan_tia = True
+    global tia_scanned
+    tia_scanned = True
 
 
 def calibrate_adc(voltages,addr_fifo):
@@ -296,7 +296,7 @@ def calibrate_adc(voltages,addr_fifo):
     drv.gpio_nforce_safe_write(0b111)
 
     # voltage = 1.5 as an example, I wonder whether we should put it as a parameter of the function
-    dac_set('P_ADC_EXT_TEST_IN', ADC_ext_voltage)
+    dac_set('P_ADC_EXT_TEST_IN', voltages[0] )
     time.sleep(1e-6)        # delay(t_sel_ext or t_ext_inp), min = 2CK
     drv.gpio_pin_set(*PIC_PINS['ADC_SEL_EXTERNAL'])
     # time.sleep(1e-6)       # delay(t_en_overide_sh), min = 0CK
@@ -316,7 +316,7 @@ def calibrate_adc(voltages,addr_fifo):
     print(f'{data:013b}\t {adc2volt(data):.3f} V')
 
     for V_adc in voltages:
-        dut.dac_set('P_ADC_EXT_TEST_IN', V_adc)    
+        dac_set('P_ADC_EXT_TEST_IN', V_adc)    
 
         time.sleep(1e-6)
         drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_SH'])
