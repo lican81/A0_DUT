@@ -57,6 +57,7 @@ def pads_defaults():
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL0'])
     drv.gpio_pin_reset(*PIC_PINS['SERIAL_CHAIN_SEL1'])
 
+
 def ground_PIC():
     # Procedure on PIC BEFORE connectinh/powering on A0.
     dac_init()
@@ -130,11 +131,18 @@ def vrefs_off():
     dac_set('DAC_SCHOTTKY', 0)
 
 
-def scan_control():
+def scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
+                                       0x20, 0x01, 0x02])):
+    '''
+    scan_ctrl_bits: 56 bits, or 7 bytes
+        Delay will be (scan value +  2) times CK_ARRAY clock period
+        [pulse count start, pulse count reset, SH count start, SH countreset (disabled), 
+        AGC frequency counter, write pulse start count, write pulse end count]
+    '''
     pads_defaults()
     #    P_SERIAL_BUS_IN data latched in # Refer to Figure 2 for timing diagram and to Table 3 for recommended initial values to use during power on
-    data = bytes([0b000_10000, 0b0000_0010 , 0b0000_1100,0b0001_0000, 0b0010_0000, 0b00000001, 0b00000010])
-    drv.spi_serial_write(2, data)
+    # data = bytes([0b000_10000, 0b0000_0010 , 0b0000_1100,0b0001_0000, 0b0010_0000, 0b00000001, 0b00000010])
+    drv.spi_serial_write(2, scan_ctrl_bits)
 
 
 def power_off():
@@ -152,12 +160,18 @@ def power_off():
 
 
 def reset_chip():
+    '''
+    Reset all scanned in values, TIA enables, and row/column vector registers
+    '''
     drv.gpio_pin_reset(*PIC_PINS['NRESET_FULL_CHIP'])
     time.sleep(1e-6)  # want to delay 1us
     drv.gpio_pin_set(*PIC_PINS['NRESET_FULL_CHIP'])
 
 
 def reset_dpe():
+    '''
+    Reset control counters, ADC flip flops, FIFO, and control shadow registers
+    '''
     drv.gpio_pin_reset(*PIC_PINS['NRESET_DPE_ENGINE'])
     time.sleep(1e-6)  # want to delay 1us
     drv.gpio_pin_set(*PIC_PINS['NRESET_DPE_ENGINE'])
@@ -199,7 +213,7 @@ def dac_init(span=0b010):
 
     vlim_lo, vlim_hi = DAC_SPAN[dac_set.span]
     print(f'DAC initialized to a span from {vlim_lo} V to {vlim_hi} V')
-    
+
 
 def dac_set(channel, voltage):
     # print(f'DAC: setting ch={channel} to vol={voltage}')
@@ -220,50 +234,63 @@ def dac_set(channel, voltage):
     # print(f'{data:08x}')
 
     drv.spi_dac_write(data)
-    
+
+
 dac_set.is_init = False
 
 
 def py_logic_analyzer():
     val = drv.gpio_pin_is_high(*PIC_PINS['PWR_GOOD'])
-    print(int(val),"\tPWR_GOOD")
+    print(int(val), "\tPWR_GOOD")
     val = drv.gpio_pin_is_high(*PIC_PINS['NRESET_FULL_CHIP'])
-    print(int(val),"\tNRESET_FULL_CHIP")
+    print(int(val), "\tNRESET_FULL_CHIP")
     val = drv.gpio_pin_is_high(*PIC_PINS['NRESET_DPE_ENGINE'])
-    print(int(val),"\tNRESET_DPE_ENGINE")
+    print(int(val), "\tNRESET_DPE_ENGINE")
     val = drv.gpio_pin_is_high(*PIC_PINS['ARRAY_EN<0>'])
-    print(int(val),"\tARRAY_EN<0>")
+    print(int(val), "\tARRAY_EN<0>")
     val = drv.gpio_pin_is_high(*PIC_PINS['ARRAY_EN<1>'])
-    print(int(val),"\tARRAY_EN<1>")
+    print(int(val), "\tARRAY_EN<1>")
     val = drv.gpio_pin_is_high(*PIC_PINS['ARRAY_EN<2>'])
-    print(int(val),"\tARRAY_EN<2>")
+    print(int(val), "\tARRAY_EN<2>")
     val = drv.gpio_pin_is_high(*PIC_PINS['NFORCE_SAFE0'])
-    print(int(val),"\tNFORCE_SAFE0")
+    print(int(val), "\tNFORCE_SAFE0")
     val = drv.gpio_pin_is_high(*PIC_PINS['NFORCE_SAFE1'])
-    print(int(val),"\tNFORCE_SAFE1")
+    print(int(val), "\tNFORCE_SAFE1")
     val = drv.gpio_pin_is_high(*PIC_PINS['NFORCE_SAFE2'])
-    print(int(val),"\tNFORCE_SAFE2")
+    print(int(val), "\tNFORCE_SAFE2")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_SEL_EXTERNAL'])
-    print(int(val),"\tADC_SEL_EXT")
+    print(int(val), "\tADC_SEL_EXT")
     val = drv.gpio_pin_is_high(*PIC_PINS['DPE_EXT_OVERRIDE_EN'])
-    print(int(val),"\tDPE_EXT_OVERRIDE_EN")
+    print(int(val), "\tDPE_EXT_OVERRIDE_EN")
     val = drv.gpio_pin_is_high(*PIC_PINS['DPE_EXT_SH'])
-    print(int(val),"\tDPE_EXT_SH")
+    print(int(val), "\tDPE_EXT_SH")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE'])
-    print(int(val),"\tADC_DONE")
+    print(int(val), "\tADC_DONE")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_FIFO_ADVANCE'])
-    print(int(val),"\tADC_FIFO_ADVANCE")
+    print(int(val), "\tADC_FIFO_ADVANCE")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_FIFO_EN<0>'])
-    print(int(val),"\tADC_FIFO_EN<0>")
+    print(int(val), "\tADC_FIFO_EN<0>")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_FIFO_EN<1>'])
-    print(int(val),"\tADC_FIFO_EN<1>")
+    print(int(val), "\tADC_FIFO_EN<1>")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_FIFO_EN<2>'])
-    print(int(val),"\tADC_FIFO_EN<2>")
+    print(int(val), "\tADC_FIFO_EN<2>")
     val = drv.gpio_pin_is_high(*PIC_PINS['ADC_FIFO_EN<3>'])
-    print(int(val),"\tADC_FIFO_EN<3>")
+    print(int(val), "\tADC_FIFO_EN<3>")
 
 
 def scan_tia(data):
+    '''
+    960 bit long scan chain for all TIA settings.
+    Each tia requries 10 bits configuration, and there are 96 (=32*3) tias for half array
+
+    e.g. data = BitArray('0b1100000100'*96).bytes
+    
+    bits:
+    9       8       7       6       5           4   3    2   1   0 
+    --------------------------------------------------------------
+    SH      TIA     400f    150f    millercap   1M  200k 30k 5k  1k
+
+    '''
     # 960 bit long scan chain for all TIA settings
     # Scan chain numbers 1 and 0 must always be enabled during TIA configuration.
     #data = BitArray('0b1100000100'*96).bytes
@@ -281,7 +308,7 @@ def scan_tia(data):
     tia_scanned = True
 
 
-def calibrate_adc(voltages,addr_fifo):
+def calibrate_adc(voltages, addr_fifo):
     # Assumes power good, and power_on() procedure completed with control block scan chain loaded
     # example inputs: voltages = np.arange(0.5, 4.5, 0.5) and addr_fifo=0b000
     reset_dpe()
@@ -296,7 +323,7 @@ def calibrate_adc(voltages,addr_fifo):
     drv.gpio_nforce_safe_write(0b111)
 
     # voltage = 1.5 as an example, I wonder whether we should put it as a parameter of the function
-    dac_set('P_ADC_EXT_TEST_IN', voltages[0] )
+    dac_set('P_ADC_EXT_TEST_IN', voltages[0])
     time.sleep(1e-6)        # delay(t_sel_ext or t_ext_inp), min = 2CK
     drv.gpio_pin_set(*PIC_PINS['ADC_SEL_EXTERNAL'])
     # time.sleep(1e-6)       # delay(t_en_overide_sh), min = 0CK
@@ -310,13 +337,13 @@ def calibrate_adc(voltages,addr_fifo):
         if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
             break
 
-    drv.gpio_adc_fifo_en_write(addr_fifo) # Select which FIFO to download from
+    drv.gpio_adc_fifo_en_write(addr_fifo)  # Select which FIFO to download from
 
     data = drv.gpio_adc_read()
     print(f'{data:013b}\t {adc2volt(data):.3f} V')
 
     for V_adc in voltages:
-        dac_set('P_ADC_EXT_TEST_IN', V_adc)    
+        dac_set('P_ADC_EXT_TEST_IN', V_adc)
 
         time.sleep(1e-6)
         drv.gpio_pin_reset(*PIC_PINS['DPE_EXT_SH'])
@@ -351,7 +378,7 @@ def download_print_fifo(addr):
 
     data = drv.gpio_adc_read()
     print(f'{data:013b}', end='\t')
-    print( f'{adc2volt(data):.3f} V' )
+    print(f'{adc2volt(data):.3f} V')
 
     StrobeNum = 15
     for strobe in range(StrobeNum):
@@ -359,8 +386,8 @@ def download_print_fifo(addr):
         drv.gpio_pin_reset(*PIC_PINS['ADC_FIFO_ADVANCE'])
         data = drv.gpio_adc_read()
         print(f'{data:013b}', end='\t')
-        #print(strobe)
-        print( f'{adc2volt(data):.3f} V' )
+        # print(strobe)
+        print(f'{adc2volt(data):.3f} V')
     print()
 
 
@@ -370,8 +397,6 @@ def download_fifo():
     data = drv.gpio_adc_read()
     #data2 = adc2volt(data)
     return data
-
-
 
 
 def calibrate_tia():
@@ -384,11 +409,11 @@ def calibrate_tia():
     if ~adc_calibrated:
         calibrate_adc()
     pads_defaults()
-   
+
     load_vectors_rows_to_zero()
     load_vectors_cols_to_zero()
     # LOAD ONE COLUMN ON ONE ARRAY (NOTE: THIS ASSUMES YOU"VE PREVIOUSLY LOADED ALL ZEROS)
-    drv.gpio_array_en_write(0b000)# array enable address
+    drv.gpio_array_en_write(0b000)  # array enable address
     drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
     drv.gpio_row_col_bank_write(0b0001)
     drv.gpio_row_col_data_write(0b1000_0000_0000_0000)
@@ -399,15 +424,16 @@ def calibrate_tia():
     reset_dpe()
 
     drv.gpio_pin_set(*PIC_PINS['WRITE_SEL_EXT'])
-    rv.gpio_pin_set(*PIC_PINS['DPE_EXT_OVERRIDE_EN'])   
+    rv.gpio_pin_set(*PIC_PINS['DPE_EXT_OVERRIDE_EN'])
     time.sleep(5e-7)        # delay(t_cntl_setup), min = 3TCK
-    drv.gpio_nforce_safe_write(0b010) # select nforce safe
+    drv.gpio_nforce_safe_write(0b010)  # select nforce safe
     time.sleep(5e-7)        # delay(t_cal_start), min = 2TCK
     drv.gpio_pin_set(*PIC_PINS['COL_WRITE_CONNECT'])
     time.sleep(5e-7)        # delay(t_opamp), min = 500ns
     drv.gpio_pin_set(*PIC_PINS['CONNECT_TIA'])
     time.sleep(5e-7)
-    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH']) # ASSUMES EXTERNAL CURRENT SOURCE HOOKED UP
+    # ASSUMES EXTERNAL CURRENT SOURCE HOOKED UP
+    drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
     while True:
         if drv.gpio_pin_is_high(*PIC_PINS['ADC_DONE']):
             break
@@ -419,7 +445,7 @@ def calibrate_tia():
     time.sleep(5e-7)  # delay(t_disconnect), min = 2TCK
     drv.gpio_pin_reset(*PIC_PINS['CONNECT_TIA'])
     time.sleep(5e-7)  # delay(t_array_cell), min = 2TCK
-    drv.gpio_nforce_safe_write(0b000) # select nforce safe
+    drv.gpio_nforce_safe_write(0b000)  # select nforce safe
     pads_defaults()
     reset_dpe()
 
@@ -493,23 +519,24 @@ def cal_mux_sel(mux_sel, mux_addr):
 
     # Send I2C commands
     assert mux_sel >= 0 and mux_sel < 4
-    drv.i2c_write_pseudo(mux_sel & 0b0100_1100, 1<<mux_addr)
+    drv.i2c_write_pseudo(mux_sel & 0b0100_1100, 1 << mux_addr)
+
 
 def load_vectors_rows_to_zero():
-    roc = [0 ,0, 0]
+    roc = [0, 0, 0]
     # data= 0b1111111111111111
-    data= 0x0000
-    array= [0, 1, 2]
+    data = 0x0000
+    array = [0, 1, 2]
     N = 3
     for a in range(0, N-1):
-        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' % (array[a])])
         if roc[a] == 1:
             drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
         elif roc[a] == 0:
             drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
         else:
             print('error, roc = 0 or 1')
-            
+
         drv.gpio_row_col_bank_write(0b1000)
         drv.gpio_row_col_data_write(data)
         time.sleep(1e-7)
@@ -538,22 +565,23 @@ def load_vectors_rows_to_zero():
         time.sleep(1e-7)
         drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
 
-        drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+        drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' % (array[a])])
+
 
 def load_vectors_cols_to_zero():
-    roc = [1 ,1, 1]
-    data= 0x0000
-    array= [0, 1, 2]
+    roc = [1, 1, 1]
+    data = 0x0000
+    array = [0, 1, 2]
     N = 3
     for a in range(0, N-1):
-        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' % (array[a])])
         if roc[a] == 1:
             drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
         elif roc[a] == 0:
             drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
         else:
             print('error, roc = 0 or 1')
-            
+
         drv.gpio_row_col_bank_write(0b1000)
         drv.gpio_row_col_data_write(data)
         time.sleep(1e-7)
@@ -582,4 +610,4 @@ def load_vectors_cols_to_zero():
         time.sleep(1e-7)
         drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
 
-        drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' %(array[a])])
+        drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' % (array[a])])
