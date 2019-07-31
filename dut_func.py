@@ -293,9 +293,6 @@ def calibrate_tia():
     pads_defaults()
     reset_dpe()
 
-def which_fifo(index):
-    '''
-    Return: fifo
 def load_vectors(array=3, data=1):
     '''
     array: a list or an int which contains the arrays you want to enable, \n
@@ -392,6 +389,28 @@ def load_vectors(array=3, data=1):
         return
     pads_defaults()
     reset_dpe()
+
+def which_fifo(index):
+    '''
+    Return: fifo # and channel # in the form [fifo#, channel#]
+    Input: [array#, row#, col#]
+    '''
+    if index[1] < 32:
+        if index[2] <32:
+            fifo_en = (2-index[0])*2
+        else:
+            fifo_en = (2-index[0])*2+1
+    else:
+        if index[2] <32:
+            fifo_en = (2-index[0])*2+6
+        else:
+            fifo_en = (2-index[0])*2+7
+    
+    if index[2] < 32:
+        channel = (index[2]//16)*8 + (7-index[2]%16//2)
+    else:
+        channel = (3-index[2]//16)*8 + index[2]%16//2
+    return [fifo_en, channel]
 
 def data_generate_sparse(index):
     '''
