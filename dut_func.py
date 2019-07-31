@@ -476,58 +476,6 @@ def calibrate_tia():
     reset_dpe()
 
 
-def load_vectors(array, roc, data):
-    # array: a list which contains the arrays you want to enable, i.e. [0, 1]: enable array0 and 1
-    # roc: a list which choose colume or row for the corresponding array, 0: row, 1: colume
-    # the sizes of 'array' and 'roc' must be the same
-    # data:
-    if ~powered_on:
-        power_on()
-    if ~dpe_reseted:
-        reset_dpe()
-    pads_defaults()
-    N = len(array)
-    for a in range(0, N-1):
-        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' % (array[a])])
-        if roc[a] == 1:
-            drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
-        elif roc[a] == 0:
-            drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
-        else:
-            print('error, roc = 0 or 1')
-            return
-        drv.gpio_row_col_bank_write(0b1000)
-        drv.gpio_row_col_data_write(hex(data[N*a]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_row_col_bank_write(0b0100)
-        drv.gpio_row_col_data_write(hex(data[N*a+1]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_row_col_bank_write(0b0010)
-        drv.gpio_row_col_data_write(hex(data[N*a+2]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_row_col_bank_write(0b0001)
-        drv.gpio_row_col_data_write(hex(data[N*a+3]))
-        time.sleep(1e-7)
-        drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
-        time.sleep(1e-7)
-        drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
-
-        drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' % (array[a])])
-    pads_defaults()
-    reset_dpe()
-
 
 def cal_mux_sel(mux_sel, mux_addr):
     '''
@@ -560,7 +508,6 @@ def load_vectors_rows_to_zero():
     # time.sleep(1e-7)
     drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
     # New code----------
-
 
     # roc = [0, 0, 0]
     # # data= 0b1111111111111111
@@ -664,3 +611,200 @@ def load_vectors_cols_to_zero():
     #     drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
 
     #     drv.gpio_pin_reset(*PIC_PINS['ARRAY_EN<%d>' % (array[a])])
+
+def load_vectors(array=3, data=1):
+    '''
+    array: a list or an int which contains the arrays you want to enable, \n
+        i.e. [0, 1]: enable array0 and 1; 0: enable array0; 3: enable all arrays\n
+    data: a list which contains at 8 elements, each element is an hex int in the range of [0x0000, 0xffff],\n
+        every four elements form a 64-bit vector from left to right, corresponds to bank[0] to bank[3]\n
+    '''
+    if not powered_on:
+        power_on()
+    if not dpe_reseted:
+        reset_dpe()
+    pads_defaults()
+    if isinstance(array, list):
+        for a in array:
+            drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(a)]) 
+        drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
+        addr = 1
+        for b in range(0, 4):
+            drv.gpio_row_col_bank_write(addr)
+            if data == 0:
+                drv.gpio_row_col_data_write(0)
+            elif data == 1:
+                drv.gpio_row_col_data_write(0xffff)
+            else:
+                drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+        drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
+        addr = 1
+        for b in range(4, 8):
+            drv.gpio_row_col_bank_write(addr)
+            if data == 0:
+                drv.gpio_row_col_data_write(0)
+            elif data == 1:
+                drv.gpio_row_col_data_write(0xffff)
+            else:
+                drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+    elif array == 3:
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<0>'])
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<1>'])
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<2>'])
+        drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
+        addr = 1
+        for b in range(0, 4):
+            drv.gpio_row_col_bank_write(addr)
+            drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+        drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
+        addr = 1
+        for b in range(4, 8):
+            drv.gpio_row_col_bank_write(addr)
+            drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+    elif (array == 0) or (array == 1) or (array == 2):
+        drv.gpio_pin_set(*PIC_PINS['ARRAY_EN<%d>' %(array)])
+        drv.gpio_pin_reset(*PIC_PINS['COL_ROW_SEL'])
+        addr = 1
+        for b in range(0, 4):
+            drv.gpio_row_col_bank_write(addr)
+            drv.gpio_row_col_data_write(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+        drv.gpio_pin_set(*PIC_PINS['COL_ROW_SEL'])
+        addr = 1
+        for b in range(4, 8):
+            drv.gpio_row_col_bank_write(addr)
+            print(addr)
+            drv.gpio_row_col_data_write(data[b])
+            print(data[b])
+            time.sleep(1e-7)
+            drv.gpio_pin_set(*PIC_PINS['LATCH_CLK_DATA'])
+            time.sleep(1e-7)
+            drv.gpio_pin_reset(*PIC_PINS['LATCH_CLK_DATA'])
+            addr = addr << 1
+    else:
+        print("Input error, please see the instruction")
+        return
+    pads_defaults()
+    reset_dpe()
+
+def which_fifo(index):
+    '''
+    Return: fifo # and channel # in the form [fifo#, channel#]
+    Input: [array#, row#, col#]
+    '''
+    if index[1] < 32:
+        if index[2] <32:
+            fifo_en = (2-index[0])*2
+        else:
+            fifo_en = (2-index[0])*2+1
+    else:
+        if index[2] <32:
+            fifo_en = (2-index[0])*2+6
+        else:
+            fifo_en = (2-index[0])*2+7
+    
+    if index[2] < 32:
+        channel = (index[2]//16)*8 + (7-index[2]%16//2)
+    else:
+        channel = (3-index[2]//16)*8 + index[2]%16//2
+    return [fifo_en, channel]
+
+def data_generate_sparse(index):
+    '''
+    index: a list, which contains the row and colume you want to write. Every two elements represent one device.\n
+        i.e. [0, 2]: row0 and col2, [0, 2, 3, 6]: row0 and col2, row3 and col6
+    '''
+    data = [0, 0, 0, 0, 0, 0, 0, 0]
+    M = len(index)//2
+    for b in range(0, M):
+        # row data
+        row_dic = {0: 2, 1: 0, 2: 1, 3: 3}
+        bank_row = row_dic[index[2*b]//16]
+        if index[2*b]%2 == 1 and  index[2*b] < 32:
+            bit = index[2*b]%16//2
+            if (data[bank_row] >> (bit + 8))&1 == 0:
+                data[bank_row] = data[bank_row] + (1 << (bit + 8))
+        elif index[2*b]%2 == 0 and  index[2*b] < 32:
+            bit = index[2*b]%16//2
+            if (data[bank_row] >> bit)&1 == 0:
+                data[bank_row] = data[bank_row] + (1 << bit)
+        elif index[2*b]%2 == 1 and  index[2*b] >= 32:
+            bit = index[2*b]%16//2
+            if (data[bank_row] >> (15-bit))&1 == 0:
+                data[bank_row] = data[bank_row] + (1 << (15 - bit))
+        elif index[2*b]%2 == 0 and  index[2*b] >= 32:
+            bit = index[2*b]%16//2
+            if (data[bank_row] >> (7-bit))&1 == 0:
+                data[bank_row] = data[bank_row] + (1 << (7 - bit))
+        # colume data
+        bank_col = 2*(index[2*b+1]//32) + (index[2*b+1]%2)
+        if index[2*b+1] < 32:
+            bit = 15 - (index[2*b+1]//2)
+            if (data[bank_col+4] >> bit)&1 == 0:
+                data[bank_col+4] = data[bank_col+4] + (1 << bit)
+        elif index[2*b+1] >= 32:
+            bit = (index[2*b+1]-32)//2
+            if (data[bank_col+4] >> bit)&1 == 0:
+                data[bank_col+4] = data[bank_col+4] + (1 << bit)
+    return data
+   
+def data_generate_vector(row_vector, col_vector):
+    '''
+    row_vector and col_vector in the form of [0x****, 0x****, 0x****, 0x****],\n
+    left to right: higher bit to lower bit
+    '''
+    data = [0, 0, 0, 0, 0, 0, 0, 0]
+    # row vector
+    row_dic = {0: 2, 1: 0, 2: 1, 3: 3}
+    for a in range(0, 2):
+        for b in range(0, 8):
+            bank_row = row_dic[a]
+            if (row_vector[3-a] >> 2*b)&1 == 1:
+                data[bank_row] = data[bank_row] + (1 << b)
+            if (row_vector[3-a] >> 2*b+1)&1 == 1:
+                data[bank_row] = data[bank_row] + (1 << b+8)
+    for a in range(2, 4):
+        for b in range(0, 8):
+            bank_row = row_dic[a]
+            if (row_vector[3-a] >> 2*b)&1 == 1:
+                data[bank_row] = data[bank_row] + (1 << 7-b)
+            if (row_vector[3-a] >> 2*b+1)&1 == 1:
+                data[bank_row] = data[bank_row] + (1 << 15-b)
+    # col vector
+    for a in range(0, 2):
+        for b in range(0, 8):
+            if (col_vector[3-a] >> 2*b)&1 == 1:
+                data[4]= data[4] + (1 << 15-b-8*a)
+            if (col_vector[3-a] >> 2*b+1)&1 == 1:
+                data[5]= data[5] + (1 << 15-b-8*a)
+    for a in range(2, 4):
+        for b in range(0, 8):
+            if (col_vector[3-a] >> 2*b)&1 == 1:
+                data[6]= data[6] + (1 << b+8*(a-2))
+            if (col_vector[3-a] >> 2*b+1)&1 == 1:
+                data[7]= data[7] + (1 << b+8*(a-2))
+    return data
