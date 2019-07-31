@@ -293,6 +293,9 @@ def calibrate_tia():
     pads_defaults()
     reset_dpe()
 
+def which_fifo(index):
+    '''
+    Return: fifo
 def load_vectors(array=3, data=1):
     '''
     array: a list or an int which contains the arrays you want to enable, \n
