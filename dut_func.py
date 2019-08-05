@@ -762,3 +762,60 @@ def data_generate_vector(row_vector, col_vector):
             if (col_vector[3-a] >> 2*b+1)&1 == 1:
                 data[7]= data[7] + (1 << b+8*(a-2))
     return data
+
+def write_forward_external(array, index, voltage, write_all=False, add_cap=False):
+    # supposed to be a SET operation
+    if not powered_on:
+        power_on()
+    if ~control_scanned:
+        scan_control()
+    if ~tia_scanned:
+        scan_tia()
+    if ~adc_calibrated():
+        calibrate_adc()
+    if ~tia_calibrated:
+        calibrate_tia()
+    if ~write_all:
+        data = data_generate_sparse(index)
+        load_vectors(array, data)
+    else:
+        print('Please make sure you have loaded desired vectors before excuting write process')
+    pads_defaults()
+    drv.gpio_pin_set(*PIC_PINS['WRT_INTERNAL_EN'])
+    if add_cap:
+        drv.gpio_pin_set(*PIC_PINS['WRITE_ADD_CAP'])
+    else:
+        drv.gpio_pin_reset(*PIC_PINS['WRITE_ADD_CAP'])
+    reset_dpe()
+    time.sleep(2e-7)        # delay(del2)
+    dac_set('DAC_VP_PAD', 0)
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['WRITE_FWD'])
+    time.sleep(2e-7)        # delay(del2)
+    if array == 0 or array == 1 or array == 2:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(array)])
+    elif array == 3:
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE0'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE1'])
+        drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE2'])
+    elif isinstance(array, list):
+        for a in array:
+            drv.gpio_pin_set(*PIC_PINS['NFORCE_SAFE%d' %(a)])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['ROW_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_set(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    dac_set('DAC_VP_PAD', voltage)
+    time.sleep(1e-3)        # delay(as necessary to write)
+    dac_set('DAC_VP_PAD', 0)
+    time.sleep(2e-6)        # delay(write pulse width + del1), how to determin 'write pulse widt'?
+    drv.gpio_pin_reset(*PIC_PINS['CONNECT_COLUMN_T'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['ROW_WRITE_CONNECT'])
+    time.sleep(2e-7)        # delay(del2)
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE0'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE1'])
+    drv.gpio_pin_reset(*PIC_PINS['NFORCE_SAFE2'])
+    pads_defaults()
+    reset_dpe()
