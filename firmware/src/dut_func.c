@@ -3,6 +3,13 @@
 
 void BSP_DelayUs(uint16_t microseconds)
 {
+    /**
+     Pause for certain microseconds
+
+    @param microseconds number of microseconds to pause
+    @return NA
+    */
+
     uint32_t time;
     
     time = READ_CORE_TIMER(); // Read Core Timer    
@@ -53,4 +60,20 @@ void I2C_Write(uint8_t addr, uint32_t data)
     PICIC2_SDAOn();
       
     SYS_PRINT("\r\n I2C: Completed! \r\n");
+}
+
+void pads_defaults() {
+    /**
+     Set all the pads to a default state
+    */
+    CONNECT_COLUMN_TOff();
+    BSP_DelayUs(1);
+    
+    ROW_COL_DATA_Set(0x0);
+    COL_ROW_SELOff();
+    ROW_COL_BANK_Set(0x0);
+    
+    LATCH_CLK_DATAOff();
+    
+    
 }
