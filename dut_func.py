@@ -668,23 +668,23 @@ def load_vectors(array, data):
 def which_fifo(index):
     '''
     Return: fifo # and channel # in the form [fifo#, channel#] \n
-    Input: [array#, row#, col#]
+    Input: [array#, col#]
     '''
-    if index[2] < 32:
-        if index[2]%2 == 0:
+    if index[1] < 32:
+        if index[1]%2 == 0:
             fifo_en = (2-index[0])*2
         else:
             fifo_en = (2-index[0])*2+6
     else:
-        if index[2]%2 == 0:
+        if index[1]%2 == 0:
             fifo_en = (2-index[0])*2+1
         else:
             fifo_en = (2-index[0])*2+7
     
-    if index[2] < 32:
-        channel = (index[2]//16)*8 + (7-index[2]%16//2)
+    if index[1] < 32:
+        channel = (index[1]//16)*8 + (7-index[1]%16//2)
     else:
-        channel = (3-index[2]//16)*8 + index[2]%16//2
+        channel = (3-index[1]//16)*8 + index[1]%16//2
     return [fifo_en, channel]
 
 def data_generate_sparse(index):

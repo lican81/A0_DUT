@@ -3,77 +3,6 @@
 #include "dut_ports.h"
 
 
-PORTS_CHANNEL ROW_COL_DATA_PORTS[16] = {
-    ROW_COL_DATA_0_PORT,
-    ROW_COL_DATA_1_PORT,
-    ROW_COL_DATA_2_PORT,
-    ROW_COL_DATA_3_PORT,
-    ROW_COL_DATA_4_PORT,
-    ROW_COL_DATA_5_PORT,
-    ROW_COL_DATA_6_PORT,
-    ROW_COL_DATA_7_PORT,
-    ROW_COL_DATA_8_PORT,
-    ROW_COL_DATA_9_PORT,
-    ROW_COL_DATA_10_PORT,
-    ROW_COL_DATA_11_PORT,
-    ROW_COL_DATA_12_PORT,
-    ROW_COL_DATA_13_PORT,
-    ROW_COL_DATA_14_PORT,
-    ROW_COL_DATA_15_PORT
-};
-
-PORTS_BIT_POS ROW_COL_DATA_PINS[16] = {
-    ROW_COL_DATA_0_PIN,
-    ROW_COL_DATA_1_PIN,
-    ROW_COL_DATA_2_PIN,
-    ROW_COL_DATA_3_PIN,
-    ROW_COL_DATA_4_PIN,
-    ROW_COL_DATA_5_PIN,
-    ROW_COL_DATA_6_PIN,
-    ROW_COL_DATA_7_PIN,
-    ROW_COL_DATA_8_PIN,
-    ROW_COL_DATA_9_PIN,
-    ROW_COL_DATA_10_PIN,
-    ROW_COL_DATA_11_PIN,
-    ROW_COL_DATA_12_PIN,
-    ROW_COL_DATA_13_PIN,
-    ROW_COL_DATA_14_PIN,
-    ROW_COL_DATA_15_PIN
-};
-
-PORTS_CHANNEL ADC_OUT_PORTS[13] = {
-    ADC_OUT_0_PORT,
-    ADC_OUT_1_PORT,
-    ADC_OUT_2_PORT,
-    ADC_OUT_3_PORT,
-    ADC_OUT_4_PORT,
-    ADC_OUT_5_PORT,
-    ADC_OUT_6_PORT,
-    ADC_OUT_7_PORT,
-    ADC_OUT_8_PORT,
-    ADC_OUT_9_PORT,
-    ADC_OUT_10_PORT,
-    ADC_OUT_11_PORT,
-    ADC_OUT_12_PORT
-};
-
-PORTS_BIT_POS ADC_OUT_PINS[13] = {
-    ADC_OUT_0_PIN,
-    ADC_OUT_1_PIN,
-    ADC_OUT_2_PIN,
-    ADC_OUT_3_PIN,
-    ADC_OUT_4_PIN,
-    ADC_OUT_5_PIN,
-    ADC_OUT_6_PIN,
-    ADC_OUT_7_PIN,
-    ADC_OUT_8_PIN,
-    ADC_OUT_9_PIN,
-    ADC_OUT_10_PIN,
-    ADC_OUT_11_PIN,
-    ADC_OUT_12_PIN
-};
-
-
 int portName2Channel( char portName ) {
     int portChannel = portName - 'A';
     
@@ -150,6 +79,43 @@ uint32_t GPIO_Read( char portName ) {
     return PLIB_PORTS_Read(PORTS_ID_0, portChannel);
 }
 
+PORTS_CHANNEL ROW_COL_DATA_PORTS[16] = {
+    ROW_COL_DATA_0_PORT,
+    ROW_COL_DATA_1_PORT,
+    ROW_COL_DATA_2_PORT,
+    ROW_COL_DATA_3_PORT,
+    ROW_COL_DATA_4_PORT,
+    ROW_COL_DATA_5_PORT,
+    ROW_COL_DATA_6_PORT,
+    ROW_COL_DATA_7_PORT,
+    ROW_COL_DATA_8_PORT,
+    ROW_COL_DATA_9_PORT,
+    ROW_COL_DATA_10_PORT,
+    ROW_COL_DATA_11_PORT,
+    ROW_COL_DATA_12_PORT,
+    ROW_COL_DATA_13_PORT,
+    ROW_COL_DATA_14_PORT,
+    ROW_COL_DATA_15_PORT
+};
+
+PORTS_BIT_POS ROW_COL_DATA_PINS[16] = {
+    ROW_COL_DATA_0_PIN,
+    ROW_COL_DATA_1_PIN,
+    ROW_COL_DATA_2_PIN,
+    ROW_COL_DATA_3_PIN,
+    ROW_COL_DATA_4_PIN,
+    ROW_COL_DATA_5_PIN,
+    ROW_COL_DATA_6_PIN,
+    ROW_COL_DATA_7_PIN,
+    ROW_COL_DATA_8_PIN,
+    ROW_COL_DATA_9_PIN,
+    ROW_COL_DATA_10_PIN,
+    ROW_COL_DATA_11_PIN,
+    ROW_COL_DATA_12_PIN,
+    ROW_COL_DATA_13_PIN,
+    ROW_COL_DATA_14_PIN,
+    ROW_COL_DATA_15_PIN
+};
 
 void ROW_COL_DATA_Set(PORTS_DATA_TYPE value) {
     SYS_PRINT("\t Setting ROW_COL_DATA value %x\r\n", value);
@@ -176,6 +142,38 @@ void ADC_FIFO_EN_Set(PORTS_DATA_TYPE value) {
     PLIB_PORTS_Write( PORTS_ID_0, PORT_CHANNEL_K, (value<<4) & 0x00f0);
 }
 
+PORTS_CHANNEL ADC_OUT_PORTS[13] = {
+    ADC_OUT_0_PORT,
+    ADC_OUT_1_PORT,
+    ADC_OUT_2_PORT,
+    ADC_OUT_3_PORT,
+    ADC_OUT_4_PORT,
+    ADC_OUT_5_PORT,
+    ADC_OUT_6_PORT,
+    ADC_OUT_7_PORT,
+    ADC_OUT_8_PORT,
+    ADC_OUT_9_PORT,
+    ADC_OUT_10_PORT,
+    ADC_OUT_11_PORT,
+    ADC_OUT_12_PORT
+};
+
+PORTS_BIT_POS ADC_OUT_PINS[13] = {
+    ADC_OUT_0_PIN,
+    ADC_OUT_1_PIN,
+    ADC_OUT_2_PIN,
+    ADC_OUT_3_PIN,
+    ADC_OUT_4_PIN,
+    ADC_OUT_5_PIN,
+    ADC_OUT_6_PIN,
+    ADC_OUT_7_PIN,
+    ADC_OUT_8_PIN,
+    ADC_OUT_9_PIN,
+    ADC_OUT_10_PIN,
+    ADC_OUT_11_PIN,
+    ADC_OUT_12_PIN
+};
+
 
 PORTS_DATA_TYPE ADC_OUT_Get(void){   
     PORTS_DATA_TYPE value_dataout = 0;
@@ -188,6 +186,49 @@ PORTS_DATA_TYPE ADC_OUT_Get(void){
     
     SYS_PRINT("\t Read ADC_OUT value %x\r\n", value_dataout);
     return value_dataout;
+}
+
+PORTS_CHANNEL ARRAY_EN_PORTS[3] = {
+    ARRAY_EN_0_PORT,
+    ARRAY_EN_1_PORT,
+    ARRAY_EN_2_PORT
+};
+
+PORTS_BIT_POS ARRAY_EN_PINS[3] = {
+    ARRAY_EN_0_PIN,
+    ARRAY_EN_1_PIN,
+    ARRAY_EN_2_PIN
+};
+
+
+void ARRAY_EN_Set(PORTS_DATA_TYPE value) {
+    SYS_PRINT("\t Setting ARRAY_EN value %x\r\n", value);
+    
+    int i;
+    for (i=0; i<3; i++) {
+        PLIB_PORTS_PinWrite(PORTS_ID_0, ARRAY_EN_PORTS[i], ARRAY_EN_PINS[i], value&(0x1<<i));
+    }
+}
+
+PORTS_CHANNEL NFORCE_SAFE_PORTS[3] = {
+    NFORCE_SAFE0_PORT,
+    NFORCE_SAFE1_PORT,
+    NFORCE_SAFE2_PORT
+};
+
+PORTS_BIT_POS NFORCE_SAFE_PINS[3] = {
+    NFORCE_SAFE0_PIN,
+    NFORCE_SAFE1_PIN,
+    NFORCE_SAFE2_PIN
+};
+
+void NFORCE_SAFE_Set(PORTS_DATA_TYPE value) {
+    SYS_PRINT("\t Setting NFORCE_SAFE value %x\r\n", value);
+    
+    int i;
+    for (i=0; i<3; i++) {
+        PLIB_PORTS_PinWrite(PORTS_ID_0, NFORCE_SAFE_PORTS[i], NFORCE_SAFE_PINS[i], value&(0x1<<i));
+    }
 }
 
 
