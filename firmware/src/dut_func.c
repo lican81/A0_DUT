@@ -1,14 +1,22 @@
+/*
+ * COPYRIGHT Hewlett Packard Labs
+ * 
+ * created by Can Li, can.li@hpe.com
+ * 
+ */
+
 
 #include "dut_func.h"
 
 void BSP_DelayUs(uint16_t microseconds)
 {
     /**
-     Pause for certain microseconds
-
-    @param microseconds number of microseconds to pause
-    @return NA
-    */
+     * Pause for certain microseconds
+     * 
+     * @param microseconds number of microseconds to pause
+     * @return NA
+     * 
+     */
 
     uint32_t time;
     
@@ -62,7 +70,7 @@ void I2C_Write(uint8_t addr, uint32_t data)
     SYS_PRINT("\r\n I2C: Completed! \r\n");
 }
 
-void pads_defaults() {
+void pads_default() {
     /**
      Set all the pads to a default state
     */
@@ -74,6 +82,238 @@ void pads_defaults() {
     ROW_COL_BANK_Set(0x0);
     
     LATCH_CLK_DATAOff();
+    READ_BITOff();
+    READ_DPEOff();
+    COL_WRITE_CONNECTOff();
+    CONNECT_TIAOff();
+    DPE_PULSEOff();
+    AGC_PULSEOff();
+    DPE_INTERNAL_ENOff();
+    AGC_INTERNAL_ENOff();
+    DPE_EXT_OVERRIDE_ENOff();
+    DPE_EXT_PULSEOff();
+    DPE_EXT_SHOff();
+    WRITE_FWDOff();
+    WRT_INTERNAL_ENOff();
+    WRT_PULSEOff();
+    WRITE_SEL_EXTOff();
+    WRITE_ADD_CAPOff();
+    ADC_FIFO_ADVANCEOff();
     
+    ADC_FIFO_EN_Set(0x0);
     
+    ADC_SEL_EXTERNALOff();
+//    SERIAL_BUS_INOff();
+//    SERIAL_CK_INOff();
+    UPDATE_TIA_CONFOff();
+    SERIAL_CHAIN_SEL_0On();
+    SERIAL_CHAIN_SEL_1On();
 }
+
+
+void gen_data_row(uint8_t row, uint16_t * data_row) {
+    /**
+     * Generate the row data to load
+     * 
+     * @param row The row to enable
+     * @param data_row[4] The data buffer to be loaded. .
+     * 
+     * @return NA
+     * 
+     */
+    uint8_t ROW_DICT[4] = {2,0,1,3};
+
+    uint8_t bank_row;
+    uint8_t bit_pos;
+
+    // Row data
+    bank_row = ROW_DICT[row/16];
+    bit_pos = row%16/2;
+    if (row<32) {
+        if (row%2) {
+            data_row[bank_row] |= ( 0x1<<(bit_pos+8) );
+        } else {
+            data_row[bank_row] |= ( 0x1<<(bit_pos ) );
+        }
+    } else {
+        if (row%2) {
+            data_row[bank_row] |= ( 0x1<<(15-bit_pos) );
+        } else {
+            data_row[bank_row] |= ( 0x1<<(7-bit_pos) );
+        }
+    }
+}
+
+void gen_data_col(uint8_t col, uint16_t * data_col) {
+    /**
+     * Generate the col data to load
+     * 
+     * @param col The col to enable
+     * @param data_col[4] The data buffer to be loaded. .
+     * 
+     * @return NA
+     * 
+     */
+    
+    uint8_t bank_col;
+
+    bank_col = col/32 * 2 + col%2;
+    if (col<32) {
+        data_col[bank_col] |= ( 0x1<<(15-col/2));
+    } else {
+        data_col[bank_col] |= ( 0x1<<((col-32)/2));
+    }
+}
+
+void gen_data_col_row(uint8_t col, uint8_t row, uint16_t * data_col_row) {
+    /**
+     * Generate the row and col data to load
+     * 
+     * @param col The col to enable
+     * @param row The row to enable
+     * @param data_col[8] The data buffer to be loaded. .
+     * 
+     * @return NA
+     * 
+     */
+    
+    gen_data_row(row, data_col_row);
+    gen_data_col(row, data_col_row+4);
+}
+
+uint8_t get_fifo_en(uint8_t arr, uint8_t col) {
+    /*
+     * Return the fifo_en
+     */
+    
+    return (2-arr)*2 + col/32 + col%2*6;
+}
+
+uint8_t get_fifo_ch(uint8_t arr, uint8_t col) {
+    /*
+     * Return the fifo_ch
+     */
+    
+    if (col<32) {
+        return (col/16)*8 + (7-col%16/2);
+    } else {
+        return (3-col/16)*8 + col%16/2;
+    }
+}
+
+
+void load_vectors(uint8_t arr, uint16_t * vector, bool is_row) {
+    /**
+     * Load row or column vectors
+     * 
+     * @param arr The array number
+     * @param data_row[4] The data buffer to be loaded.
+     * @param is_row Load row vector if True.
+     * 
+     * @return NA
+     * 
+     */
+    
+    if (arr<0 && arr>=4) {
+        SYS_PRINT("\t Wrong array number!! arr = %d\r\n", arr);
+        return;
+    }
+    
+    LATCH_CLK_DATAOff();
+    
+    ARRAY_EN_Set( 0x1 << arr );
+    
+    if (is_row) {
+        COL_ROW_SELOff();
+    } else {
+        COL_ROW_SELOn();
+    }
+        
+    int n_bank = 0;
+    for (n_bank=0; n_bank<4; n_bank++) {
+        ROW_COL_BANK_Set( 0x1<<n_bank );
+        ROW_COL_DATA_Set( vector[n_bank] );
+        
+        BSP_DelayUs(0.1);
+        LATCH_CLK_DATAOn();
+        BSP_DelayUs(0.1);
+        LATCH_CLK_DATAOff();
+    }
+}
+
+void download_fifo( uint8_t fifo_en, uint16_t * data ) {
+    /*
+     * Download FIFO data
+     * 
+     * @param addr The FIFO address, 0-11
+     * @param data The data buffer for the result
+     * 
+     */
+    
+    int FIFO_DEPTH = 16;
+    int i;
+    
+    ADC_FIFO_ADVANCEOff();
+    ADC_FIFO_EN_Set( fifo_en );
+    
+    for (i=0; i<FIFO_DEPTH; i++) {
+        data[i] = ADC_OUT_Get();
+        
+        // Strobe 
+        BSP_DelayUs(0.5);
+        ADC_FIFO_ADVANCEOn();
+        BSP_DelayUs(0.5);
+        ADC_FIFO_ADVANCEOff();
+        BSP_DelayUs(0.5);
+    }
+}
+
+/*
+ * All the functions start with A0 are 4xx commands
+ */
+
+uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
+    /*
+     * Read a single device
+     * 
+     */
+    
+    uint16_t data_row[4];
+    uint16_t data_col[4];
+    
+    uint16_t res_buff[16];
+    
+    uint8_t fifo_en, fifo_ch;
+    int i;
+    
+    for (i=0; i<4; i++) {
+        data_row[i] = 0;
+        data_col[i] = 0;
+    }
+    
+    gen_data_row(col, data_row);
+    gen_data_col(col, data_col);
+    
+    load_vectors(arr, data_row, true);
+    load_vectors(arr, data_col, false);
+    
+    DPE_INTERNAL_ENOn();
+    READ_BITOn();
+    READ_BITOff();
+    
+    NFORCE_SAFE_Set( 0x1 << arr );
+    
+    CONNECT_TIAOn();
+    CONNECT_COLUMN_TOn();
+    
+    DPE_PULSEOn();
+    BSP_DelayUs(0.2);
+    DPE_PULSEOff();
+    
+    fifo_en = get_fifo_en(arr, col);
+    fifo_ch = get_fifo_ch(arr, col);
+    
+    download_fifo( fifo_en, res_buff);
+    return res_buff[fifo_ch];
+}
+

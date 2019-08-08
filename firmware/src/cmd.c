@@ -125,6 +125,9 @@ void CMD_Tasks ( void )
                     
                     uint16_t adc_result[8];
                     
+                    uint8_t row, col, arr;
+                    uint16_t res_read;
+                    
                     switch ( icmd ) 
                     {
                         // Formal commands
@@ -394,6 +397,33 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+                        case 401:
+                            /*
+                             * read_single
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            row = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            col = atoi(ptr);
+                            
+                            res_read = A0_read_single(arr, row, col);
+                            USB_Write( (char *) &res_read, 2 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+                            
+                        case 402:
+                            /*
+                             * read_batch
+                             */
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+                            
                         // Test commands
                         // Command start from 101 for fault tolerance
                         case 101:

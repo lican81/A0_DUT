@@ -27,6 +27,16 @@ void BSP_DelayUs(uint16_t microseconds);
 void I2C_Write(uint8_t addr, uint32_t data);
 
 
+void pads_default();
+
+
+void gen_data_row(uint8_t row, uint16_t * data_row);
+void gen_data_col(uint8_t col, uint16_t * data_col);
+void gen_data_col_row(uint8_t col, uint8_t row, uint16_t * data_col_row);
+uint8_t get_fifo_en(uint8_t arr, uint8_t col);
+uint8_t get_fifo_ch(uint8_t arr, uint8_t col);
+
+
 #ifdef	__cplusplus
 }
 #endif
