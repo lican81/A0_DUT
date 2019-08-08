@@ -317,3 +317,14 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     return res_buff[fifo_ch];
 }
 
+void A0_read_batch( uint16_t * read_buffer ) {
+    int i, j, k;
+
+    for (k=0; k<3; k++) {
+        for (i=0; i<64; i++) {
+            for (j=0; j<64; j++) {
+                read_buffer[ (i+k*64)*64 + j] = i+j+k*10000;
+            }
+        }
+    }
+}

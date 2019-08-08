@@ -34,6 +34,9 @@ uint8_t rxDataSize;
 //    RESET_COL_NOn();
 //}
 
+const N_ROW = 64*3;
+uint16_t read_buffer[N_ROW][64];
+uint16_t read_row;
 
 void CMD_Initialize ( void )
 {
@@ -420,8 +423,11 @@ void CMD_Tasks ( void )
                             /*
                              * read_batch
                              */
+                            A0_read_batch( read_buffer );
+                            SYS_PRINT("\t READ: batch read completed.\r\n");
                             
-                            cmdData.state = CMD_STATE_INIT;
+                            read_row = 0;
+                            cmdData.state = CMD_STATE_USB_WRITE;
                             break; 
                             
                         // Test commands
@@ -514,12 +520,25 @@ void CMD_Tasks ( void )
             
             break;
         }
+        case CMD_STATE_USB_WRITE:
+        {
+            if (! USB_Write_isBusy() ) {
+                SYS_PRINT("\t READ: read_row=%d\r\n", read_row);
+                USB_Write( (char *) read_buffer[read_row], 512 );
+                read_row += 4;
+                
+                if (read_row>=N_ROW) {
+                    cmdData.state = CMD_STATE_INIT;
+                }
+            }
+//            cmdData.state = CMD_STATE_INIT;
+        }
         case CMD_STATE_SERVICE_TASKS:
         {
         
             break;
         }
-
+        
         /* TODO: implement your application state machine.*/
         
 
