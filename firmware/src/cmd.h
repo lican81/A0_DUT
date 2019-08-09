@@ -29,6 +29,7 @@ typedef enum
     CMD_STATE_PARSE,     
     CMD_STATE_ADC,
     CMD_STATE_SPI,
+    CMD_STATE_USB_WRITE
 	/* TODO: Define states used by the application state machine. */
 
 } CMD_STATES;

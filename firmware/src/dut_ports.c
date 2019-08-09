@@ -179,7 +179,7 @@ PORTS_DATA_TYPE ADC_OUT_Get(void){
     PORTS_DATA_TYPE value_dataout = 0;
     
     int i;
-    for (i=0; i<12; i++) {
+    for (i=0; i<13; i++) {
         // Will replace with PinGet to read PORTs directly
         value_dataout = value_dataout | (PLIB_PORTS_PinGet(PORTS_ID_0, ADC_OUT_PORTS[i], ADC_OUT_PINS[i]) << i);
     }

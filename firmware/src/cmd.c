@@ -34,6 +34,9 @@ uint8_t rxDataSize;
 //    RESET_COL_NOn();
 //}
 
+//int N_ROW = 64*3;
+uint16_t read_buffer[64*3][64];
+uint16_t read_row;
 
 void CMD_Initialize ( void )
 {
@@ -124,6 +127,9 @@ void CMD_Tasks ( void )
                     int ser_len;
                     
                     uint16_t adc_result[8];
+                    
+                    uint8_t row, col, arr;
+                    uint16_t res_read;
                     
                     switch ( icmd ) 
                     {
@@ -394,6 +400,36 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+                        case 401:
+                            /*
+                             * read_single
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            row = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            col = atoi(ptr);
+                            
+                            res_read = A0_read_single(arr, row, col);
+                            USB_Write( (char *) &res_read, 2 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+                            
+                        case 402:
+                            /*
+                             * read_batch
+                             */
+                            A0_read_batch( read_buffer );
+                            SYS_PRINT("\t READ: batch read completed.\r\n");
+                            
+                            read_row = 0;
+                            cmdData.state = CMD_STATE_USB_WRITE;
+                            break; 
+                            
                         // Test commands
                         // Command start from 101 for fault tolerance
                         case 101:
@@ -484,12 +520,25 @@ void CMD_Tasks ( void )
             
             break;
         }
+        case CMD_STATE_USB_WRITE:
+        {
+            if (! USB_Write_isBusy() ) {
+                SYS_PRINT("\t READ: read_row=%d\r\n", read_row);
+                USB_Write( (char *) read_buffer[read_row], 512 );
+                read_row += 4;
+                
+                if (read_row>=64*3) {
+                    cmdData.state = CMD_STATE_INIT;
+                }
+            }
+//            cmdData.state = CMD_STATE_INIT;
+        }
         case CMD_STATE_SERVICE_TASKS:
         {
         
             break;
         }
-
+        
         /* TODO: implement your application state machine.*/
         
 
