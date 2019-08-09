@@ -107,7 +107,7 @@ def vrefs_defaults():
     dac_set('P_VAGC_1', 3.9)
     dac_set('DAC_VREF_HI_CMP', 3.92)
     dac_set('P_ADC_EXT_TEST_IN', 1)
-    dac_set('P_ADC_EXT_TEST_IN', 0)
+    # dac_set('P_ADC_EXT_TEST_IN', 0)
     dac_set('P_AMP_VREF', 2.5)
     dac_set('P_AMP_INPUT', 2.5)
 
