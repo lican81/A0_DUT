@@ -34,8 +34,8 @@ uint8_t rxDataSize;
 //    RESET_COL_NOn();
 //}
 
-const N_ROW = 64*3;
-uint16_t read_buffer[N_ROW][64];
+//int N_ROW = 64*3;
+uint16_t read_buffer[64*3][64];
 uint16_t read_row;
 
 void CMD_Initialize ( void )
@@ -527,7 +527,7 @@ void CMD_Tasks ( void )
                 USB_Write( (char *) read_buffer[read_row], 512 );
                 read_row += 4;
                 
-                if (read_row>=N_ROW) {
+                if (read_row>=64*3) {
                     cmdData.state = CMD_STATE_INIT;
                 }
             }
