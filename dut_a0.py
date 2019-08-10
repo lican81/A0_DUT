@@ -1,11 +1,11 @@
-    
-import drv_gpio as drv
-
 import dut_func as dut
 import numpy as np
 from bitstring import BitArray
 from misc import *
 import time
+import struct
+
+drv=dut.drv
 
 _gain_table = [
     '0b1111100001',
@@ -22,6 +22,70 @@ _gain_ratio = [
     200e3,
     1e6
 ]    
+def pic_read_config(**kwargs):
+
+    Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
+    Vgate = kwargs['Vgate'] if 'Vgate' in kwargs.keys() else 5
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    Tsh = kwargs['Tsh'] if 'Tsh' in kwargs.keys() else 0x0c
+    Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+
+    VREF_TIA = Vref
+    Vread = 0.2
+    Tsh = 0x0c
+
+    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
+                                        Tsh, 0x01, 0x02]))
+
+    dut.scan_tia( BitArray(_gain_table[gain]*96).bytes )
+
+    assert VREF_TIA - Vread > -0.2 and VREF_TIA - Vread <= 1
+
+    dut.dac_set('PLANE_VPP', VREF_TIA - Vread)
+    dut.dac_set('P_VREF_TIA', VREF_TIA)
+    dut.dac_set('P_TVDD', Vgate)
+
+    dut.pads_defaults()
+    dut.reset_dpe()
+
+def pic_read_single(array, row, col, **kwargs):
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+
+    pic_read_config(**kwargs)
+
+    drv.ser.write(f'401,{array},{row},{col}\0'.encode() )
+    value = drv.ser.read(2)
+    value = struct.unpack('<H', value)[0] 
+
+    return (dut.adc2volt(value) - Vref) / _gain_ratio[gain]
+
+def pic_read_batch(**kwargs):
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+
+    pic_read_config(**kwargs)
+
+    drv.ser.flushInput()
+    drv.ser.write(f'402'.encode() )
+    data = []
+
+    r=0
+    while True:
+        value = drv.ser.read(2 * 256)
+        if len(value) == 0:
+            print(f'Wait for data r={r}')
+            continue
+        value = struct.unpack('<' +'H'*256, value)
+        data.append(value)
+        
+        r += 1
+        if r>=48:
+            break
+
+    data=np.array(data).reshape((3, 64, 64))
+    return (dut.adc2volt(data) - Vref ) / _gain_ratio[gain]
+    # return (dut.adc2volt(value) - Vref) / _gain_ratio[gain]
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
     '''
@@ -100,6 +164,7 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
     dut.dac_set('P_TVDD', Vgate)
 
     data_load = dut.data_generate_sparse([row, col])
+    print([hex(d) for d in data_load])
     dut.load_vectors(array=array, data=data_load)
 
     dut.pads_defaults()
@@ -126,6 +191,11 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
     [fifo_en, channel] = dut.which_fifo([array, col])
 
     data = dut.download_fifo( fifo_en )
+    
+    for d in data:
+        print(f'{d:03x}')
+    print(f'fifo_{fifo_en}, ch={channel}')
+
     volt = dut.adc2volt(data[channel]) - VREF_LO
     
     return volt / _gain_ratio[gain]

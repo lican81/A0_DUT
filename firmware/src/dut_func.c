@@ -272,6 +272,12 @@ void download_fifo( uint8_t fifo_en, uint16_t * data ) {
  * All the functions start with A0 are 4xx commands
  */
 
+void reset_dpe() {
+    NRESET_DPE_ENGINEOff();
+    BSP_DelayUs(1);
+    NRESET_DPE_ENGINEOn();
+}
+
 uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     /*
      * Read a single device
@@ -296,6 +302,8 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     
     load_vectors(arr, data_row, true);
     load_vectors(arr, data_col, false);
+    
+    reset_dpe();
     
     DPE_INTERNAL_ENOn();
     READ_BITOn();
