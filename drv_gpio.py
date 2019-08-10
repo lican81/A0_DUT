@@ -300,38 +300,3 @@ def i2c_write_pseudo(addr, data):
               str(addr).encode() + b',' +
               str(data).encode() + b'\0')
 
-
-# def pwm_start(channel, width, period):
-#     '''
-#     There are 3 PWM channels, with ch0 and ch1 sharing timer TMR1, and ch2 using TMR2
-#     ch0->OC2, ch1->OC6, ch2-> OC8
-
-#     06/13/19: currently pins are setup so that
-#     PIC_READ is CH0 (OC2)
-#     PIC_START_SEARCH is CH1 (OC6)
-#     PIC_PULSE is CH2 (OC8)
-
-#     PIC_READ is continuous pulse, so setting the width = 0 stops the PWM.
-
-#     The unit for the period and width parameter is 10 ns.
-#     The maximum value for both is 0xffff (16-bit timer) for now, i.e. 655,350 ns.
-#     '''
-#     ser.write(b'209,' +
-#               str(channel).encode() + b',' +
-#               str(width).encode() + b',' +
-#               str(period).encode() + b'\0')
-
-# def mcu_reset():
-#     ser.write(b'999,')
-
-
-# def adc_read():
-#     ser.write(b'214\0')
-
-#     value = ser.read(2 * 8)
-#     value = struct.unpack('<' + 'H'*8, value)
-#     return value
-
-# async def adc_int_read(channel):
-#     # Use interupt in the microcontroller
-#     pass
