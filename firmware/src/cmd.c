@@ -400,6 +400,21 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+                        case 301:
+                            /*
+                             * test download_fifo()
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            ser_addr = atoi(ptr);
+                            
+                            uint16_t res_buff[16];
+                            download_fifo( ser_addr, res_buff);
+                            
+                            USB_Write( (char *) res_buff, 2*16 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
                         case 401:
                             /*
                              * read_single
@@ -414,6 +429,7 @@ void CMD_Tasks ( void )
                             col = atoi(ptr);
                             
                             res_read = A0_read_single(arr, row, col);
+                            SYS_PRINT("\t Read res_read=%x\r\n", res_read);
                             USB_Write( (char *) &res_read, 2 );
                             
                             cmdData.state = CMD_STATE_INIT;

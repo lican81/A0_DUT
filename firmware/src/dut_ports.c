@@ -136,7 +136,7 @@ void ROW_COL_BANK_Set(PORTS_DATA_TYPE value) {
 
 void ADC_FIFO_EN_Set(PORTS_DATA_TYPE value) {
     // K4, K5, K6, K7
-    SYS_PRINT("\t Setting ROW_COL_BANK value %x (raw=%x)\r\n", value, (value<<4) & 0x00f0);
+    SYS_PRINT("\t Setting ADC_FIFO_EN value %x (raw=%x)\r\n", value, (value<<4) & 0x00f0);
     
     // Only lowest four bits get written
     PLIB_PORTS_Write( PORTS_ID_0, PORT_CHANNEL_K, (value<<4) & 0x00f0);
@@ -184,7 +184,7 @@ PORTS_DATA_TYPE ADC_OUT_Get(void){
         value_dataout = value_dataout | (PLIB_PORTS_PinGet(PORTS_ID_0, ADC_OUT_PORTS[i], ADC_OUT_PINS[i]) << i);
     }
     
-    SYS_PRINT("\t Read ADC_OUT value %x\r\n", value_dataout);
+//    SYS_PRINT("\t Read ADC_OUT value %x\r\n", value_dataout);
     return value_dataout;
 }
 
@@ -202,7 +202,7 @@ PORTS_BIT_POS ARRAY_EN_PINS[3] = {
 
 
 void ARRAY_EN_Set(PORTS_DATA_TYPE value) {
-    SYS_PRINT("\t Setting ARRAY_EN value %x\r\n", value);
+//    SYS_PRINT("\t Setting ARRAY_EN value %x\r\n", value);
     
     int i;
     for (i=0; i<3; i++) {
@@ -223,7 +223,7 @@ PORTS_BIT_POS NFORCE_SAFE_PINS[3] = {
 };
 
 void NFORCE_SAFE_Set(PORTS_DATA_TYPE value) {
-    SYS_PRINT("\t Setting NFORCE_SAFE value %x\r\n", value);
+//    SYS_PRINT("\t Setting NFORCE_SAFE value %x\r\n", value);
     
     int i;
     for (i=0; i<3; i++) {

@@ -165,7 +165,7 @@ void gen_data_col(uint8_t col, uint16_t * data_col) {
     }
 }
 
-void gen_data_col_row(uint8_t col, uint8_t row, uint16_t * data_col_row) {
+void gen_data_row_col(uint8_t row, uint8_t col, uint16_t * data_col_row) {
     /**
      * Generate the row and col data to load
      * 
@@ -178,7 +178,7 @@ void gen_data_col_row(uint8_t col, uint8_t row, uint16_t * data_col_row) {
      */
     
     gen_data_row(row, data_col_row);
-    gen_data_col(row, data_col_row+4);
+    gen_data_col(col, data_col_row+4);
 }
 
 uint8_t get_fifo_en(uint8_t arr, uint8_t col) {
@@ -291,7 +291,7 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
         data_col[i] = 0;
     }
     
-    gen_data_row(col, data_row);
+    gen_data_row(row, data_row);
     gen_data_col(col, data_col);
     
     load_vectors(arr, data_row, true);
@@ -313,17 +313,30 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     fifo_en = get_fifo_en(arr, col);
     fifo_ch = get_fifo_ch(arr, col);
     
+    //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
+    
+    while ( ADC_DONEStateGet() == 0) {
+//        SYS_PRINT("\t Wait for ADC_DONE\r\n");
+    }
+    BSP_DelayUs(0.2);
+    
     download_fifo( fifo_en, res_buff);
     return res_buff[fifo_ch];
 }
 
 void A0_read_batch( uint16_t * read_buffer ) {
-    int i, j, k;
+    /*
+     * Read the entire array.
+     * 
+     * @param read_buffer The raw adc buffer for the readout result
+     * 
+     */
+    int r, c, arr; // row, column, array
 
-    for (k=0; k<3; k++) {
-        for (i=0; i<64; i++) {
-            for (j=0; j<64; j++) {
-                read_buffer[ (i+k*64)*64 + j] = i+j+k*10000;
+    for (arr=0; arr<3; arr++) {
+        for (r=0; r<64; r++) {
+            for (c=0; c<64; c++) {
+                read_buffer[ (r+arr*64)*64 + c] = A0_read_single(arr, r, c);
             }
         }
     }
