@@ -275,7 +275,8 @@ void CMD_Tasks ( void )
                             ptr = strtok(NULL, ",");
                             ser_len = atoi(ptr); 
                             
-                            ptr = strtok(NULL, ",");
+                            ptr = strtok(NULL, ","); //expecting a non-zero character
+                            ptr += 1;
                             SYS_PRINT("\t Sending data '%s' with addr=%x, size=%d\r\n", ptr, ser_addr, ser_len);
                             
 //                            PLIB_PORTS_PinSet(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_14);
@@ -445,6 +446,23 @@ void CMD_Tasks ( void )
                             read_row = 0;
                             cmdData.state = CMD_STATE_USB_WRITE;
                             break; 
+                        case 403:
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ","); // expecting a non-zero byte after , character
+                            
+                            SYS_PRINT("\t Expecting data sz=%d, ptr=%x\r\n", portValue, (int)*ptr);
+                            ptr += 1;
+                            
+                            for (i=0; i<portValue; i++) {
+                                SYS_PRINT("\t i=%d,  data=0x %x\r\n", i, ptr[i]);
+                            }
+                            
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+
                             
                         // Test commands
                         // Command start from 101 for fault tolerance
