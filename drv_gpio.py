@@ -286,7 +286,7 @@ def clk_config(channel, base=0, divisor=20):
     Change the clock frequency
     '''
     freq = 200000.0 / (2 * (divisor + base / 512.0))
-    print(f'Setting freq={freq}kHz')
+    print(f'Setting {ch} freq={freq}kHz')
 
     ch = REFCLKO[channel]
     ser.write(b'220,' +
