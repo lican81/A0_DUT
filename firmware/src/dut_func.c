@@ -376,14 +376,14 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
             data_col[i] = 0;
         }
 
-        gen_data_col(col, data_col);
+        gen_data_col(c, data_col);
         load_vectors(arr, data_col, false);
 
         CONNECT_TIAOn();
         CONNECT_COLUMN_TOn();
 
-        fifo_en = get_fifo_en(arr, col);
-        fifo_ch = get_fifo_ch(arr, col);
+        fifo_en = get_fifo_en(arr, c);
+        fifo_ch = get_fifo_ch(arr, c);
 
         for (r=0; r<64; r++) {
 
@@ -391,7 +391,7 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
                 data_row[i] = 0;
             }
             
-            gen_data_row(row, data_row);   
+            gen_data_row(r, data_row);   
             
             load_vectors(arr, data_row, true);
             reset_dpe();
