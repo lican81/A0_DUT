@@ -164,7 +164,6 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
     dut.dac_set('P_TVDD', Vgate)
 
     data_load = dut.data_generate_sparse([row, col])
-    print([hex(d) for d in data_load])
     dut.load_vectors(array=array, data=data_load)
 
     dut.pads_defaults()
@@ -192,10 +191,6 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
 
     data = dut.download_fifo( fifo_en )
     
-    for d in data:
-        print(f'{d:03x}')
-    print(f'fifo_{fifo_en}, ch={channel}')
-
     volt = dut.adc2volt(data[channel]) - VREF_LO
     
     return volt / _gain_ratio[gain]
