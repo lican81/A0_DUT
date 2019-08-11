@@ -332,20 +332,166 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     return res_buff[fifo_ch];
 }
 
-void A0_read_batch( uint16_t * read_buffer ) {
+void A0_read_batch( uint8_t arr, uint16_t *read_buffer ) {
     /*
      * Read the entire array.
      * 
      * @param read_buffer The raw adc buffer for the readout result
      * 
      */
-    int r, c, arr; // row, column, array
+    int r, c; // row, column
 
-    for (arr=0; arr<3; arr++) {
-        for (r=0; r<64; r++) {
-            for (c=0; c<64; c++) {
-                read_buffer[ (r+arr*64)*64 + c] = A0_read_single(arr, r, c);
-            }
+    for (r=0; r<64; r++) {
+        for (c=0; c<64; c++) {
+            read_buffer[ r*64 + c] = A0_read_single(arr, r, c);
         }
     }
+}
+
+
+void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
+    /*
+     * Read the entire array.
+     * 
+     * @param read_buffer The raw adc buffer for the readout result
+     * 
+     */
+    int i, r, c; // row, column
+
+    uint16_t data_row[4];
+    uint16_t res_buff[16];
+    
+    uint8_t fifo_en, fifo_ch;
+    
+    DPE_INTERNAL_ENOn();
+    READ_BITOn();
+    READ_BITOff();
+    
+    NFORCE_SAFE_Set( 0x1 << arr );
+
+    for (c=0; c<64; c++) {
+        uint16_t data_col[4];
+
+        for (i=0; i<4; i++) {
+            data_col[i] = 0;
+        }
+
+        gen_data_col(col, data_col);
+        load_vectors(arr, data_col, false);
+
+        CONNECT_TIAOn();
+        CONNECT_COLUMN_TOn();
+
+        fifo_en = get_fifo_en(arr, col);
+        fifo_ch = get_fifo_ch(arr, col);
+
+        for (r=0; r<64; r++) {
+
+            for (i=0; i<4; i++) {
+                data_row[i] = 0;
+            }
+            
+            gen_data_row(row, data_row);   
+            
+            load_vectors(arr, data_row, true);
+            reset_dpe();
+ 
+            DPE_PULSEOn();
+            BSP_DelayUs(0.2);
+            DPE_PULSEOff();
+            
+            //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
+            
+            while ( ADC_DONEStateGet() == 0) {
+        //        SYS_PRINT("\t Wait for ADC_DONE\r\n");
+            }
+            BSP_DelayUs(0.2);
+            
+            download_fifo( fifo_en, res_buff);
+            read_buffer[ r*64 + c] = res_buff[fifo_ch];
+        }
+    }
+}
+
+
+// void A0_dpe_single( uint_8 arr, )
+
+void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output_buffer) {
+    /*
+     * Perform vector-matrix multiplication
+     * 
+     * @param input_buffer The input vectors, each vector is composed of 
+     *                      eight bytes (64 bits)
+     * @param output_buffer The multiplication results
+     */
+
+    int i_vector = 0;
+
+    // for (i=0; i<portValue; i++) {
+    //     SYS_PRINT("\t i=%d,  data=0x %x\r\n", i, ptr[i]);
+    // }
+
+    uint16_t data_row[4];
+    uint16_t fifo_buff[16];
+
+    uint8_t fifo_en_list[4] = {(2-arr)*2, (2-arr)*2+6, (2-arr)*2+1, (2-arr)*2+7};
+
+    // Load column vector externally
+    // uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
+    // uint8_t fifo_en, fifo_ch;
+    int i, j;
+
+    for (i_vector=0; i_vector<len; i_vector++) {
+    
+        for (i=0; i<4; i++) {
+            data_row[i] = 0;
+        }
+
+        for (i=0; i<64; i++) {
+            SYS_PRINT("\r\n\t DPE: load_vector=");
+            if (input_buffer[7-(i/8)] & (0x1<<i%8) ) {
+                gen_data_row(i, data_row);
+
+                SYS_PRINT("1");
+            } else {
+                SYS_PRINT("0");
+            }
+        }
+
+        input_buffer += 8;
+        load_vectors(arr, data_row, true);
+
+        reset_dpe();
+        
+        DPE_INTERNAL_ENOn();
+        READ_BITOn();
+        READ_BITOn();
+        
+        NFORCE_SAFE_Set( 0x1 << arr );
+        
+        CONNECT_TIAOn();
+        CONNECT_COLUMN_TOn();
+        
+        DPE_PULSEOn();
+        BSP_DelayUs(0.2);
+        DPE_PULSEOff();
+        
+        //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
+        
+        while ( ADC_DONEStateGet() == 0) {
+    //        SYS_PRINT("\t Wait for ADC_DONE\r\n");
+        }
+        BSP_DelayUs(0.2);
+
+        for (i=0; i<4; i++) {
+            download_fifo( fifo_en_list[i], fifo_buff);
+
+            for (j=0; j<16; j++) {
+                output_buffer[j] = fifo_buff[ get_fifo_ch(arr, j) ];
+            }
+
+            output_buffer += 16;
+        }
+    } //end for i_vector
+
 }
