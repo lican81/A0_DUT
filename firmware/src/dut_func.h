@@ -23,6 +23,28 @@ extern "C" {
     
 #define READ_CORE_TIMER()                 _CP0_GET_COUNT()          // Read the MIPS Core Timer
 
+typedef enum
+{
+	PLANE_VPP=0,
+    DAC_VREF_ARRAY= 1,
+    P_VREF_TIA=2,
+    DAC_VREF_HI_CMP=3,
+    P_VREF_SH=4,
+    DAC_VP_PAD=5,
+    P_TVDD=6,
+    P_VAGC_0=7,
+    P_VAGC_1=8,
+    P_ADC_EXT_TEST_IN=9,
+    P_AMP_VREF=10,
+    P_AMP_INPUT=11,
+    DAC_SPARE1=12,
+    DAC_SPARE2=13,
+    DAC_DRIVE_VN=14,
+    DAC_SCHOTTKY=15
+
+} DAC_CH;
+
+
 void BSP_DelayUs(uint16_t microseconds);
 void I2C_Write(uint8_t addr, uint32_t data);
 
@@ -39,6 +61,7 @@ void load_vectors(uint8_t arr, uint16_t * vector, bool is_row);
 void download_fifo( uint8_t fifo_en, uint16_t * data );
 uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col);
 void A0_read_batch();
+int dac_set( uint8_t ch, uint16_t value);
 
 
 #ifdef	__cplusplus
