@@ -376,14 +376,14 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
             data_col[i] = 0;
         }
 
-        gen_data_col(col, data_col);
+        gen_data_col(c, data_col);
         load_vectors(arr, data_col, false);
 
         CONNECT_TIAOn();
         CONNECT_COLUMN_TOn();
 
-        fifo_en = get_fifo_en(arr, col);
-        fifo_ch = get_fifo_ch(arr, col);
+        fifo_en = get_fifo_en(arr, c);
+        fifo_ch = get_fifo_ch(arr, c);
 
         for (r=0; r<64; r++) {
 
@@ -391,7 +391,7 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
                 data_row[i] = 0;
             }
             
-            gen_data_row(row, data_row);   
+            gen_data_row(r, data_row);   
             
             load_vectors(arr, data_row, true);
             reset_dpe();
@@ -416,10 +416,13 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
 
 // void A0_dpe_single( uint_8 arr, )
 
-void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output_buffer) {
+void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16_t *output_buffer) {
     /*
      * Perform vector-matrix multiplication
      * 
+     * @param arr The array number: 0-2
+     * @param len The number of vectors
+     * @param mode Read mode, 0 -> ground unselected wires; 1->float unselected wires
      * @param input_buffer The input vectors, each vector is composed of 
      *                      eight bytes (64 bits)
      * @param output_buffer The multiplication results
@@ -432,13 +435,15 @@ void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output
     // }
 
     uint16_t data_row[4];
-    uint16_t fifo_buff[16];
+    uint16_t fifo_buff[12][16];
 
     uint8_t fifo_en_list[4] = {(2-arr)*2, (2-arr)*2+6, (2-arr)*2+1, (2-arr)*2+7};
 
-    // Load column vector externally
-    // uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
-    // uint8_t fifo_en, fifo_ch;
+    // TODO Select only part of the columns
+    // Attach all TIAs to the columns
+    uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
+    load_vectors(arr, data_col, false);
+    
     int i, j;
 
     for (i_vector=0; i_vector<len; i_vector++) {
@@ -446,9 +451,13 @@ void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output
         for (i=0; i<4; i++) {
             data_row[i] = 0;
         }
-
+        
+        SYS_PRINT("\t DPE: load_vector=");
         for (i=0; i<64; i++) {
-            SYS_PRINT("\r\n\t DPE: load_vector=");
+            if (i%8 == 0) {
+                SYS_PRINT("\r\n\t\t");
+            }
+                
             if (input_buffer[7-(i/8)] & (0x1<<i%8) ) {
                 gen_data_row(i, data_row);
 
@@ -456,7 +465,9 @@ void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output
             } else {
                 SYS_PRINT("0");
             }
+            
         }
+        SYS_PRINT("\r\n");
 
         input_buffer += 8;
         load_vectors(arr, data_row, true);
@@ -465,7 +476,12 @@ void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output
         
         DPE_INTERNAL_ENOn();
         READ_BITOn();
-        READ_BITOn();
+        
+        if (mode==0) {
+            READ_DPEOn();
+        } else {
+            READ_DPEOff();
+        }
         
         NFORCE_SAFE_Set( 0x1 << arr );
         
@@ -484,10 +500,14 @@ void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output
         BSP_DelayUs(0.2);
 
         for (i=0; i<4; i++) {
-            download_fifo( fifo_en_list[i], fifo_buff);
-
+            download_fifo( fifo_en_list[i], fifo_buff[ fifo_en_list[i] ]);
+        }
+        
+        for (i=0; i<4; i++) {
             for (j=0; j<16; j++) {
-                output_buffer[j] = fifo_buff[ get_fifo_ch(arr, j) ];
+                uint8_t col=j+16*i;
+                
+                output_buffer[j] = fifo_buff[get_fifo_en(arr, col)][ get_fifo_ch(arr, col) ];
             }
 
             output_buffer += 16;

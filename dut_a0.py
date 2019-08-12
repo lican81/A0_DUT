@@ -25,6 +25,10 @@ _gain_ratio = [
 
 
 def pic_read_config(**kwargs):
+    '''
+    Configure read voltage, timing, gain, etc. 
+    They should stay unchanged for the most of the time.
+    '''
 
     Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
     Vgate = kwargs['Vgate'] if 'Vgate' in kwargs.keys() else 5
@@ -52,6 +56,9 @@ def pic_read_config(**kwargs):
 
 
 def pic_read_single(array, row, col, **kwargs):
+    '''
+    Read a single device with PIC control
+    '''
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
@@ -64,14 +71,23 @@ def pic_read_single(array, row, col, **kwargs):
     return (dut.adc2volt(value) - Vref) / _gain_ratio[gain]
 
 
-def pic_read_batch(**kwargs):
+def pic_read_batch(array, **kwargs):
+    '''
+    Read a entire array.
+
+    Args:
+        array(int): The array number to read
+
+    Returns:
+        np.ndarray: Calcuated current map
+    '''
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     pic_read_config(**kwargs)
 
     drv.ser.flushInput()
-    drv.ser.write(f'402'.encode())
+    drv.ser.write(f'502,{array}\0'.encode())
     data = []
 
     r = 0
@@ -83,13 +99,73 @@ def pic_read_batch(**kwargs):
         value = struct.unpack('<' + 'H'*256, value)
         data.append(value)
 
-        r += 1
-        if r >= 48:
+        r += 4
+        if r >= 64:
             break
 
-    data = np.array(data).reshape((3, 64, 64))
+    data = np.array(data).reshape((64, 64))
     return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
-    # return (dut.adc2volt(value) - Vref) / _gain_ratio[gain]
+
+def pic_dpe_batch(array, input, **kwargs):
+    '''
+    Perform DPE (vector-matrix multiplication) operation
+
+    Args:
+        array(int): The array number to read
+        input(list): Each element is a 64-bit unsigned integer
+                     representing a 64-dimensional input vector
+        mode(int): 0 -> ground unselected rows
+                   1 -> float unselected rows
+
+    Returns:
+        np.ndarray: The outputs
+    '''
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+    mode = kwargs['mode'] if 'mode' in kwargs.keys() else 0
+
+    pic_read_config(**kwargs)
+    
+    n_input = len(input)
+    data = []
+
+    r_start = 0
+    while True:
+        r_stop = r_start+60 if r_start+60<n_input else n_input
+        r_size = r_stop - r_start
+
+        print(f'DPE: {r_start}-{r_stop}, len={r_size}')
+
+        cmd = f'403,{array},{r_size},{mode},\1'.encode()
+        cmd += struct.pack('>' +'Q'*(r_size), *input[r_start:r_stop])
+        cmd += b'\0'
+
+        # print(cmd)
+
+        drv.ser.flushInput()
+        drv.ser.write(cmd)
+
+        r = 0
+        while True:
+            value = drv.ser.read(2 * 256)
+            if len(value) == 0:
+                print(f'Wait for data r={r}')
+                continue
+            value = struct.unpack('<' + 'H'*256, value)
+            data.append(value)
+
+            r += 4
+            if r >= r_size:
+                break
+        
+        if r_stop == n_input:
+            break    
+        r_start += 60
+
+    data = np.array(data).reshape((-1, 64))
+    # return data[:n_input]
+    return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
+
 
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
