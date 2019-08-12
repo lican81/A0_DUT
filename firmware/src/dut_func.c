@@ -452,22 +452,11 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
             data_row[i] = 0;
         }
         
-        SYS_PRINT("\t DPE: load_vector=");
         for (i=0; i<64; i++) {
-            if (i%8 == 0) {
-                SYS_PRINT("\r\n\t\t");
-            }
-                
             if (input_buffer[7-(i/8)] & (0x1<<i%8) ) {
                 gen_data_row(i, data_row);
-
-                SYS_PRINT("1");
-            } else {
-                SYS_PRINT("0");
-            }
-            
+            } 
         }
-        SYS_PRINT("\r\n");
 
         input_buffer += 8;
         load_vectors(arr, data_row, true);

@@ -498,9 +498,6 @@ void CMD_Tasks ( void )
                                 break; 
                             }
                             
-                            
-                            
-                            
                             cmdData.state = CMD_STATE_INIT;
                             break; 
 
@@ -598,7 +595,7 @@ void CMD_Tasks ( void )
         case CMD_STATE_USB_WRITE:
         {
             if (! USB_Write_isBusy() ) {
-                SYS_PRINT("\t READ: read_row=%d\r\n", read_row);
+//                SYS_PRINT("\t READ: read_row=%d\r\n", read_row);
                 USB_Write( (char *) read_buffer[read_row], 512 );
                 read_row += 4;
                 
