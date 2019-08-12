@@ -118,7 +118,7 @@ PORTS_BIT_POS ROW_COL_DATA_PINS[16] = {
 };
 
 void ROW_COL_DATA_Set(PORTS_DATA_TYPE value) {
-    SYS_PRINT("\t Setting ROW_COL_DATA value %x\r\n", value);
+//    SYS_PRINT("\t Setting ROW_COL_DATA value %x\r\n", value);
     
     int i;
     for (i=0; i<16; i++) {
@@ -128,7 +128,7 @@ void ROW_COL_DATA_Set(PORTS_DATA_TYPE value) {
 
 void ROW_COL_BANK_Set(PORTS_DATA_TYPE value) {
     // K0, K1, K2, K3
-    SYS_PRINT("\t Setting ROW_COL_BANK value %x (raw=%x)\r\n", value, value & 0x000f);
+//    SYS_PRINT("\t Setting ROW_COL_BANK value %x (raw=%x)\r\n", value, value & 0x000f);
     
     // Only lowest four bits get written
     PLIB_PORTS_Write( PORTS_ID_0, PORT_CHANNEL_K, value & 0x000f);
@@ -136,7 +136,7 @@ void ROW_COL_BANK_Set(PORTS_DATA_TYPE value) {
 
 void ADC_FIFO_EN_Set(PORTS_DATA_TYPE value) {
     // K4, K5, K6, K7
-    SYS_PRINT("\t Setting ADC_FIFO_EN value %x (raw=%x)\r\n", value, (value<<4) & 0x00f0);
+//    SYS_PRINT("\t Setting ADC_FIFO_EN value %x (raw=%x)\r\n", value, (value<<4) & 0x00f0);
     
     // Only lowest four bits get written
     PLIB_PORTS_Write( PORTS_ID_0, PORT_CHANNEL_K, (value<<4) & 0x00f0);

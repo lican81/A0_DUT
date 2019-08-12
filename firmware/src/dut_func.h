@@ -40,7 +40,7 @@ void download_fifo( uint8_t fifo_en, uint16_t * data );
 uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col);
 void A0_read_batch( uint8_t arr, uint16_t *read_buffer );
 void A0_read_batch2( uint8_t arr, uint16_t *read_buffer );
-void A0_dpe_batch( uint8_t arr, int len, uint8_t *input_buffer, uint16_t *output_buffer);
+void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16_t *output_buffer);
 
 
 #ifdef	__cplusplus

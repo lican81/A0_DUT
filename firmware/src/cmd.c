@@ -451,6 +451,20 @@ void CMD_Tasks ( void )
                             n_row_to_send = 64;
                             cmdData.state = CMD_STATE_USB_WRITE;
                             break; 
+                        case 502:
+                            /*
+                             * read_batch
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);        // array number
+
+                            A0_read_batch2(arr, read_buffer );
+                            SYS_PRINT("\t READ: batch read completed.\r\n");
+                            
+                            read_row = 0;
+                            n_row_to_send = 64;
+                            cmdData.state = CMD_STATE_USB_WRITE;
+                            break; 
                         case 403:
                             /*
                              * dpe_batch
@@ -463,6 +477,9 @@ void CMD_Tasks ( void )
 
                             ptr = strtok(NULL, ",");
                             ser_len = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode
 
                             ptr = strtok(NULL, ","); // expecting a non-zero byte after , character
                             SYS_PRINT("\t DPE on array %d, # of vectors sz=%d\r\n", arr, ser_len);
@@ -473,7 +490,7 @@ void CMD_Tasks ( void )
                             } else {
                                 ptr += 1;
 
-                                A0_dpe_batch(arr, ser_len, ptr, read_buffer);
+                                A0_dpe_batch(arr, ser_len, channel, ptr, read_buffer);
                                 
                                 read_row = 0;
                                 n_row_to_send = ser_len;
