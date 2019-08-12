@@ -504,3 +504,23 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
     } //end for i_vector
 
 }
+
+
+int dac_set( DAC_CH ch, uint16_t value) {
+    PIC_CSOn();
+    PIC_CSOff();
+
+    uint32_t cmd = (0x3<<20) | (ch<<16) | value;
+
+    SYS_PRINT("\t DAC cmd=%x", cmd);
+
+    spi_handle = DRV_SPI1_BufferAddWrite( &portValue, 4, NULL, NULL); 
+
+    if (DRV_SPI0_BufferStatus(spi_handle) != DRV_SPI_BUFFER_EVENT_COMPLETE) {
+        SYS_PRINT("\t Wait spi (DAC) to complete...");
+    }
+
+    PIC_CSOn();
+
+    return 0;
+}

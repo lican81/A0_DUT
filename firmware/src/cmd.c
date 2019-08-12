@@ -417,6 +417,19 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+                        case 302:
+                            /*
+                             * test pic_dac_set()
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+
+                            dac_set(P_ADC_EXT_TEST_IN, portValue);
+
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+
                         case 401:
                             /*
                              * read_single
