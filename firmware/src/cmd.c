@@ -1,6 +1,7 @@
 
 
 #include "cmd.h"
+#include "dut_func.h"
 
 CMD_DATA cmdData;
 
@@ -11,32 +12,10 @@ uint8_t txDataSize = sizeof(txData);
 uint8_t rxData[512];
 uint8_t rxDataSize;
 
-//void default_highpins() {
-//    // The pins prevent high current from the pull-up transistors of level transistors
-//    RRPROG_D1On();
-//    RRPROG_D2On();
-//    RRPROG_D3On();
-//    RRPROG_D4On();
-//    SCAN_CLK_TIAOn();
-//    SCAN_LOAD_CONF_TIAOn();
-//    RRPROG_CLKOn();
-//    SCAN_IN_TIAOn();
-//    SCAN_CLK_ROWOn();
-//    SCAN_OUT_ROWOn();
-//    SCAN_EN_ROWOn();
-//    
-//    // Default highs
-//    STROBE_REGOn();
-//    RESET_GLOBALOn();
-//    RESET_DELAYOn();
-//    CS_ADC_NOn();
-//    RESET_ROW_NOn();
-//    RESET_COL_NOn();
-//}
-
 //int N_ROW = 64*3;
-uint16_t read_buffer[64*3][64];
+uint16_t read_buffer[64][64];
 uint16_t read_row;
+uint16_t n_row_to_send;
 
 void CMD_Initialize ( void )
 {
@@ -416,6 +395,20 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+                        case 302:
+                            /*
+                             * test pic_dac_set()
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+
+                            DAC_CH ch = P_ADC_EXT_TEST_IN;
+                            dac_set(ch, portValue);
+
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+
                         case 401:
                             /*
                              * read_single
@@ -440,25 +433,62 @@ void CMD_Tasks ( void )
                             /*
                              * read_batch
                              */
-                            A0_read_batch( read_buffer );
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);        // array number
+
+                            A0_read_batch(arr, read_buffer );
                             SYS_PRINT("\t READ: batch read completed.\r\n");
                             
                             read_row = 0;
+                            n_row_to_send = 64;
+                            cmdData.state = CMD_STATE_USB_WRITE;
+                            break; 
+                        case 502:
+                            /*
+                             * read_batch
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);        // array number
+
+                            A0_read_batch2(arr, read_buffer );
+                            SYS_PRINT("\t READ: batch read completed.\r\n");
+                            
+                            read_row = 0;
+                            n_row_to_send = 64;
                             cmdData.state = CMD_STATE_USB_WRITE;
                             break; 
                         case 403:
+                            /*
+                             * dpe_batch
+                             * Command example:
+                             *      403,0,siz,\x01\x01....
+                             */
+
                             ptr = strtok(NULL, ",");
-                            portValue = atoi(ptr);
+                            arr = atoi(ptr);        // array number
+
+                            ptr = strtok(NULL, ",");
+                            ser_len = atoi(ptr);
                             
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode
+
                             ptr = strtok(NULL, ","); // expecting a non-zero byte after , character
-                            
-                            SYS_PRINT("\t Expecting data sz=%d, ptr=%x\r\n", portValue, (int)*ptr);
-                            ptr += 1;
-                            
-                            for (i=0; i<portValue; i++) {
-                                SYS_PRINT("\t i=%d,  data=0x %x\r\n", i, ptr[i]);
+                            SYS_PRINT("\t DPE on array %d, # of vectors sz=%d\r\n", arr, ser_len);
+
+                            if (ser_len>60) {
+                                // usb buffer limit is 512, so one packet can accommodate (512-11) / 8 
+                                SYS_PRINT("\t In valid # of vectors! exit...\r\n", arr, ser_len);
+                            } else {
+                                ptr += 1;
+
+                                A0_dpe_batch(arr, ser_len, channel, ptr, read_buffer);
+                                
+                                read_row = 0;
+                                n_row_to_send = ser_len;
+                                cmdData.state = CMD_STATE_USB_WRITE;
+                                break; 
                             }
-                            
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
@@ -557,11 +587,11 @@ void CMD_Tasks ( void )
         case CMD_STATE_USB_WRITE:
         {
             if (! USB_Write_isBusy() ) {
-                SYS_PRINT("\t READ: read_row=%d\r\n", read_row);
+//                SYS_PRINT("\t READ: read_row=%d\r\n", read_row);
                 USB_Write( (char *) read_buffer[read_row], 512 );
                 read_row += 4;
                 
-                if (read_row>=64*3) {
+                if (read_row>=n_row_to_send) {
                     cmdData.state = CMD_STATE_INIT;
                 }
             }

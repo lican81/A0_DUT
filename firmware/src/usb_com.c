@@ -107,7 +107,7 @@ USB_DEVICE_CDC_EVENT_RESPONSE USB_COM_USBDeviceCDCEventHandler
         case USB_DEVICE_CDC_EVENT_WRITE_COMPLETE:
 
             /* This means that the host has sent some data*/
-            SYS_MESSAGE("Data sent\r\n");
+//            SYS_MESSAGE("Data sent\r\n");
             appDataObject->writeLen = 0;
             
             appDataObject->writeTransferHandle = USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID;
@@ -206,7 +206,7 @@ static void USB_TX_Task (void)
          */
         if ((usb_comData.writeLen > 0) && (usb_comData.writeTransferHandle == USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID))
         {
-            SYS_PRINT("Sending data (len=%d) back to the host\r\n", usb_comData.writeLen);
+//            SYS_PRINT("Sending data (len=%d) back to the host\r\n", usb_comData.writeLen);
             USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
                                  &usb_comData.writeTransferHandle,
                                  writeBuffer, 

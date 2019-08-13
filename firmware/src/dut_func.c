@@ -332,20 +332,204 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     return res_buff[fifo_ch];
 }
 
-void A0_read_batch( uint16_t * read_buffer ) {
+void A0_read_batch( uint8_t arr, uint16_t *read_buffer ) {
     /*
      * Read the entire array.
      * 
      * @param read_buffer The raw adc buffer for the readout result
      * 
      */
-    int r, c, arr; // row, column, array
+    int r, c; // row, column
 
-    for (arr=0; arr<3; arr++) {
-        for (r=0; r<64; r++) {
-            for (c=0; c<64; c++) {
-                read_buffer[ (r+arr*64)*64 + c] = A0_read_single(arr, r, c);
-            }
+    for (r=0; r<64; r++) {
+        for (c=0; c<64; c++) {
+            read_buffer[ r*64 + c] = A0_read_single(arr, r, c);
         }
     }
+}
+
+
+void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
+    /*
+     * Read the entire array.
+     * 
+     * @param read_buffer The raw adc buffer for the readout result
+     * 
+     */
+    int i, r, c; // row, column
+
+    uint16_t data_row[4];
+    uint16_t res_buff[16];
+    
+    uint8_t fifo_en, fifo_ch;
+    
+    DPE_INTERNAL_ENOn();
+    READ_BITOn();
+    READ_BITOff();
+    
+    NFORCE_SAFE_Set( 0x1 << arr );
+
+    for (c=0; c<64; c++) {
+        uint16_t data_col[4];
+
+        for (i=0; i<4; i++) {
+            data_col[i] = 0;
+        }
+
+        gen_data_col(c, data_col);
+        load_vectors(arr, data_col, false);
+
+        CONNECT_TIAOn();
+        CONNECT_COLUMN_TOn();
+
+        fifo_en = get_fifo_en(arr, c);
+        fifo_ch = get_fifo_ch(arr, c);
+
+        for (r=0; r<64; r++) {
+
+            for (i=0; i<4; i++) {
+                data_row[i] = 0;
+            }
+            
+            gen_data_row(r, data_row);   
+            
+            load_vectors(arr, data_row, true);
+            reset_dpe();
+ 
+            DPE_PULSEOn();
+            BSP_DelayUs(0.2);
+            DPE_PULSEOff();
+            
+            //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
+            
+            while ( ADC_DONEStateGet() == 0) {
+        //        SYS_PRINT("\t Wait for ADC_DONE\r\n");
+            }
+            BSP_DelayUs(0.2);
+            
+            download_fifo( fifo_en, res_buff);
+            read_buffer[ r*64 + c] = res_buff[fifo_ch];
+        }
+    }
+}
+
+
+// void A0_dpe_single( uint_8 arr, )
+
+void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16_t *output_buffer) {
+    /*
+     * Perform vector-matrix multiplication
+     * 
+     * @param arr The array number: 0-2
+     * @param len The number of vectors
+     * @param mode Read mode, 0 -> ground unselected wires; 1->float unselected wires
+     * @param input_buffer The input vectors, each vector is composed of 
+     *                      eight bytes (64 bits)
+     * @param output_buffer The multiplication results
+     */
+
+    int i_vector = 0;
+
+    // for (i=0; i<portValue; i++) {
+    //     SYS_PRINT("\t i=%d,  data=0x %x\r\n", i, ptr[i]);
+    // }
+
+    uint16_t data_row[4];
+    uint16_t fifo_buff[12][16];
+
+    uint8_t fifo_en_list[4] = {(2-arr)*2, (2-arr)*2+6, (2-arr)*2+1, (2-arr)*2+7};
+
+    // TODO Select only part of the columns
+    // Attach all TIAs to the columns
+    uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
+    load_vectors(arr, data_col, false);
+    
+    int i, j;
+
+    for (i_vector=0; i_vector<len; i_vector++) {
+    
+        for (i=0; i<4; i++) {
+            data_row[i] = 0;
+        }
+        
+        for (i=0; i<64; i++) {
+            if (input_buffer[7-(i/8)] & (0x1<<i%8) ) {
+                gen_data_row(i, data_row);
+            } 
+        }
+
+        input_buffer += 8;
+        load_vectors(arr, data_row, true);
+
+        reset_dpe();
+        
+        DPE_INTERNAL_ENOn();
+        READ_BITOn();
+        
+        if (mode==0) {
+            READ_DPEOn();
+        } else {
+            READ_DPEOff();
+        }
+        
+        NFORCE_SAFE_Set( 0x1 << arr );
+        
+        CONNECT_TIAOn();
+        CONNECT_COLUMN_TOn();
+        
+        DPE_PULSEOn();
+        BSP_DelayUs(0.2);
+        DPE_PULSEOff();
+        
+        //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
+        
+        while ( ADC_DONEStateGet() == 0) {
+    //        SYS_PRINT("\t Wait for ADC_DONE\r\n");
+        }
+        BSP_DelayUs(0.2);
+
+        for (i=0; i<4; i++) {
+            download_fifo( fifo_en_list[i], fifo_buff[ fifo_en_list[i] ]);
+        }
+        
+        for (i=0; i<4; i++) {
+            for (j=0; j<16; j++) {
+                uint8_t col=j+16*i;
+                
+                output_buffer[j] = fifo_buff[get_fifo_en(arr, col)][ get_fifo_ch(arr, col) ];
+            }
+
+            output_buffer += 16;
+        }
+    } //end for i_vector
+
+}
+
+
+int dac_set( DAC_CH ch, uint16_t value) {
+    PIC_CSOn();
+    PIC_CSOff();
+
+    uint32_t cmd = (0x3<<20) | (ch<<16) | value;
+    
+    uint8_t cmd_b[4];
+    cmd_b[3] = (uint8_t) (cmd >>  0u);
+    cmd_b[2] = (uint8_t) (cmd >>  8u);
+    cmd_b[1] = (uint8_t) (cmd >> 16u);
+    cmd_b[0] = (uint8_t) (cmd >> 24u);
+
+    SYS_PRINT("\t DAC cmd=%x\r\n", cmd);
+    SYS_PRINT("\t DAC re cmd=%x %x %x %x\r\n", cmd_b[0], cmd_b[1] , cmd_b[2] , cmd_b[3] );
+    
+    DRV_SPI_BUFFER_HANDLE spi_handle = DRV_SPI1_BufferAddWrite( cmd_b, 4, NULL, NULL); 
+
+    while (DRV_SPI0_BufferStatus(spi_handle) != DRV_SPI_BUFFER_EVENT_COMPLETE) {
+        SYS_PRINT("\t Wait spi (DAC) to complete...\r\n");
+    }
+    
+//    BSP_DelayUs(10);
+
+    PIC_CSOn();
+
+    return 0;
 }
