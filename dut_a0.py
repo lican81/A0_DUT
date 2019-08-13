@@ -119,6 +119,15 @@ def pic_dpe_batch(array, input, **kwargs):
 
     Returns:
         np.ndarray: The outputs
+
+    Example usage for row at a time read:
+        input = [0x1<<i for i in range(64)]
+        ts = time.time()
+        data = a0.pic_dpe_batch(2, input, gain=3, Vread=0.2, mode=1) / 0.2
+        print(time.time()-ts)
+        plt.imshow(data * 1e6)
+        plt.colorbar()
+
     '''
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
