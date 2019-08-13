@@ -1,6 +1,7 @@
 
 
 #include "cmd.h"
+#include "dut_func.h"
 
 CMD_DATA cmdData;
 
@@ -10,29 +11,6 @@ uint8_t txDataSize = sizeof(txData);
 //uint8_t __attribute__ ((aligned (16))) rxData[512];
 uint8_t rxData[512];
 uint8_t rxDataSize;
-
-//void default_highpins() {
-//    // The pins prevent high current from the pull-up transistors of level transistors
-//    RRPROG_D1On();
-//    RRPROG_D2On();
-//    RRPROG_D3On();
-//    RRPROG_D4On();
-//    SCAN_CLK_TIAOn();
-//    SCAN_LOAD_CONF_TIAOn();
-//    RRPROG_CLKOn();
-//    SCAN_IN_TIAOn();
-//    SCAN_CLK_ROWOn();
-//    SCAN_OUT_ROWOn();
-//    SCAN_EN_ROWOn();
-//    
-//    // Default highs
-//    STROBE_REGOn();
-//    RESET_GLOBALOn();
-//    RESET_DELAYOn();
-//    CS_ADC_NOn();
-//    RESET_ROW_NOn();
-//    RESET_COL_NOn();
-//}
 
 //int N_ROW = 64*3;
 uint16_t read_buffer[64][64];
@@ -425,7 +403,8 @@ void CMD_Tasks ( void )
                             ptr = strtok(NULL, ",");
                             portValue = atoi(ptr);
 
-                            dac_set(P_ADC_EXT_TEST_IN, portValue);
+                            DAC_CH ch = P_ADC_EXT_TEST_IN;
+                            dac_set(ch, portValue);
 
                             cmdData.state = CMD_STATE_INIT;
                             break; 

@@ -179,7 +179,7 @@ def reset_dpe():
     dpe_reseted = True
 
 
-def dac_init(span=0b010):
+def dac_init(span=0b000):
     '''
     Span code:
     S2  S1  S0  Span
@@ -220,7 +220,7 @@ def dac_set(channel, voltage):
     '''
     '''
     if dac_set.is_init == False:
-        dac_init(span=0b010)
+        dac_init(span=0b000)
 
     cmd = 0b0011
     # address = 0b0000

@@ -511,14 +511,23 @@ int dac_set( DAC_CH ch, uint16_t value) {
     PIC_CSOff();
 
     uint32_t cmd = (0x3<<20) | (ch<<16) | value;
+    
+    uint8_t cmd_b[4];
+    cmd_b[3] = (uint8_t) (cmd >>  0u);
+    cmd_b[2] = (uint8_t) (cmd >>  8u);
+    cmd_b[1] = (uint8_t) (cmd >> 16u);
+    cmd_b[0] = (uint8_t) (cmd >> 24u);
 
-    SYS_PRINT("\t DAC cmd=%x", cmd);
+    SYS_PRINT("\t DAC cmd=%x\r\n", cmd);
+    SYS_PRINT("\t DAC re cmd=%x %x %x %x\r\n", cmd_b[0], cmd_b[1] , cmd_b[2] , cmd_b[3] );
+    
+    DRV_SPI_BUFFER_HANDLE spi_handle = DRV_SPI1_BufferAddWrite( cmd_b, 4, NULL, NULL); 
 
-    spi_handle = DRV_SPI1_BufferAddWrite( &portValue, 4, NULL, NULL); 
-
-    if (DRV_SPI0_BufferStatus(spi_handle) != DRV_SPI_BUFFER_EVENT_COMPLETE) {
-        SYS_PRINT("\t Wait spi (DAC) to complete...");
+    while (DRV_SPI0_BufferStatus(spi_handle) != DRV_SPI_BUFFER_EVENT_COMPLETE) {
+        SYS_PRINT("\t Wait spi (DAC) to complete...\r\n");
     }
+    
+//    BSP_DelayUs(10);
 
     PIC_CSOn();
 
