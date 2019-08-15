@@ -37,8 +37,6 @@ def pic_read_config(**kwargs):
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     VREF_TIA = Vref
-    Vread = 0.2
-    Tsh = 0x0c
 
     dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
                                            Tsh, 0x01, 0x02]))
@@ -55,14 +53,15 @@ def pic_read_config(**kwargs):
     dut.reset_dpe()
 
 
-def pic_read_single(array, row, col, **kwargs):
+def pic_read_single(array, row, col, skip_conf=False, **kwargs):
     '''
     Read a single device with PIC control
     '''
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
-    pic_read_config(**kwargs)
+    if not skip_conf:
+        pic_read_config(**kwargs)
 
     drv.ser.write(f'401,{array},{row},{col}\0'.encode())
     value = drv.ser.read(2)
@@ -106,7 +105,7 @@ def pic_read_batch(array, **kwargs):
     data = np.array(data).reshape((64, 64))
     return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
 
-def pic_dpe_batch(array, input, **kwargs):
+def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
     '''
     Perform DPE (vector-matrix multiplication) operation
 
@@ -124,7 +123,8 @@ def pic_dpe_batch(array, input, **kwargs):
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
     mode = kwargs['mode'] if 'mode' in kwargs.keys() else 0
 
-    pic_read_config(**kwargs)
+    if not skip_conf:
+        pic_read_config(**kwargs)
     
     n_input = len(input)
     data = []
@@ -134,7 +134,7 @@ def pic_dpe_batch(array, input, **kwargs):
         r_stop = r_start+60 if r_start+60<n_input else n_input
         r_size = r_stop - r_start
 
-        print(f'DPE: {r_start}-{r_stop}, len={r_size}')
+        # print(f'DPE: {r_start}-{r_stop}, len={r_size}')
 
         cmd = f'403,{array},{r_size},{mode},\1'.encode()
         cmd += struct.pack('>' +'Q'*(r_size), *input[r_start:r_stop])
@@ -162,7 +162,7 @@ def pic_dpe_batch(array, input, **kwargs):
             break    
         r_start += 60
 
-    data = np.array(data).reshape((-1, 64))
+    data = np.array(data, dtype=np.uint16).reshape((-1, 64))
     # return data[:n_input]
     return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
 
