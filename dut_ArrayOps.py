@@ -289,6 +289,29 @@ for j in range(numCols):
 #time.sleep(30)
 #save_workspace(vars(), note='KernelProgr26x14_ARRAY2')
 
+#
+# 8/15/19 Code for array read operation
+#
+arr = 2
+numRows = 64
+numCols = 64
+vRead = 0.2
+vReadGate = 5.0
+gains = np.array([4, 3, 2, 1, 0])
+maxCurr = np.array([3.2e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+Gmap1post = np.zeros((numRows, numCols))
+for rr in range(numRows):
+        for cc in range(numCols):
+            for gg in gains:
+                    #rdCurr = a0.read_single_int(vRead, vReadGate, array=arr, row=rr, col=cc, gain=gg)
+                    rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+                    if rdCurr < maxCurr[gg]:
+                        break
+            Gmap1post[rr,cc] = 1e6*rdCurr/vRead
+plt.imshow(Gmap1post)
+plt.colorbar()
+
+
 #8/12/19 Array code using slow autogain read for every read
 #
 
