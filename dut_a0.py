@@ -85,7 +85,7 @@ def pic_read_batch(array, **kwargs):
     Returns:
         np.ndarray: Calcuated current map
     '''
-    # gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     pic_read_config(**kwargs)
@@ -109,7 +109,8 @@ def pic_read_batch(array, **kwargs):
 
     data = np.array(data).reshape((64, 64))
 
-    return adc2current(data, Vref)
+    return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
+    # return adc2current(data, Vref)
 
 
 def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
@@ -180,9 +181,9 @@ def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
 
     data = np.array(data, dtype=np.uint16).reshape((-1, 64))
     # return data[:n_input]
-    # return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
+    return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
 
-    return adc2current(data[:n_input], Vref)
+    # return adc2current(data[:n_input], Vref)
 
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
@@ -250,14 +251,15 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
     VREF_TIA = Vref
     VREF_LO = 0.5
 
+    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
+                                           Tsh, 0x01, 0x02]))
+
     if gain >= 0 and gain <= 3:
         AGC = False
+        dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
     else:
         AGC = True
 
-    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
-                                           Tsh, 0x01, 0x02]))
-    dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
 
     # Make sure the VPP is reasonable
     assert VREF_TIA - Vread > -0.2 and VREF_TIA - Vread <= 1
@@ -299,7 +301,7 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
 
     data = dut.download_fifo(fifo_en)
 
-    volt = dut.adc2volt(data[channel]) - VREF_LO
+    # volt = dut.adc2volt(data[channel]) - VREF_LO
 
     return adc2current(data[channel], VREF_LO)
     # volt / _gain_ratio[gain]
