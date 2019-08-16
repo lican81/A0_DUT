@@ -158,7 +158,137 @@ for rr in range(numRows)
 plt.imshow(Gmeas)
 plt.colorbar()
     
+
 #
+# 8/15/19 Array code for the convolutional kernel programming
+#
+
+VreadGate = 5.0
+vRead = 0.2
+
+arr = 2
+startRow = 0
+startCol = 0
+numRows = 26
+numCols = 14
+GMin = 1e-6
+GMax = 100e-6
+
+#targetGVals = np.linspace(GMax, GMin, numRows)
+targetGVals = Gconv/2
+targetRows = np.arange(startRow, startRow+numRows)
+targetCols = np.arange(startCol, startCol+numCols)
+
+vAppliedSet = np.arange(0.6, 2.3, 0.05)
+vAppliedReset = np.arange(0.5, 2.9, 0.05)
+vGateSet = np.arange(0.5, 1.6, 0.05)
+vGateReset = np.arange(5.0, 5.5, 0.5)
+
+gains = np.array([4, 3, 2, 1, 0])
+maxCurr = np.array([3.3e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+
+GHistory = []
+VHistory = []
+for j in range(numCols):
+    cc = targetCols[j]
+    for i in range(numRows):
+        rr = targetRows[i]
+        print('Working on array', arr, ', device (row=', rr, 'col=', cc, ')')
+        thisGtarget = targetGVals[i,j]
+        thisGHistory = []
+        thisVHistory = []
+        thisGainHistory = []
+        # Do a first read of this device
+        for gg in gains:
+            #rdCurr = a0.read_single_int(vRead, VreadGate, array=arr, row=rr, col=cc, gain=gg)
+            rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+            if rdCurr < maxCurr[gg]:
+                break
+        currG = rdCurr/vRead
+        thisGHistory.append(currG)
+        thisVHistory.append(0)
+        print('Initial G=', currG, 'Target G =', thisGtarget)
+        # Now, if device is lower than target, SET it
+        if currG < thisGtarget:
+            for vgate in vGateSet:
+                for vappset in vAppliedSet:
+                    # Apply vappset pulse, then read
+                    a0.set_single_int(vappset, vgate, array=arr, row=rr, col=cc)
+                    for gg in gains:
+                        #rdCurr = a0.read_single_int(vRead, VreadGate, array=arr, row=rr, col=cc, gain=gg)
+                        rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+                        if rdCurr < maxCurr[gg]:
+                            break
+                    currG = rdCurr/vRead
+                    thisGHistory.append(currG)
+                    thisVHistory.append(vappset)
+                    if currG >= thisGtarget:
+                        break
+                if currG >= thisGtarget:
+                    break
+            GHistory.append(thisGHistory)
+            VHistory.append(thisVHistory)
+
+        # Else, if device is higher than target, RESET it, then SET it
+        elif currG > thisGtarget:
+            for vgate in vGateReset:
+                for vappreset in vAppliedReset:
+                    # Apply vappreset pulse, then read
+                    a0.reset_single_int(vappreset, vgate, array=arr, row=rr, col=cc)
+                    for gg in gains:
+                        #rdCurr = a0.read_single_int(vRead, VreadGate, array=arr, row=rr, col=cc, gain=gg)
+                        rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+                        if rdCurr < maxCurr[gg]:
+                            break
+                    currG = rdCurr/vRead
+                    thisGHistory.append(currG)
+                    thisVHistory.append(-1*vappreset)
+                    if currG <= thisGtarget:
+                        break
+                if currG <= thisGtarget:
+                    break
+
+            #Now if it is below Gtarget, then do SET operations; If it is above Gtarget, then Reset failed and device stuck ON
+            
+            if currG <= thisGtarget:
+                for vgate in vGateSet:
+                    for vappset in vAppliedSet:
+                        # Apply vappset pulse, then read
+                        a0.set_single_int(vappset, vgate, array=arr, row=rr, col=cc)
+                        for gg in gains:
+                            #rdCurr = a0.read_single_int(vRead, VreadGate, array=arr, row=rr, col=cc, gain=gg)
+                            rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+                            if rdCurr < maxCurr[gg]:
+                                break
+                        currG = rdCurr/vRead
+                        thisGHistory.append(currG)
+                        thisVHistory.append(vappset)
+                        if currG >= thisGtarget:
+                            break
+                    if currG >= thisGtarget:
+                        break
+
+            GHistory.append(thisGHistory)
+            VHistory.append(thisVHistory)
+
+        fig, ax1 = plt.subplots()
+        color = 'tab:blue'
+        ax1.set_xlabel('Cycles')
+        ax1.set_ylabel('Conductance (uS)', color=color)
+        ax1.plot([i* 1e6 for i in thisGHistory], color=color)
+        ax1.tick_params(axis='y', labelcolor=color)
+        ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+        color = 'tab:red'
+        # we already handled the x-label with ax1
+        ax2.set_ylabel('Voltage Applied', color=color)
+        ax2.plot(thisVHistory, color=color)
+        ax2.tick_params(axis='y', labelcolor=color)
+        fig.tight_layout()  # otherwise the right y-label is slightly clipped
+        plt.show()
+        
+#time.sleep(30)
+#save_workspace(vars(), note='KernelProgr26x14_ARRAY2')
+
 #8/12/19 Array code using slow autogain read for every read
 #
 

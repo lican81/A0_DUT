@@ -34,7 +34,7 @@ def pic_read_config(**kwargs):
     Vgate = kwargs['Vgate'] if 'Vgate' in kwargs.keys() else 5
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Tsh = kwargs['Tsh'] if 'Tsh' in kwargs.keys() else 0x0c
-    Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+    Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.425
 
     VREF_TIA = Vref
 
