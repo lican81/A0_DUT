@@ -24,6 +24,11 @@ _gain_ratio = [
 ]
 
 
+def adc2current(data, Vref):
+    gain = data >> 10
+    return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
+
+
 def pic_read_config(**kwargs):
     '''
     Configure read voltage, timing, gain, etc. 
@@ -57,7 +62,7 @@ def pic_read_single(array, row, col, skip_conf=False, **kwargs):
     '''
     Read a single device with PIC control
     '''
-    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    # gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     if not skip_conf:
@@ -67,7 +72,7 @@ def pic_read_single(array, row, col, skip_conf=False, **kwargs):
     value = drv.ser.read(2)
     value = struct.unpack('<H', value)[0]
 
-    return (dut.adc2volt(value) - Vref) / _gain_ratio[gain]
+    return adc2current(value, Vref)
 
 
 def pic_read_batch(array, **kwargs):
@@ -80,7 +85,7 @@ def pic_read_batch(array, **kwargs):
     Returns:
         np.ndarray: Calcuated current map
     '''
-    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    # gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     pic_read_config(**kwargs)
@@ -103,7 +108,9 @@ def pic_read_batch(array, **kwargs):
             break
 
     data = np.array(data).reshape((64, 64))
-    return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
+
+    return adc2current(data, Vref)
+
 
 def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
     '''
@@ -118,6 +125,15 @@ def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
 
     Returns:
         np.ndarray: The outputs
+
+    Example usage for row at a time read:
+        input = [0x1<<i for i in range(64)]
+        ts = time.time()
+        data = a0.pic_dpe_batch(2, input, gain=3, Vread=0.2, mode=1) / 0.2
+        print(time.time()-ts)
+        plt.imshow(data * 1e6)
+        plt.colorbar()
+
     '''
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
@@ -131,13 +147,13 @@ def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
 
     r_start = 0
     while True:
-        r_stop = r_start+60 if r_start+60<n_input else n_input
+        r_stop = r_start+60 if r_start+60 < n_input else n_input
         r_size = r_stop - r_start
 
         # print(f'DPE: {r_start}-{r_stop}, len={r_size}')
 
         cmd = f'403,{array},{r_size},{mode},\1'.encode()
-        cmd += struct.pack('>' +'Q'*(r_size), *input[r_start:r_stop])
+        cmd += struct.pack('>' + 'Q'*(r_size), *input[r_start:r_stop])
         cmd += b'\0'
 
         # print(cmd)
@@ -157,15 +173,16 @@ def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
             r += 4
             if r >= r_size:
                 break
-        
+
         if r_stop == n_input:
-            break    
+            break
         r_start += 60
 
     data = np.array(data, dtype=np.uint16).reshape((-1, 64))
     # return data[:n_input]
-    return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
+    # return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
 
+    return adc2current(data[:n_input], Vref)
 
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
@@ -225,6 +242,7 @@ def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
 def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=0.5):
     '''
     Args,
+        gain(int): If -1, then auto_gain
 
     Returns:
         The ADC readout voltages
@@ -232,10 +250,13 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
     VREF_TIA = Vref
     VREF_LO = 0.5
 
+    if gain >= 0 and gain <= 3:
+        AGC = False
+    else:
+        AGC = True
+
     dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
                                            Tsh, 0x01, 0x02]))
-    # dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, Tsh, 0x10,
-    #                                        0x20, 0x01, 0x02]))
     dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
 
     # Make sure the VPP is reasonable
@@ -252,22 +273,27 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
 
     dut.reset_dpe()
 
-    drv.gpio_pin_set(*PIC_PINS['DPE_INTERNAL_EN'])
+    if AGC:
+        drv.gpio_pin_set(*PIC_PINS['AGC_INTERNAL_EN'])
+    else:
+        drv.gpio_pin_set(*PIC_PINS['DPE_INTERNAL_EN'])
+
     drv.gpio_pin_set(*PIC_PINS['READ_BIT'])
     drv.gpio_pin_reset(*PIC_PINS['READ_DPE'])
 
-    # drv.gpio_nforce_safe_write(0b100)
     drv.gpio_nforce_safe_write(0b1 << array)
     drv.gpio_pin_set(*PIC_PINS['CONNECT_TIA'])
     drv.gpio_pin_set(*PIC_PINS['CONNECT_COLUMN_T'])
 
-    drv.gpio_pin_set(*PIC_PINS['DPE_PULSE'])
-    time.sleep(2e-7)
-    drv.gpio_pin_reset(*PIC_PINS['DPE_PULSE'])
+    if AGC:
+        drv.gpio_pin_set(*PIC_PINS['AGC_PULSE'])
+        time.sleep(2e-7)
+        drv.gpio_pin_reset(*PIC_PINS['AGC_PULSE'])
+    else:
+        drv.gpio_pin_set(*PIC_PINS['DPE_PULSE'])
+        time.sleep(2e-7)
+        drv.gpio_pin_reset(*PIC_PINS['DPE_PULSE'])
 
-    # drv.gpio_pin_set(*PIC_PINS['DPE_EXT_PULSE'])
-    # time.sleep(1e-6)
-    # drv.gpio_pin_set(*PIC_PINS['DPE_EXT_SH'])
 
     [fifo_en, channel] = dut.which_fifo([array, col])
 
@@ -275,7 +301,8 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
 
     volt = dut.adc2volt(data[channel]) - VREF_LO
 
-    return volt / _gain_ratio[gain]
+    return adc2current(data[channel], VREF_LO)
+    # volt / _gain_ratio[gain]
 
 
 def reset_single(Vreset, Vgate, array=0, row=0, col=0):
