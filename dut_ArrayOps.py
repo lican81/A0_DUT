@@ -1124,6 +1124,19 @@ plt.colorbar()
 time.sleep(30)
 save_workspace(vars(), note='FullyConnProgr57x40_ARRAY0_contd')
 
+def read_single_2step():
+adc_raw = a0.read_single_int(vread, Vgate, array=ar, row=r, col=c, gain=-1, raw=True)
+print(f'{result:013b}')
+
+volt = dut.adc2volt(adc_raw)
+print(f'{volt:.4f} V')
+
+gain = adc_raw >> 10
+print(f'gain = {gain:d}')
+
+curr = a0.adc2current(adc_raw, 0.5)
+print(f'curr = {curr*1e6:.4f} uA')
+
 def read_single_int_array(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=0.5):
     '''
     Args,
