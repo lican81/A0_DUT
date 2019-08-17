@@ -1124,18 +1124,118 @@ plt.colorbar()
 time.sleep(30)
 save_workspace(vars(), note='FullyConnProgr57x40_ARRAY0_contd')
 
+def resetStrayDevices()
+
+VreadGate = 5.0
+vRead = 0.2
+arr = 0
+startRow = 57
+startCol = 0
+numRows = 7
+numCols = 36
+
+thisGtarget = 5e-6
+targetRows = np.arange(startRow, startRow+numRows)
+targetCols = np.arange(startCol, startCol+numCols)
+
+vAppliedReset = np.arange(0.5, 3.3, 0.05)
+vGateReset = np.arange(5.0, 5.5, 0.5)
+
+gains = np.array([4, 3, 2, 1, 0])
+maxCurr = np.array([3.3e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+
+GHistory = []
+VHistory = []
+for j in range(numCols):
+    cc = targetCols[j]
+    for i in range(numRows):
+        rr = targetRows[i]
+        print('Working on array', arr, ', device (row=', rr, 'col=', cc, ')')
+        
+        thisGHistory = []
+        thisVHistory = []
+        thisGainHistory = []
+        # Do a first read of this device
+        for gg in gains:
+            #rdCurr = a0.read_single_int(vRead, VreadGate, array=arr, row=rr, col=cc, gain=gg)
+            rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+            if rdCurr < maxCurr[gg]:
+                break
+        currG = rdCurr/vRead
+        thisGHistory.append(currG)
+        thisVHistory.append(0)
+        print('Initial G=', currG, 'Target G =', thisGtarget)
+        # If device is higher than target, RESET it
+        if currG > thisGtarget:
+            for vgate in vGateReset:
+                for vappreset in vAppliedReset:
+                    # Apply vappreset pulse, then read
+                    a0.reset_single_int(vappreset, vgate, array=arr, row=rr, col=cc)
+                    for gg in gains:
+                        #rdCurr = a0.read_single_int(vRead, VreadGate, array=arr, row=rr, col=cc, gain=gg)
+                        rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+                        if rdCurr < maxCurr[gg]:
+                            break
+                    currG = rdCurr/vRead
+                    thisGHistory.append(currG)
+                    thisVHistory.append(-1*vappreset)
+                    if currG <= thisGtarget:
+                        break
+                if currG <= thisGtarget:
+                    break
+
+        GHistory.append(thisGHistory)
+        VHistory.append(thisVHistory)
+
+        fig, ax1 = plt.subplots()
+        color = 'tab:blue'
+        ax1.set_xlabel('Cycles')
+        ax1.set_ylabel('Conductance (uS)', color=color)
+        ax1.plot([i* 1e6 for i in thisGHistory], color=color)
+        ax1.tick_params(axis='y', labelcolor=color)
+        ax2 = ax1.twinx()  
+        color = 'tab:red'
+        ax2.set_ylabel('Voltage Applied', color=color)
+        ax2.plot(thisVHistory, color=color)
+        ax2.tick_params(axis='y', labelcolor=color)
+        fig.tight_layout()  
+        plt.show()
+        
+time.sleep(30)
+arr = 0
+numRows = 64
+numCols = 64
+vRead = 0.2
+vReadGate = 5.0
+gains = np.array([4, 3, 2, 1, 0])
+maxCurr = np.array([3.2e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+Gmap0post22 = np.zeros((numRows, numCols))
+for rr in range(numRows):
+        for cc in range(numCols):
+            for gg in gains:
+                    #rdCurr = a0.read_single_int(vRead, vReadGate, array=arr, row=rr, col=cc, gain=gg)
+                    rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+                    if rdCurr < maxCurr[gg]:
+                        break
+            Gmap0post22[rr,cc] = 1e6*rdCurr/vRead
+plt.imshow(Gmap0post22)
+plt.colorbar()
+
+time.sleep(30)
+save_workspace(vars(), note='Prober2FCL_ResetBottom')
+
 def read_single_2step():
-adc_raw = a0.read_single_int(vread, Vgate, array=ar, row=r, col=c, gain=-1, raw=True)
-print(f'{result:013b}')
+    adc_raw = a0.read_single_int(vread, Vgate, array=ar, row=r, col=c, gain=-1, raw=True)
+    print(f'{result:013b}')
 
-volt = dut.adc2volt(adc_raw)
-print(f'{volt:.4f} V')
+    volt = dut.adc2volt(adc_raw)
+    print(f'{volt:.4f} V')
 
-gain = adc_raw >> 10
-print(f'gain = {gain:d}')
+    gain = adc_raw >> 10
+    print(f'gain = {gain:d}')
 
-curr = a0.adc2current(adc_raw, 0.5)
-print(f'curr = {curr*1e6:.4f} uA')
+    curr = a0.adc2current(adc_raw, 0.5)
+    print(f'curr = {curr*1e6:.4f} uA')
 
 def read_single_int_array(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=0.5):
     '''
