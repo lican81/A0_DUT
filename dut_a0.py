@@ -256,7 +256,7 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
     dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
                                            Tsh, 0x01, 0x02]))
 
-    if gain >= 0 and gain <= 3:
+    if gain >= 0 and gain <= 4:
         AGC = False
         dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
     else:
