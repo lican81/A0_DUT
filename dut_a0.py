@@ -240,7 +240,9 @@ def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
     return volt / _gain_ratio[gain]
 
 
-def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=0.5):
+def read_single_int(Vread, Vgate, array=0, row=0, col=0, 
+                    gain=0, Tsh=0x0c, Vref=0.5,
+                    raw=False):
     '''
     Args,
         gain(int): If -1, then auto_gain
@@ -303,7 +305,10 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=
 
     # volt = dut.adc2volt(data[channel]) - VREF_LO
 
-    return adc2current(data[channel], VREF_LO)
+    if raw:
+        return data[channel]
+    else:
+        return adc2current(data[channel], VREF_LO)
     # volt / _gain_ratio[gain]
 
 
