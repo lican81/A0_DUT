@@ -1124,6 +1124,225 @@ plt.colorbar()
 time.sleep(30)
 save_workspace(vars(), note='FullyConnProgr57x40_ARRAY0_contd')
 
+
+def ProgramUpdatedFullyConnectedLayer()
+
+from lib_data import *
+import scipy.io as sio
+#load_workspace(vars(), '20190814-205207-CNN weights')
+mat_contents = sio.loadmat('UpdatedGfc.mat')
+finalGfc = mat_contents['finalGfc']
+
+#mat_contents = sio.loadmat('UpdatedGconv.mat')
+#finalGconv = mat_contents['finalGconv']
+
+VreadGate = 5.0
+vRead = 0.2
+arr = 0
+startRow = 0
+startCol = 0
+numRows = 57
+numCols = 40
+GMin = 2e-6
+GMax = 100e-6
+# Take previous code by putting finalGfc in scaledGfc
+scaledGfc = finalGfc
+# First reshape Gfc to fit within the 64 rows
+# reshape from 113x20 to 57x40
+newGfc = np.zeros((57,40))+GMin
+newGfc[0:57,0:20]=scaledGfc[0:57,0:20]
+newGfc[0:56,20:40]=scaledGfc[57:113,0:20]
+
+targetGVals = newGfc
+targetGThresh = 4e-6
+targetRows = np.arange(startRow, startRow+numRows)
+targetCols = np.arange(startCol, startCol+numCols)
+
+vAppliedSet = np.arange(0.5, 2.5, 0.1)
+vAppliedReset = np.arange(0.5, 3.2, 0.1)
+vGateSet = np.arange(0.5, 1.7, 0.05)
+vGateReset = np.arange(5.0, 5.5, 0.5)
+
+gains = np.array([4, 3, 2, 1, 0])
+maxCurr = np.array([3.3e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+
+GHistory = []
+VHistory = []
+
+VADC_boundary = np.array([0.4, 1.692, 1.927, 2.247, 2.645, 3.045, 3.391, 3.688, 4.1])
+VRefHiCmp = np.array([5.0, 4.5, 4.2, 3.8, 3.4, 3.0, 2.7, 2.4])
+
+_gain_ratio = [
+    1e3,
+    5e3,
+    30e3,
+    200e3,
+    1e6
+]
+
+vOffset = -0.08
+dut.dac_set('DAC_VREF_HI_CMP', 4.0+vOffset)
+Vgate = 5
+Vref = 0.5
+
+
+for j in range(numCols):
+    cc = targetCols[j]
+    for i in range(numRows):
+        rr = targetRows[i]
+        print('Working on array', arr, ', device (row=', rr, 'col=', cc, ')')
+        thisGtarget = targetGVals[i,j]
+        thisGHistory = []
+        thisVHistory = []
+        thisGainHistory = []
+        # Do a first read of this device
+        adc_raw = a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=-1, raw=True)
+        VADC_read_first = dut.adc2volt(adc_raw)
+        gainFirst = adc_raw >> 10
+        secondVRefHiCmpIndex = np.searchsorted(VADC_boundary,VADC_read_first)-1
+        secondVRefHiCmp = VRefHiCmp[secondVRefHiCmpIndex]+vOffset
+        dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp+vOffset) 
+        VADC_read_sec = dut.adc2volt(a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=gainFirst, raw=True))
+        finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+        dut.dac_set('DAC_VREF_HI_CMP', 4.0+vOffset)
+        rdCurr = (finalADCOut - 0.5) / _gain_ratio[gainFirst]
+        
+        currG = rdCurr/vRead
+        thisGHistory.append(currG)
+        thisVHistory.append(0)
+        #print('Initial G=', currG, 'Target G =', thisGtarget)
+        initG = currG
+        # Now, if device is lower than target, SET it
+        if currG < (thisGtarget-targetGThresh):
+            for vgate in vGateSet:
+                for vappset in vAppliedSet:
+                    # Apply vappset pulse, then read
+                    a0.set_single_int(vappset, vgate, array=arr, row=rr, col=cc)
+
+                    adc_raw = a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=-1, raw=True)
+                    VADC_read_first = dut.adc2volt(adc_raw)
+                    gainFirst = adc_raw >> 10
+                    secondVRefHiCmpIndex = np.searchsorted(VADC_boundary,VADC_read_first)-1
+                    secondVRefHiCmp = VRefHiCmp[secondVRefHiCmpIndex]+vOffset
+                    dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp+vOffset) 
+                    VADC_read_sec = dut.adc2volt(a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=gainFirst, raw=True))
+                    finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+                    dut.dac_set('DAC_VREF_HI_CMP', 4.0+vOffset)
+                    rdCurr = (finalADCOut - 0.5) / _gain_ratio[gainFirst]
+                
+                    currG = rdCurr/vRead
+                    thisGHistory.append(currG)
+                    thisVHistory.append(vappset)
+                    if currG >= (thisGtarget-targetGThresh):
+                        break
+                if currG >= (thisGtarget-targetGThresh):
+                    break
+            GHistory.append(thisGHistory)
+            VHistory.append(thisVHistory)
+
+        # Else, if device is higher than target, RESET it, then SET it
+        elif currG > (thisGtarget+targetGThresh):
+            for vgate in vGateReset:
+                for vappreset in vAppliedReset:
+                    # Apply vappreset pulse, then read
+                    a0.reset_single_int(vappreset, vgate, array=arr, row=rr, col=cc)
+
+                    adc_raw = a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=-1, raw=True)
+                    VADC_read_first = dut.adc2volt(adc_raw)
+                    gainFirst = adc_raw >> 10
+                    secondVRefHiCmpIndex = np.searchsorted(VADC_boundary,VADC_read_first)-1
+                    secondVRefHiCmp = VRefHiCmp[secondVRefHiCmpIndex]+vOffset
+                    dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp+vOffset) 
+                    VADC_read_sec = dut.adc2volt(a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=gainFirst, raw=True))
+                    finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+                    dut.dac_set('DAC_VREF_HI_CMP', 4.0+vOffset)
+                    rdCurr = (finalADCOut - 0.5) / _gain_ratio[gainFirst]
+
+                    currG = rdCurr/vRead
+                    thisGHistory.append(currG)
+                    thisVHistory.append(-1*vappreset)
+                    if currG <= (thisGtarget+targetGThresh):
+                        break
+                if currG <= (thisGtarget+targetGThresh):
+                    break
+
+            #Now if it is below Gtarget, then do SET operations; If it is above Gtarget, then Reset failed and device stuck ON
+            
+            #if currG <= thisGtarget and thisGtarget >= 2.5e-6:
+            if currG <= (thisGtarget-targetGThresh):
+                for vgate in vGateSet:
+                    for vappset in vAppliedSet:
+                        # Apply vappset pulse, then read
+                        a0.set_single_int(vappset, vgate, array=arr, row=rr, col=cc)
+
+                        adc_raw = a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=-1, raw=True)
+                        VADC_read_first = dut.adc2volt(adc_raw)
+                        gainFirst = adc_raw >> 10
+                        secondVRefHiCmpIndex = np.searchsorted(VADC_boundary,VADC_read_first)-1
+                        secondVRefHiCmp = VRefHiCmp[secondVRefHiCmpIndex]+vOffset
+                        dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp+vOffset) 
+                        VADC_read_sec = dut.adc2volt(a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=gainFirst, raw=True))
+                        finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+                        dut.dac_set('DAC_VREF_HI_CMP', 4.0+vOffset)
+                        rdCurr = (finalADCOut - 0.5) / _gain_ratio[gainFirst]
+                    
+                        currG = rdCurr/vRead
+                        thisGHistory.append(currG)
+                        thisVHistory.append(vappset)
+                        if currG >= (thisGtarget-targetGThresh):
+                            break
+                    if currG >= (thisGtarget-targetGThresh):
+                        break
+
+            GHistory.append(thisGHistory)
+            VHistory.append(thisVHistory)
+            print('Array', arr, ', device (row=', rr, 'col=', cc, ') Init G=', initG, ' Target G=', thisGtarget, ' Final G=', currG)
+
+        # fig, ax1 = plt.subplots()
+        # color = 'tab:blue'
+        # ax1.set_xlabel('Cycles')
+        # ax1.set_ylabel('Conductance (uS)', color=color)
+        # ax1.plot([i* 1e6 for i in thisGHistory], color=color)
+        # ax1.tick_params(axis='y', labelcolor=color)
+        # ax2 = ax1.twinx()  
+        # color = 'tab:red'
+        # ax2.set_ylabel('Voltage Applied', color=color)
+        # ax2.plot(thisVHistory, color=color)
+        # ax2.tick_params(axis='y', labelcolor=color)
+        # fig.tight_layout()  
+        # plt.show()
+        
+time.sleep(30)
+arr = 0
+numRows = 64
+numCols = 64
+vRead = 0.2
+vReadGate = 5.0
+gains = np.array([4, 3, 2, 1, 0])
+maxCurr = np.array([3.2e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+Gmap0post = np.zeros((numRows, numCols))
+for rr in range(numRows):
+        for cc in range(numCols):
+            adc_raw = a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=-1, raw=True)
+            VADC_read_first = dut.adc2volt(adc_raw)
+            gainFirst = adc_raw >> 10
+            secondVRefHiCmpIndex = np.searchsorted(VADC_boundary,VADC_read_first)-1
+            secondVRefHiCmp = VRefHiCmp[secondVRefHiCmpIndex]+vOffset
+            dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp+vOffset) 
+            VADC_read_sec = dut.adc2volt(a0.read_single_int(vRead, Vgate, array=arr, row=rr, col=cc, gain=gainFirst, raw=True))
+            finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+            dut.dac_set('DAC_VREF_HI_CMP', 4.0+vOffset)
+            rdCurr = (finalADCOut - 0.5) / _gain_ratio[gainFirst]
+        
+            Gmap0post[rr,cc] = 1e6*rdCurr/vRead
+plt.imshow(Gmap0post)
+plt.colorbar()
+
+time.sleep(30)
+save_workspace(vars(), note='Prober2_UpdatedFC_Progr57x40_ARRAY0')
+
+
+
 def resetStrayDevices()
 
 VreadGate = 5.0
@@ -1224,7 +1443,9 @@ plt.colorbar()
 time.sleep(30)
 save_workspace(vars(), note='Prober2FCL_ResetBottom')
 
-def read_single_2step():
+def ExampleFromCan():
+    VRefHiCmpOffset = -0.08
+
     adc_raw = a0.read_single_int(vread, Vgate, array=ar, row=r, col=c, gain=-1, raw=True)
     print(f'{result:013b}')
 
@@ -1236,6 +1457,132 @@ def read_single_2step():
 
     curr = a0.adc2current(adc_raw, 0.5)
     print(f'curr = {curr*1e6:.4f} uA')
+
+
+def read_single_2step():
+            
+    # Important Note - it is assumed that DAC_VREF_HI_CMP is already set at 4.0V by DAC. No offset correction, thus it is actually
+    # outputting ~4.08V
+    VADC_boundary = np.array([0.9, 1.692, 1.927, 2.247, 2.645, 3.045, 3.391, 3.688, 4.1])
+    VRefHiCmp = np.array([5.3, 4.5, 4.2, 3.8, 3.4, 3.0, 2.7, 2.4])
+
+    adc_raw = a0.read_single_int(vread, Vgate, array=arr, row=rr, col=cc, gain=-1, raw=True)
+    VADC_read_first = dut.adc2volt(adc_raw)
+    gainFirst = adc_raw >> 10
+    secondVRefHiCmpIndex = np.searchsorted(VADC_boundary,VADC_read_first)-1
+    secondVRefHiCmp = VRefHiCmp[secondVRefHiCmpIndex]
+
+    dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp)
+            
+    VADC_read_sec = dut.adc2volt(a0.read_single_int(vread, Vgate, array=arr, row=rr, col=cc, gain=gainFirst, raw=True))
+
+    finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+
+    dut.dac_set('DAC_VREF_HI_CMP', 4.0)
+
+    curr = (finalADCOut - 0.5) / _gain_ratio[gainFirst]
+
+
+    #Perform Array Read with 2step process and normal process and compare them
+
+    VADC_boundary = np.array([0.9, 1.692, 1.927, 2.247, 2.645, 3.045, 3.391, 3.688, 4.1])
+    VRefHiCmp = np.array([5.3, 4.5, 4.2, 3.8, 3.4, 3.0, 2.7, 2.4])
+    _gain_ratio = [
+        1e3,
+        5e3,
+        30e3,
+        200e3,
+        1e6
+    ]
+    dut.dac_set('DAC_VREF_HI_CMP', 4.0)
+
+    arr = 0
+    numRows = 64
+    numCols = 64
+    vRead = 0.2
+    vReadGate = 5.0
+    gains = np.array([4, 3, 2, 1, 0])
+    maxCurr = np.array([3.2e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+    Gmap2step = np.zeros((numRows, numCols))
+    for rr in range(numRows):
+            for cc in range(numCols):
+                adc_raw = a0.read_single_int(vread, Vgate, array=arr, row=rr, col=cc, gain=-1, raw=True)
+                VADC_read_first = dut.adc2volt(adc_raw)
+                gainFirst = adc_raw >> 10
+                secondVRefHiCmpIndex = np.searchsorted(VADC_boundary,VADC_read_first)-1
+                secondVRefHiCmp = VRefHiCmp[secondVRefHiCmpIndex]
+                dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp)                        
+                VADC_read_sec = dut.adc2volt(a0.read_single_int(vread, Vgate, array=arr, row=rr, col=cc, gain=gainFirst, raw=True))
+                finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+                dut.dac_set('DAC_VREF_HI_CMP', 4.0)
+                rdCurr = (finalADCOut - 0.5) / _gain_ratio[gainFirst]
+                Gmap2step[rr,cc] = 1e6*rdCurr/vRead
+    #plt.imshow(Gmap2step)
+    #plt.colorbar()
+
+    arr = 0
+    numRows = 64
+    numCols = 64
+    vRead = 0.2
+    vReadGate = 5.0
+    gains = np.array([4, 3, 2, 1, 0])
+    maxCurr = np.array([3.2e-3, 650e-6, 110e-6, 14.0e-6, 3.3e-6])
+    Gmap = np.zeros((numRows, numCols))
+    for rr in range(numRows):
+            for cc in range(numCols):
+                for gg in gains:
+                        #rdCurr = a0.read_single_int(vRead, vReadGate, array=arr, row=rr, col=cc, gain=gg)
+                        rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vRead, skip_conf=False, gain=gg)
+                        if rdCurr < maxCurr[gg]:
+                            break
+                Gmap[rr,cc] = 1e6*rdCurr/vRead
+    #plt.imshow(Gmap)
+    #plt.colorbar()
+
+#
+#Perform IV sweep
+#
+
+arr=0
+rr=10
+cc=10
+
+Vreads = np.arange(0, 0.4, 0.01)
+Vgate = 5
+Vref = 0.5
+
+volts = []
+for vread in Vreads:
+    for gg in gains:
+        #rdCurr = a0.read_single_int(vRead, vReadGate, array=arr, row=rr, col=cc, gain=gg)
+        rdCurr = a0.pic_read_single(arr, rr, cc, Vread = vread, skip_conf=False, gain=gg)
+        if rdCurr < maxCurr[gg]:
+            break
+    volts.append(rdCurr)
+    #volts.append( a0.pic_read_single(arr, rr, cc, Vread = vread, skip_conf=False, gain=gg) )
+plt.plot(Vreads, [i* 1e6 for i in volts], '.-')
+    
+plt.xlabel('V_device')
+plt.ylabel('Caculated current (uA)')
+plt.grid(True, alpha=0.3)
+
+# Now try with AutoGain
+
+Vreads = np.arange(0, 0.4, 0.01)
+Vgate = 5
+Vref = 0.5
+
+volts = []
+for vread in Vreads:
+    #volts.append( a0.pic_read_single(ar, r, c, Vread = vread, skip_conf=False, gain=gg) )
+    volts.append( a0.read_single_int(vread, Vgate, array=arr, row=rr, col=cc, gain=-1)
+plt.plot(Vreads, [i* 1e6 for i in volts], '.-')
+    
+plt.xlabel('V_device')
+plt.ylabel('Caculated current (uA)')
+plt.grid(True, alpha=0.3)
+
+
 
 def read_single_int_array(Vread, Vgate, array=0, row=0, col=0, gain=0, Tsh=0x0c, Vref=0.5):
     '''

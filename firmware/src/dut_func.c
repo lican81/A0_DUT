@@ -278,7 +278,7 @@ void reset_dpe() {
     NRESET_DPE_ENGINEOn();
 }
 
-uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
+uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col, int mode) {
     /*
      * Read a single device
      * 
@@ -305,7 +305,12 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     
     reset_dpe();
     
-    DPE_INTERNAL_ENOn();
+    if (mode==0) {
+        DPE_INTERNAL_ENOn();
+    } else {
+        AGC_INTERNAL_ENOn();
+    }
+    
     READ_BITOn();
     READ_BITOff();
     
@@ -314,9 +319,15 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     CONNECT_TIAOn();
     CONNECT_COLUMN_TOn();
     
-    DPE_PULSEOn();
-    BSP_DelayUs(0.2);
-    DPE_PULSEOff();
+    if (mode==0) {
+        DPE_PULSEOn();
+        BSP_DelayUs(0.2);
+        DPE_PULSEOff();
+    } else {
+        AGC_PULSEOn();
+        BSP_DelayUs(0.2);
+        AGC_PULSEOff();
+    }
     
     fifo_en = get_fifo_en(arr, col);
     fifo_ch = get_fifo_ch(arr, col);
@@ -332,7 +343,7 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col) {
     return res_buff[fifo_ch];
 }
 
-void A0_read_batch( uint8_t arr, uint16_t *read_buffer ) {
+void A0_read_batch( uint8_t arr, uint16_t *read_buffer, int mode) {
     /*
      * Read the entire array.
      * 
@@ -343,13 +354,13 @@ void A0_read_batch( uint8_t arr, uint16_t *read_buffer ) {
 
     for (r=0; r<64; r++) {
         for (c=0; c<64; c++) {
-            read_buffer[ r*64 + c] = A0_read_single(arr, r, c);
+            read_buffer[ r*64 + c] = A0_read_single(arr, r, c, mode);
         }
     }
 }
 
 
-void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
+void A0_read_batch2( uint8_t arr, uint16_t *read_buffer, int mode ) {
     /*
      * Read the entire array.
      * 
@@ -363,7 +374,12 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
     
     uint8_t fifo_en, fifo_ch;
     
-    DPE_INTERNAL_ENOn();
+    if (mode==0) {
+        DPE_INTERNAL_ENOn();
+    } else {
+        AGC_INTERNAL_ENOn();
+    }
+    
     READ_BITOn();
     READ_BITOff();
     
@@ -396,9 +412,15 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer ) {
             load_vectors(arr, data_row, true);
             reset_dpe();
  
-            DPE_PULSEOn();
-            BSP_DelayUs(0.2);
-            DPE_PULSEOff();
+            if (mode==0) {
+                DPE_PULSEOn();
+                BSP_DelayUs(0.2);
+                DPE_PULSEOff();
+            } else {
+                AGC_PULSEOn();
+                BSP_DelayUs(0.2);
+                AGC_PULSEOff();
+            }
             
             //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
             
@@ -422,7 +444,8 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
      * 
      * @param arr The array number: 0-2
      * @param len The number of vectors
-     * @param mode Read mode, 0 -> ground unselected wires; 1->float unselected wires
+     * @param mode Read mode, bit 1: 0 -> ground unselected wires; 1->float unselected wires
+     *                        bit 2: 0 -> normal reading;  1-> autogain
      * @param input_buffer The input vectors, each vector is composed of 
      *                      eight bytes (64 bits)
      * @param output_buffer The multiplication results
@@ -441,8 +464,8 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
 
     // TODO Select only part of the columns
     // Attach all TIAs to the columns
-    uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
-    load_vectors(arr, data_col, false);
+//    uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
+//    load_vectors(arr, data_col, false);
     
     int i, j;
 
@@ -463,10 +486,15 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
 
         reset_dpe();
         
-        DPE_INTERNAL_ENOn();
+        if ( (mode&0x2) ==0) {
+            DPE_INTERNAL_ENOn();
+        } else {
+            AGC_INTERNAL_ENOn();
+        }
+
         READ_BITOn();
         
-        if (mode==0) {
+        if ( (mode&0x1) ==0) {
             READ_DPEOn();
         } else {
             READ_DPEOff();
@@ -477,9 +505,16 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
         CONNECT_TIAOn();
         CONNECT_COLUMN_TOn();
         
-        DPE_PULSEOn();
-        BSP_DelayUs(0.2);
-        DPE_PULSEOff();
+        if ( (mode&0x2) ==0) {
+            DPE_PULSEOn();
+            BSP_DelayUs(0.2);
+            DPE_PULSEOff();
+        } else {
+            AGC_PULSEOn();
+            BSP_DelayUs(0.2);
+            AGC_PULSEOff();
+        }
+        
         
         //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
         

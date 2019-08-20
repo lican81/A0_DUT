@@ -25,8 +25,43 @@ _gain_ratio = [
 
 
 def adc2current(data, Vref):
+    '''
+    Converts the RAW adc value to current.
+
+    Args:
+        data(uint16): The raw adc data or a data array
+        Vref:         The VREF_TIA
+    Returns:
+        float:        The converted current
+    '''
     gain = data >> 10
     return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
+
+def adc2current_array(data, Vref):
+    '''
+    Converts the RAW adc values to currents.
+
+    Args:
+        data(np.ndarray): The raw adc data or a data array
+        Vref:             The VREF_TIA
+    Returns:
+        np.ndarray:        The converted current
+    '''
+    gain = data >> 10
+
+    ratio = np.zeros(gain.shape)
+    for g in range(len(_gain_ratio)):
+        ratio[gain == g] = _gain_ratio[g]
+
+    currents = (dut.adc2volt(data) - Vref) / ratio
+
+    # FOR LOOP VERSION
+    # currents = np.empty( data.shape )
+    # for i in range( data.shape[0] ):
+    #     for j in range( data.shape[1] ):
+    #         currents[i,j] = adc2current(data[i, j],  Vref)
+
+    return currents
 
 
 def pic_read_config(**kwargs):
@@ -58,24 +93,33 @@ def pic_read_config(**kwargs):
     dut.reset_dpe()
 
 
-def pic_read_single(array, row, col, skip_conf=False, **kwargs):
+def pic_read_single(array, row, col, skip_conf=False, raw=False, \
+                    **kwargs):
     '''
     Read a single device with PIC control
     '''
-    # gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+
+    # autogain if gain=-1
+    mode = 1 if gain==-1 else 0
 
     if not skip_conf:
         pic_read_config(**kwargs)
 
-    drv.ser.write(f'401,{array},{row},{col}\0'.encode())
+    
+        
+    drv.ser.write(f'401,{array},{row},{col},{mode}\0'.encode())
     value = drv.ser.read(2)
     value = struct.unpack('<H', value)[0]
 
-    return adc2current(value, Vref)
+    if raw:
+        return value
+    else:
+        return adc2current(value, Vref)
 
 
-def pic_read_batch(array, **kwargs):
+def pic_read_batch(array, raw=False, **kwargs):
     '''
     Read a entire array.
 
@@ -88,10 +132,13 @@ def pic_read_batch(array, **kwargs):
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
+    # autogain if gain=-1
+    mode = 1 if gain==-1 else 0
+
     pic_read_config(**kwargs)
 
     drv.ser.flushInput()
-    drv.ser.write(f'502,{array}\0'.encode())
+    drv.ser.write(f'502,{array},{mode}\0'.encode())
     data = []
 
     r = 0
@@ -109,11 +156,22 @@ def pic_read_batch(array, **kwargs):
 
     data = np.array(data).reshape((64, 64))
 
-    return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
-    # return adc2current(data, Vref)
+    if raw:
+        return data
+    else:
+        # return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
+        return adc2current_array(data, Vref)
 
 
-def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
+def pic_dpe_cols(array, col_en = [0xffff, 0xffff, 0xffff, 0xffff]):
+    data_load = dut.data_generate_vector(
+    [0x0, 0x0, 0x0, 0x0], col_en )
+    dut.load_vectors(array=array, data=data_load)
+
+
+def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
+               col_en = [0xffff, 0xffff, 0xffff, 0xffff], \
+               **kwargs):
     '''
     Perform DPE (vector-matrix multiplication) operation
 
@@ -121,8 +179,10 @@ def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
         array(int): The array number to read
         input(list): Each element is a 64-bit unsigned integer
                      representing a 64-dimensional input vector
-        mode(int): 0 -> ground unselected rows
-                   1 -> float unselected rows
+        mode(int): 0 -> ground unselected rows and normal gain
+                   1 -> float unselected rows and normal gain
+                   2 -> ground unselected rows and auto gain
+                   3 -> float unselected rows and auto gain
 
     Returns:
         np.ndarray: The outputs
@@ -136,12 +196,18 @@ def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
         plt.colorbar()
 
     '''
-    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else -1
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
     mode = kwargs['mode'] if 'mode' in kwargs.keys() else 0
 
+    if gain == -1:
+        mode = mode | 0x2
+    else:
+        mode = mode & (~0x2)
+
     if not skip_conf:
         pic_read_config(**kwargs)
+        pic_dpe_cols(array, col_en = col_en)
     
     n_input = len(input)
     data = []
@@ -181,9 +247,12 @@ def pic_dpe_batch(array, input, skip_conf=False, **kwargs):
 
     data = np.array(data, dtype=np.uint16).reshape((-1, 64))
     # return data[:n_input]
-    return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
+    # return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
 
-    # return adc2current(data[:n_input], Vref)
+    if raw:
+        return data[:n_input]
+    else:
+        return adc2current_array(data[:n_input], Vref)
 
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):

@@ -422,8 +422,11 @@ void CMD_Tasks ( void )
                             ptr = strtok(NULL, ",");
                             col = atoi(ptr);
                             
-                            res_read = A0_read_single(arr, row, col);
-                            SYS_PRINT("\t Read res_read=%x\r\n", res_read);
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode: 0 is normal read, 1 is autogain
+                            
+                            res_read = A0_read_single(arr, row, col, channel);
+                            SYS_PRINT("\t Read res_read=%x, mode=%d\r\n", res_read, channel);
                             USB_Write( (char *) &res_read, 2 );
                             
                             cmdData.state = CMD_STATE_INIT;
@@ -435,8 +438,11 @@ void CMD_Tasks ( void )
                              */
                             ptr = strtok(NULL, ",");
                             arr = atoi(ptr);        // array number
+                            
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode: 0 is normal read, 1 is autogain
 
-                            A0_read_batch(arr, read_buffer );
+                            A0_read_batch(arr, (uint16_t *)read_buffer, channel);
                             SYS_PRINT("\t READ: batch read completed.\r\n");
                             
                             read_row = 0;
@@ -449,8 +455,11 @@ void CMD_Tasks ( void )
                              */
                             ptr = strtok(NULL, ",");
                             arr = atoi(ptr);        // array number
+                            
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode: 0 is normal read, 1 is autogain
 
-                            A0_read_batch2(arr, read_buffer );
+                            A0_read_batch2(arr, (uint16_t *)read_buffer, channel );
                             SYS_PRINT("\t READ: batch read completed.\r\n");
                             
                             read_row = 0;
@@ -482,7 +491,7 @@ void CMD_Tasks ( void )
                             } else {
                                 ptr += 1;
 
-                                A0_dpe_batch(arr, ser_len, channel, ptr, read_buffer);
+                                A0_dpe_batch(arr, ser_len, channel, ptr, (uint16_t *)read_buffer);
                                 
                                 read_row = 0;
                                 n_row_to_send = ser_len;

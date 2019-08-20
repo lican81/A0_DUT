@@ -34,7 +34,7 @@ def connect(new_serial=None):
 
 def disconnect():
     ser.close()
-    print('Serial port disconnected.')
+    # print('Serial port disconnected.')
 
 
 def gpio_port_write(portName, data):
