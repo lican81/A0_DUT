@@ -464,8 +464,8 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
 
     // TODO Select only part of the columns
     // Attach all TIAs to the columns
-    uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
-    load_vectors(arr, data_col, false);
+//    uint16_t data_col[4] = {0xffff, 0xffff, 0xffff, 0xffff};
+//    load_vectors(arr, data_col, false);
     
     int i, j;
 

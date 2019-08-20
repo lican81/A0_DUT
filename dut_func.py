@@ -97,15 +97,17 @@ def power_on():
 
 
 def vrefs_defaults():
-    dac_set('DAC_VREF_ARRAY', 0.42)
-    dac_set('P_VREF_TIA', 0.42)
-    dac_set('P_VREF_SH', 2.42)
-    dac_set('PLANE_VPP', 0.22)
+    print('Setting vrefs to default')
+
+    dac_set('DAC_VREF_ARRAY', 0.5)
+    dac_set('P_VREF_TIA', 0.5)
+    dac_set('P_VREF_SH', 2.5)
+    dac_set('PLANE_VPP', 0.3)
     dac_set('DAC_VP_PAD', 2.5)
     dac_set('P_TVDD', 1)
     dac_set('P_VAGC_0', 1)
     dac_set('P_VAGC_1', 3.9)
-    dac_set('DAC_VREF_HI_CMP', 3.92)
+    dac_set('DAC_VREF_HI_CMP', 4)
     dac_set('P_ADC_EXT_TEST_IN', 1)
     # dac_set('P_ADC_EXT_TEST_IN', 0)
     dac_set('P_AMP_VREF', 2.5)
@@ -179,7 +181,7 @@ def reset_dpe():
     dpe_reseted = True
 
 
-def dac_init(span=0b000):
+def dac_init(span=0b011):
     '''
     Span code:
     S2  S1  S0  Span
@@ -216,11 +218,15 @@ def dac_init(span=0b000):
 
 
 def dac_set(channel, voltage):
+    '''
+
+    '''
+
     # print(f'DAC: setting ch={channel} to vol={voltage}')
-    '''
-    '''
+    voltage = voltage - 0.078
+
     if dac_set.is_init == False:
-        dac_init(span=0b000)
+        dac_init(span=0b011)
 
     cmd = 0b0011
     # address = 0b0000

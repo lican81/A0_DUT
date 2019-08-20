@@ -47,11 +47,19 @@ def adc2current_array(data, Vref):
     Returns:
         np.ndarray:        The converted current
     '''
-    # gain = data >> 10
-    currents = np.empty( data.shape )
-    for i in range( data.shape[0] ):
-        for j in range( data.shape[1] ):
-            currents[i,j] = adc2current(data[i, j],  Vref)
+    gain = data >> 10
+
+    ratio = np.zeros(gain.shape)
+    for g in range(len(_gain_ratio)):
+        ratio[gain == g] = _gain_ratio[g]
+
+    currents = (dut.adc2volt(data) - Vref) / ratio
+
+    # FOR LOOP VERSION
+    # currents = np.empty( data.shape )
+    # for i in range( data.shape[0] ):
+    #     for j in range( data.shape[1] ):
+    #         currents[i,j] = adc2current(data[i, j],  Vref)
 
     return currents
 
@@ -155,8 +163,15 @@ def pic_read_batch(array, raw=False, **kwargs):
         return adc2current_array(data, Vref)
 
 
+def pic_dpe_cols(array, col_en = [0xffff, 0xffff, 0xffff, 0xffff]):
+    data_load = dut.data_generate_vector(
+    [0x0, 0x0, 0x0, 0x0], col_en )
+    dut.load_vectors(array=array, data=data_load)
+
+
 def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
-                **kwargs):
+               col_en = [0xffff, 0xffff, 0xffff, 0xffff], \
+               **kwargs):
     '''
     Perform DPE (vector-matrix multiplication) operation
 
@@ -181,7 +196,7 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
         plt.colorbar()
 
     '''
-    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else -1
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
     mode = kwargs['mode'] if 'mode' in kwargs.keys() else 0
 
@@ -192,6 +207,7 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
 
     if not skip_conf:
         pic_read_config(**kwargs)
+        pic_dpe_cols(array, col_en = col_en)
     
     n_input = len(input)
     data = []
@@ -234,7 +250,7 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
     # return (dut.adc2volt(data[:n_input]) - Vref) / _gain_ratio[gain]
 
     if raw:
-        return data
+        return data[:n_input]
     else:
         return adc2current_array(data[:n_input], Vref)
 
