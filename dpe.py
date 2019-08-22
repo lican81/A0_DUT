@@ -1,3 +1,11 @@
+'''
+COPYRIGHT Hewlett Packard Labs
+
+Created by Can Li, can.li@hpe.com
+
+'''
+
+
 import dut_a0 as a0
 import numpy as np
 import serial
@@ -86,6 +94,22 @@ class DPE:
 
         return np.array(vec_list)
 
+    def binarize_unary(self, vectors):
+        '''
+        Binarize the vectors with one unary pulse per bit 
+
+        Args:
+            vectors(numpy.ndarray): The normalized vector
+        '''
+        vec_int = np.round(vectors * (self.N_BIT))
+        vec_int = np.array(vec_int, dtype=np.uint32)
+
+        vec_list = []
+        for i in range(self.N_BIT):
+            vec_list.append(vec_int > (i+0.5))
+
+        return np.array(vec_list)
+
     def vec2ints(self, vector, start=0):
         '''
         Convert a binarized vector to 64-bit integer for DPE input
@@ -117,26 +141,46 @@ class DPE:
         Shift and add
         '''
 
-        result = np.zeros( vectors[0].shape )
+        result = np.zeros(vectors[0].shape)
         for i in range(self.N_BIT):
-            result += vectors[i] * (0x1<<i)
+            result += vectors[i] * (0x1 << i)
 
-        return result / (2**self.N_BIT -1)
+        return result / (2**self.N_BIT - 1)
 
+    def unary_sum(self, vectors):
+        '''
+        Sum
+        '''
+        result = np.sum(vectors, axis=0) / self.N_BIT
+        return result
 
     @with_ser
-    def multiply(self, array, vectors, r_start=0, c_sel=[0, 14]):
+    def multiply(self, array, vectors, r_start=0, c_sel=[0, 14],
+                 mode=0, **kwargs):
         '''
         The core of DPE operation
 
         Args:
             array(int): The array number
             vectors(numpy.ndarray): The vectors to be multiplied
+            mode(int):  0 -> shift and add
+                        1 -> unary pulses
         Returns:
             numpy.ndarray: The multiply result
         '''
 
-        vectors_bin = self.binarize_shift(vectors)
+        Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
+
+        if mode == 0:
+            # shift and add
+            func_binarize = self.binarize_shift
+            func_recover = self.shift_n_add
+        elif mode == 1:
+            # unary
+            func_binarize = self.binarize_unary
+            func_recover = self.unary_sum
+
+        vectors_bin = func_binarize(vectors)
 
         outputs_dpe_all = []
 
@@ -146,9 +190,9 @@ class DPE:
                 inputs_dpe.append(self.vec2ints(v))
 
             outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=-1, mode=1,
-                                            col_en=self.get_col_en(c_sel) )
+                                           col_en=self.get_col_en(c_sel))
 
-            outputs_dpe = outputs_dpe[:,c_sel[0]:c_sel[1] ]
+            outputs_dpe = outputs_dpe[:, c_sel[0]:c_sel[1]]
             outputs_dpe_all.append(outputs_dpe)
 
-        return self.shift_n_add( outputs_dpe_all )
+        return func_recover(outputs_dpe_all) / Vread
