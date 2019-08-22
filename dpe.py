@@ -227,6 +227,9 @@ class DPE:
 
         outputs_dpe_all = []
 
+        a0.pic_read_config(**kwargs)
+        a0.pic_dpe_cols(array, col_en = self.get_col_en(c_sel))
+
         for vec in vectors_bin:
             inputs_dpe = []
             for v in vec.T:
@@ -239,7 +242,7 @@ class DPE:
                         print(f'[DEBUG] processing vector {i}')
 
                 output_single = a0.pic_dpe_batch(array, [input_single], gain=-1, mode=1,
-                                                 col_en=self.get_col_en(c_sel))
+                                                 skip_conf=True)
                 outputs_dpe.append(output_single)
                 time.sleep(delay / 1000)
 
