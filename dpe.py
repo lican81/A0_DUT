@@ -14,22 +14,24 @@ import time
 dut = a0.dut
 drv = dut.drv
 
+
 def with_ser(func):
-        '''
-        A decorator handles all the functions require a serial communication
-        '''
-        def wrapper_with_ser(*args, **kwargs):
-            print(f'Running {func} with serial')
-            with serial.Serial(args[0].ser_name, 9600, timeout=1) as ser:
-                dut.connect(ser)
+    '''
+    A decorator handles all the functions require a serial communication
+    '''
+    def wrapper_with_ser(*args, **kwargs):
+        print(f'Running {func} with serial')
+        with serial.Serial(args[0].ser_name, 9600, timeout=1) as ser:
+            dut.connect(ser)
 
-                ts = time.time()
-                result = func(*args, **kwargs)
-                print(f'[INFO] Elapsed time = {time.time()-ts:.2f}s')
+            ts = time.time()
+            result = func(*args, **kwargs)
+            print(f'[INFO] Elapsed time = {time.time()-ts:.2f}s')
 
-            print('Serial disconnected')
-            return result
-        return wrapper_with_ser
+        print('Serial disconnected')
+        return result
+    return wrapper_with_ser
+
 
 class DPE:
     ser_name = None
@@ -37,7 +39,7 @@ class DPE:
 
     def __init__(self, ser_name='COM6'):
         self.ser_name = ser_name
-        self.init_dut() 
+        self.init_dut()
 
     @with_ser
     def init_dut(self):
@@ -196,9 +198,9 @@ class DPE:
 
         return func_recover(outputs_dpe_all) / Vread
 
-
     @with_ser
-    def multiply_w_delay(self, array, vectors, r_start=0, c_sel=[0, 14], delay=5, debug=False):
+    def multiply_w_delay(self, array, vectors, r_start=0, c_sel=[0, 14],\
+                         mode=0, delay=5, debug=False, **kwargs):
         '''
         The core of DPE operation
 
@@ -209,7 +211,7 @@ class DPE:
         Returns:
             numpy.ndarray: The multiply result
         '''
-        
+
         Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
 
         if mode == 0:
@@ -233,17 +235,17 @@ class DPE:
             outputs_dpe = []
             for i, input_single in enumerate(inputs_dpe):
                 if debug:
-                    if i%50 == 0:
+                    if i % 50 == 0:
                         print(f'[DEBUG] processing vector {i}')
 
                 output_single = a0.pic_dpe_batch(array, [input_single], gain=-1, mode=1,
-                                            col_en=self.get_col_en(c_sel) )
+                                                 col_en=self.get_col_en(c_sel))
                 outputs_dpe.append(output_single)
-                time.sleep( delay / 1000 )
+                time.sleep(delay / 1000)
 
             outputs_dpe = np.concatenate(outputs_dpe, axis=0)
 
-            outputs_dpe = outputs_dpe[:,c_sel[0]:c_sel[1] ]
+            outputs_dpe = outputs_dpe[:, c_sel[0]:c_sel[1]]
             outputs_dpe_all.append(outputs_dpe)
 
         return func_recover(outputs_dpe_all) / Vread
