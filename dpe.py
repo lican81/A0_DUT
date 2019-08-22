@@ -14,21 +14,12 @@ import time
 dut = a0.dut
 drv = dut.drv
 
-
-class DPE:
-    ser_name = None
-    N_BIT = 8
-
-    def __init__(self, ser_name='COM6'):
-        self.ser_name = ser_name
-        self.init_dut()
-
-    def with_ser(func):
+def with_ser(func):
         '''
         A decorator handles all the functions require a serial communication
         '''
         def wrapper_with_ser(*args, **kwargs):
-            print('Connecting to serial')
+            print(f'Running {func} with serial')
             with serial.Serial(args[0].ser_name, 9600, timeout=1) as ser:
                 dut.connect(ser)
 
@@ -39,6 +30,14 @@ class DPE:
             print('Serial disconnected')
             return result
         return wrapper_with_ser
+
+class DPE:
+    ser_name = None
+    N_BIT = 8
+
+    def __init__(self, ser_name='COM6'):
+        self.ser_name = ser_name
+        self.init_dut() 
 
     @with_ser
     def init_dut(self):
@@ -193,6 +192,58 @@ class DPE:
                                            col_en=self.get_col_en(c_sel))
 
             outputs_dpe = outputs_dpe[:, c_sel[0]:c_sel[1]]
+            outputs_dpe_all.append(outputs_dpe)
+
+        return func_recover(outputs_dpe_all) / Vread
+
+
+    @with_ser
+    def multiply_w_delay(self, array, vectors, r_start=0, c_sel=[0, 14], delay=5, debug=False):
+        '''
+        The core of DPE operation
+
+        Args:
+            array(int): The array number
+            vectors(numpy.ndarray): The vectors to be multiplied
+            delay(int): The delay between two ADC read in milliseconds
+        Returns:
+            numpy.ndarray: The multiply result
+        '''
+        
+        Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
+
+        if mode == 0:
+            # shift and add
+            func_binarize = self.binarize_shift
+            func_recover = self.shift_n_add
+        elif mode == 1:
+            # unary
+            func_binarize = self.binarize_unary
+            func_recover = self.unary_sum
+
+        vectors_bin = func_binarize(vectors)
+
+        outputs_dpe_all = []
+
+        for vec in vectors_bin:
+            inputs_dpe = []
+            for v in vec.T:
+                inputs_dpe.append(self.vec2ints(v))
+
+            outputs_dpe = []
+            for i, input_single in enumerate(inputs_dpe):
+                if debug:
+                    if i%50 == 0:
+                        print(f'[DEBUG] processing vector {i}')
+
+                output_single = a0.pic_dpe_batch(array, [input_single], gain=-1, mode=1,
+                                            col_en=self.get_col_en(c_sel) )
+                outputs_dpe.append(output_single)
+                time.sleep( delay / 1000 )
+
+            outputs_dpe = np.concatenate(outputs_dpe, axis=0)
+
+            outputs_dpe = outputs_dpe[:,c_sel[0]:c_sel[1] ]
             outputs_dpe_all.append(outputs_dpe)
 
         return func_recover(outputs_dpe_all) / Vread
