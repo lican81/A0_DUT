@@ -98,20 +98,22 @@ def power_on():
 
 def vrefs_defaults():
     print('Setting vrefs to default')
-
-    dac_set('DAC_VREF_ARRAY', 0.5)
-    dac_set('P_VREF_TIA', 0.5)
-    dac_set('P_VREF_SH', 2.5)
-    dac_set('PLANE_VPP', 0.3)
-    dac_set('DAC_VP_PAD', 2.5)
-    dac_set('P_TVDD', 1)
-    dac_set('P_VAGC_0', 1)
-    dac_set('P_VAGC_1', 3.9)
-    dac_set('DAC_VREF_HI_CMP', 4)
-    dac_set('P_ADC_EXT_TEST_IN', 1)
+                                    #   Norminal    Prober1   Prober2   TP
+    dac_set('DAC_VREF_ARRAY', 0.497)#   0.5         0.503               17
+    dac_set('P_VREF_TIA', 0.497)    #   0.5         0.503               21
+    dac_set('P_VREF_SH', 2.505)     #   2.5         2.495               29
+    dac_set('PLANE_VPP', 0.3)       #   0.3         0.304               09
+    dac_set('DAC_VP_PAD', 2.507)    #   2.5         2.493               31
+    dac_set('P_TVDD', 1)            #   1.0         1.000               33
+    dac_set('P_VAGC_0', 1)          #   1.0         1.001               36
+    dac_set('P_VAGC_1', 3.9)        #   3.9         3.90_               25
+    dac_set('DAC_VREF_HI_CMP', 4)   #   4.0         4.00_               22
+    dac_set('P_ADC_EXT_TEST_IN', 1) #   1.0         1.001               32
     # dac_set('P_ADC_EXT_TEST_IN', 0)
-    dac_set('P_AMP_VREF', 2.5)
-    dac_set('P_AMP_INPUT', 2.5)
+    dac_set('P_AMP_VREF', 2.5)      #   2.5         2.500               30
+    dac_set('P_AMP_INPUT', 2.5)     #   2.5         2.494               28
+
+    # DAC Schottky, Drive_VN -0.078
 
 
 def vrefs_off():

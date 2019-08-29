@@ -328,8 +328,11 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
     if gain >= 0 and gain <= 4:
         AGC = False
         dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
+        time.sleep(5e-3)
     else:
         AGC = True
+        
+
 
 
     # Make sure the VPP is reasonable
