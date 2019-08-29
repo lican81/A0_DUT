@@ -39,6 +39,7 @@ class DPE:
 
     def __init__(self, ser_name='COM6'):
         self.ser_name = ser_name
+        self.a0 = a0
         self.init_dut()
 
     @with_ser
