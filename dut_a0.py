@@ -23,6 +23,15 @@ _gain_ratio = [
     1e6
 ]
 
+_sh_default = [
+    # This table assumes the chip runs at 50 MHz
+    12,
+    12,
+    12,
+    25,
+    100
+]
+
 
 def adc2current(data, Vref):
     '''
@@ -310,7 +319,7 @@ def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
 
 
 def read_single_int(Vread, Vgate, array=0, row=0, col=0, 
-                    gain=0, Tsh=0x0c, Vref=0.5,
+                    gain=0, Tsh=-1, Vref=0.5,
                     raw=False):
     '''
     Args,
@@ -322,7 +331,10 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
     VREF_TIA = Vref
     VREF_LO = 0.5
 
-    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
+    if Tsh<0:
+        Tsh = _sh_default[gain]
+
+    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c*3, 0x10,
                                            Tsh, 0x01, 0x02]))
 
     if gain >= 0 and gain <= 4:
