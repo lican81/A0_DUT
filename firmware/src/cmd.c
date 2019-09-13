@@ -409,6 +409,26 @@ void CMD_Tasks ( void )
                             cmdData.state = CMD_STATE_INIT;
                             break; 
 
+                        case 303:
+                            /*
+                             * test blocking scan chain
+                             */
+                            
+                            ptr = strtok(NULL, ",");
+                            ser_addr = atoi(ptr) & 0x3; // address
+                            
+                            ptr = strtok(NULL, ",");
+                            ser_len = atoi(ptr); 
+                            
+                            ptr = strtok(NULL, ","); //expecting a non-zero character
+                            ptr += 1;
+                            SYS_PRINT("\t Sending data '%s' with addr=%x, size=%d\r\n", ptr, ser_addr, ser_len);
+
+                            serial_set( ser_addr, ser_len, ptr);
+
+                            cmdData.state = CMD_STATE_INIT;
+                            break;
+
                         case 401:
                             /*
                              * read_single

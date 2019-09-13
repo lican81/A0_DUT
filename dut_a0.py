@@ -37,6 +37,7 @@ def adc2current(data, Vref):
     gain = data >> 10
     return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
 
+
 def adc2current_array(data, Vref):
     '''
     Converts the RAW adc values to currents.
@@ -54,12 +55,6 @@ def adc2current_array(data, Vref):
         ratio[gain == g] = _gain_ratio[g]
 
     currents = (dut.adc2volt(data) - Vref) / ratio
-
-    # FOR LOOP VERSION
-    # currents = np.empty( data.shape )
-    # for i in range( data.shape[0] ):
-    #     for j in range( data.shape[1] ):
-    #         currents[i,j] = adc2current(data[i, j],  Vref)
 
     return currents
 
@@ -93,7 +88,7 @@ def pic_read_config(**kwargs):
     dut.reset_dpe()
 
 
-def pic_read_single(array, row, col, skip_conf=False, raw=False, \
+def pic_read_single(array, row, col, skip_conf=False, raw=False,
                     **kwargs):
     '''
     Read a single device with PIC control
@@ -102,13 +97,11 @@ def pic_read_single(array, row, col, skip_conf=False, raw=False, \
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     # autogain if gain=-1
-    mode = 1 if gain==-1 else 0
+    mode = 1 if gain == -1 else 0
 
     if not skip_conf:
         pic_read_config(**kwargs)
 
-    
-        
     drv.ser.write(f'401,{array},{row},{col},{mode}\0'.encode())
     value = drv.ser.read(2)
     value = struct.unpack('<H', value)[0]
@@ -133,7 +126,7 @@ def pic_read_batch(array, raw=False, **kwargs):
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     # autogain if gain=-1
-    mode = 1 if gain==-1 else 0
+    mode = 1 if gain == -1 else 0
 
     pic_read_config(**kwargs)
 
@@ -163,15 +156,15 @@ def pic_read_batch(array, raw=False, **kwargs):
         return adc2current_array(data, Vref)
 
 
-def pic_dpe_cols(array, col_en = [0xffff, 0xffff, 0xffff, 0xffff]):
+def pic_dpe_cols(array, col_en=[0xffff, 0xffff, 0xffff, 0xffff]):
     data_load = dut.data_generate_vector(
-    [0x0, 0x0, 0x0, 0x0], col_en )
+        [0x0, 0x0, 0x0, 0x0], col_en)
     dut.load_vectors(array=array, data=data_load)
 
 
-def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
-               col_en = [0xffff, 0xffff, 0xffff, 0xffff], \
-               **kwargs):
+def pic_dpe_batch(array, input, skip_conf=False, raw=False,
+                  col_en=[0xffff, 0xffff, 0xffff, 0xffff],
+                  **kwargs):
     '''
     Perform DPE (vector-matrix multiplication) operation
 
@@ -207,11 +200,12 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
 
     if not skip_conf:
         pic_read_config(**kwargs)
-        pic_dpe_cols(array, col_en = col_en)
-    
+        pic_dpe_cols(array, col_en=col_en)
+
     n_input = len(input)
     data = []
 
+    # Process 60 vectors at a time
     r_start = 0
     while True:
         r_stop = r_start+60 if r_start+60 < n_input else n_input
@@ -309,7 +303,7 @@ def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
     return volt / _gain_ratio[gain]
 
 
-def read_single_int(Vread, Vgate, array=0, row=0, col=0, 
+def read_single_int(Vread, Vgate, array=0, row=0, col=0,
                     gain=0, Tsh=0x0c, Vref=0.5,
                     raw=False):
     '''
@@ -330,7 +324,6 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
         dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
     else:
         AGC = True
-
 
     # Make sure the VPP is reasonable
     assert VREF_TIA - Vread > -0.2 and VREF_TIA - Vread <= 1
@@ -366,7 +359,6 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
         drv.gpio_pin_set(*PIC_PINS['DPE_PULSE'])
         time.sleep(2e-7)
         drv.gpio_pin_reset(*PIC_PINS['DPE_PULSE'])
-
 
     [fifo_en, channel] = dut.which_fifo([array, col])
 
