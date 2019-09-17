@@ -425,10 +425,23 @@ void CMD_Tasks ( void )
                             SYS_PRINT("\t Sending data '%s' with addr=%x, size=%d\r\n", ptr, ser_addr, ser_len);
 
                             serial_set( ser_addr, ser_len, ptr);
+                            
+                            //Handshake
+                            USB_Write( "0", 1 );
 
                             cmdData.state = CMD_STATE_INIT;
                             break;
-
+                        case 304:
+                            /*
+                             * test dac_init
+                             */
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            dac_init(portValue);  
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break;
                         case 401:
                             /*
                              * read_single

@@ -53,6 +53,13 @@ class DPE:
         dut.power_on()
 
     @with_ser
+    def power_off(self):
+        '''
+        Manually turn off the power
+        '''
+        dut.power_off()
+
+    @with_ser
     def set_clock(self, Mhz):
         '''
         Set clock frequency

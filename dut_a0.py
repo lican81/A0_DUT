@@ -77,17 +77,21 @@ def pic_read_config(**kwargs):
     Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
     Vgate = kwargs['Vgate'] if 'Vgate' in kwargs.keys() else 5
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
-    Tsh = kwargs['Tsh'] if 'Tsh' in kwargs.keys() else 0x0c
+    Tsh = kwargs['Tsh'] if 'Tsh' in kwargs.keys() else _sh_default[gain]
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.425
+    Tagc = kwargs['Tagc'] if 'Tagc' in kwargs.keys() else 0x24
 
     VREF_TIA = Vref
 
-    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
+    # print(vars())
+    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, Tagc, 0x10,
                                            Tsh, 0x01, 0x02]))
 
     dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
 
     assert VREF_TIA - Vread > -0.2 and VREF_TIA - Vread <= 1
+
+    # print(vars())
 
     dut.dac_set('PLANE_VPP', VREF_TIA - Vread)
     dut.dac_set('P_VREF_TIA', VREF_TIA)

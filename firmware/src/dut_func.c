@@ -576,6 +576,12 @@ int dac_set( DAC_CH ch, uint16_t value) {
 }
 
 int dac_init(uint8_t span) {
+    /*
+     * Initialize the DAC
+     * 
+     * @param span The span code
+     */
+    
     PIC_LDACOn();
     PIC_TGPOn();
 
@@ -587,7 +593,8 @@ int dac_init(uint8_t span) {
     PIC_CSOff();
 
     // Hardcoded to 0-5 V for now
-    span = 0;
+    // span = 0;
+    
     uint32_t cmd = (0xe<<20) | span;
 
     uint8_t cmd_b[4];
@@ -596,7 +603,7 @@ int dac_init(uint8_t span) {
     cmd_b[1] = (uint8_t) (cmd >> 16u);
     cmd_b[0] = (uint8_t) (cmd >> 24u);
 
-    SYS_PRINT("\t DAC cmd=%x\r\n", cmd);
+    SYS_PRINT("\t DAC cmd=%x, span=%x\r\n", cmd, span);
     SYS_PRINT("\t DAC re cmd=%x %x %x %x\r\n", cmd_b[0], cmd_b[1] , cmd_b[2] , cmd_b[3] );
     
     DRV_SPI_BUFFER_HANDLE spi_handle = DRV_SPI1_BufferAddWrite( cmd_b, 4, NULL, NULL); 
@@ -646,9 +653,6 @@ int serial_set(uint8_t addr,  int size, uint8_t * buffer) {
     // Clear the address to a safe state
     SERIAL_CHAIN_SEL_0On();
     SERIAL_CHAIN_SEL_1On();
-
-    //Handshake
-    USB_Write( "0", 1 );
 }
 
 
@@ -678,7 +682,7 @@ uint16_t A0_write_single(uint8_t arr, uint8_t row, uint8_t col,
     load_vectors(arr, data_col, false);
     
     WRT_INTERNAL_ENOn();
-    WRITE_ADD_CAPOff()
+    WRITE_ADD_CAPOff();
 
     reset_dpe();
 
