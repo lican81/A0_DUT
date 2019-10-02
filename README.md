@@ -27,6 +27,14 @@ README for setting up python environment and microcontroller on host PC
     
 
 4) Pull code from this Github repository to your host PC, note the project folder location
+  a. If using GItHub desktop and you need to get the proxy working, 
+    1)	Make sure you’ve downloaded git, and have opened github desktop
+    2)	Under C:->users -> *your username* you should find a .gitconfig fie
+    3)	Add the following lines to this file
+      [http]
+	      proxy = http://web-proxy-pa.labs.hpecorp.net:8088
+      [https]
+	      proxy = https://web-proxy-pa.labs.hpecorp.net:8088
 
 5) Get all the packages you'll need to run the code. Two ways:
 
