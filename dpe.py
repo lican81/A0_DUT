@@ -167,11 +167,13 @@ class DPE:
     def multiply(self, array, vectors, r_start=0, c_sel=[0, 14],
                  mode=0, **kwargs):
         '''
-        The core of DPE operation
+        The core of the DPE operation
 
         Args:
             array(int): The array number
             vectors(numpy.ndarray): The vectors to be multiplied
+                                    ONLY POSTIVE NUMBERS ARE SUPPORTED
+                                    NORMALIZE FIRST
             mode(int):  0 -> shift and add
                         1 -> unary pulses
         Returns:
