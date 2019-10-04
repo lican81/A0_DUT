@@ -262,3 +262,11 @@ class DPE:
             outputs_dpe_all.append(outputs_dpe)
 
         return func_recover(outputs_dpe_all) / Vread
+
+
+    def lin_corr(self, outputs, factors):
+        result = np.zeros(outputs.shape)
+        for c in range(outputs.shape[1]):
+            result[:,c] = outputs[:,c] * factors[c][0] + factors[c][1]
+            
+        return result
