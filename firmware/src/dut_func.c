@@ -560,13 +560,13 @@ int dac_set( DAC_CH ch, uint16_t value) {
     cmd_b[1] = (uint8_t) (cmd >> 16u);
     cmd_b[0] = (uint8_t) (cmd >> 24u);
 
-    SYS_PRINT("\t DAC cmd=%x\r\n", cmd);
-    SYS_PRINT("\t DAC re cmd=%x %x %x %x\r\n", cmd_b[0], cmd_b[1] , cmd_b[2] , cmd_b[3] );
+//    SYS_PRINT("\t DAC cmd=%x\r\n", cmd);
+//    SYS_PRINT("\t DAC re cmd=%x %x %x %x\r\n", cmd_b[0], cmd_b[1] , cmd_b[2] , cmd_b[3] );
     
     DRV_SPI_BUFFER_HANDLE spi_handle = DRV_SPI1_BufferAddWrite( cmd_b, 4, NULL, NULL); 
 
     while (DRV_SPI0_BufferStatus(spi_handle) != DRV_SPI_BUFFER_EVENT_COMPLETE) {
-        SYS_PRINT("\t Wait spi (DAC) to complete...\r\n");
+//        SYS_PRINT("\t Wait spi (DAC) to complete...\r\n");
     }
     
 //    BSP_DelayUs(10);
@@ -656,14 +656,13 @@ int serial_set(uint8_t addr,  int size, uint8_t * buffer) {
 }
 
 
-uint16_t A0_write_single(uint8_t arr, uint8_t row, uint8_t col, 
+int A0_write_single(uint8_t arr, uint8_t row, uint8_t col, 
                         uint16_t Vwrite_raw, uint16_t Vgate_raw, 
                         uint8_t is_set) {
     /*
      * Program a single device
      * 
      */
-    
     uint16_t data_row[4];
     uint16_t data_col[4];
     
@@ -703,11 +702,49 @@ uint16_t A0_write_single(uint8_t arr, uint8_t row, uint8_t col,
     dac_set( P_TVDD, Vgate_raw);
     dac_set( DAC_VP_PAD, Vwrite_raw);
     
+    // Wait for the DAC
+    BSP_DelayUs(5);
+    
     WRT_PULSEOn();
     BSP_DelayUs(0.2);
     WRT_PULSEOff();
+    
+    BSP_DelayUs(1);
 
     CONNECT_COLUMN_TOff();
     ROW_WRITE_CONNECTOff();
     NFORCE_SAFE_Set( 0x0 );
+    
+    return 0;
+}
+
+int A0_write_batch(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_t * Vgate_raw) {
+  
+    SYS_PRINT("\tStart Prog.\r\n", arr, mode);
+    
+    int i, j;
+    
+    for (i=0; i<4; i++) {
+        SYS_PRINT("[DW] r=%d | ", i*16);
+        for (j=0; j<4; j++) {
+            SYS_PRINT("%x, ", Vwrite_raw[(i*16)*64 + j*16]);
+        }
+        SYS_PRINT("\r\n");
+    }
+
+    for (i=0; i<4; i++) {
+        SYS_PRINT("[DG] r=%d | ", i*16);
+        for (j=0; j<4; j++) {
+            SYS_PRINT("%x, ", Vgate_raw[(i*16)*64 + j*16]);
+        }
+        SYS_PRINT("\r\n");
+    }
+    
+    for (i=0; i<64; i++) {
+        for (j=0; j<64; j++) {
+            A0_write_single(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], mode);
+        }
+    }
+    
+    return 0;
 }

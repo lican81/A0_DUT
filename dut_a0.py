@@ -226,7 +226,7 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False,
 
         # print(f'DPE: {r_start}-{r_stop}, len={r_size}')
 
-        cmd = f'403,{array},{r_size},{mode},\1'.encode()
+        cmd = f'403,{array},{r_size},{mode},\1,'.encode()
         cmd += struct.pack('>' + 'Q'*(r_size), *input[r_start:r_stop])
         cmd += b'\0'
 
@@ -261,6 +261,94 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False,
     else:
         return adc2current_array(data[:n_input], Vref)
 
+
+def pic_write_single(Vwrite, Vgate, array=0, row=0, col=0, mode=-1):
+    ''' 
+    Program a device with PIC control
+
+    Args:
+        Vwrite(float): Set or Reset voltage
+        Vgate(float):  Corresponding gate voltage
+        array(int):    The array to program
+        row(int):      Row #
+        col(int):      col #
+        mode(int): 0 -> Reset
+                   1 -> Set
+                   others -> invalid
+
+    Returns:
+        np.ndarray: The outputs
+
+    '''
+    # Configure timing
+    dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
+                                           0x20, 0x01, 0x02]))
+
+    dut.pads_defaults()
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+    Vwrite_raw = dut.dac_volt2raw(Vwrite)
+    Vgate_raw = dut.dac_volt2raw(Vgate)
+
+    if mode in [0,1]:
+
+        # print(f'404,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw}\0'.encode())
+        drv.ser.write(f'404,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw}\0'.encode())
+
+        # wait for completion
+        ret = drv.ser.read(1)
+
+        if ret != b'0':
+            print('[ERROR] Single device write return a wrong value')
+    else:
+        print(F'[ERROR] wrong writing mode = {mode}')
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+def pic_write_batch(Vwrite, Vgate, array=0, mode=-1):
+    ''' 
+    Program a device with PIC control
+
+    Args:
+        Vwrite(np.ndarray): Set or Reset voltage
+        Vgate(np.ndarray):  Corresponding gate voltage
+        array(int):    The array to program
+        row(int):      Row #
+        col(int):      col #
+        mode(int): 0 -> Reset
+                   1 -> Set
+                   others -> invalid
+
+    Returns:
+        np.ndarray: The outputs
+
+    '''
+
+    # Configure timing
+    dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
+                                           0x20, 0x01, 0x02]))
+
+    dut.pads_defaults()
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+    Vwrite_raw = dut.dac_volt2raw(Vwrite)
+    Vgate_raw = dut.dac_volt2raw(Vgate)
+
+    for row in range(0,64,2):
+        drv.ser.write(f'405,{array},{mode},{row},0,'.encode() 
+                    + Vwrite_raw[row:row+2,:].tobytes() + b'\0')
+
+    for row in range(0,64,2):
+        drv.ser.write(f'405,{array},{mode},{row+64},0,'.encode() 
+                    + Vgate_raw[row:row+2,:].tobytes() + b'\0')
+
+    ret = drv.ser.read(1)
+    if ret != b'0':
+        print('[ERROR] Single device write return a wrong value')
+
+    dut.dac_set('DAC_VP_PAD', 0)
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
     '''
@@ -392,10 +480,9 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
     # volt / _gain_ratio[gain]
 
 
-def reset_single(Vreset, Vgate, array=0, row=0, col=0):
+def reset_single(Vreset, Vgate, array=0, row=0, col=0, Twidth=1e-6):
     #     Vreset = 1
     # Vgate = 5
-    Twidth = 1e-6
 
     ar = array
     r = row

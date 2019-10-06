@@ -75,7 +75,7 @@ class DPE:
         drv.clk_start('CK_ARRAY')
 
     @with_ser
-    def read(self, array, Vread=0.2):
+    def read(self, array, Vread=0.2, gain=-1):
         '''
         Read the array conductance
 
@@ -84,7 +84,7 @@ class DPE:
         Returns:
             numpy.ndarray: The conductance map
         '''
-        Gmap = a0.pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+        Gmap = a0.pic_read_batch(array, Vread=Vread, gain=gain) / Vread
         return Gmap
 
     def binarize_shift(self, vectors):

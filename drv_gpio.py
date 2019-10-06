@@ -224,7 +224,7 @@ def spi_serial_write(addr, data):
 
     ser.write(b'303,' +
                   str(addr).encode() + b',' +
-                  str(len(data)).encode() + b',\1' +
+                  str(len(data)).encode() + b',\1,' +
                   data + b'\0')
 
     ret = ser.read(1)
@@ -253,7 +253,7 @@ def spi_serial_write_and_read(addr, data):
     ser.write(b'219,' +
               str(addr).encode() + b',' +
               str(sz_data).encode() + b',\1' +
-              data + b'\0')
+              data + b'\0,')
 
     line = ser.read(4 * sz_data)
 

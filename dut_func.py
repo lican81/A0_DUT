@@ -243,8 +243,23 @@ def dac_set(channel, voltage):
 
     drv.spi_dac_write(data)
 
-
 dac_set.is_init = False
+
+def dac_volt2raw(voltage):
+    if dac_set.is_init == False:
+        dac_init(span=0b011)
+
+    vlim_lo, vlim_hi = DAC_SPAN[dac_set.span]
+
+    data = (voltage - vlim_lo) / (vlim_hi-vlim_lo) * 0xffff
+
+    if np.isscalar(voltage):
+        data = int(data)
+    else:
+        data = data.astype(np.uint16)
+
+    return data
+    
 
 
 def py_logic_analyzer():
