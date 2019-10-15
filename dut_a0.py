@@ -392,8 +392,8 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
                 for vSet in vSetRamp:
                     vGateSetMatrix = zeroMatrix + vGateSet * (GMatrix < targetGLow)
                     vWriteSetMatrix = zeroMatrix + vSet * (GMatrix < targetGLow)
-                    print('VWrite:', vWriteSetMatrix[0:3,0:3])
-                    print('VGate:', vGateSetMatrix[0:3,0:3])
+                    #print('VWrite:', vWriteSetMatrix[0:3,0:3])
+                    #print('VGate:', vGateSetMatrix[0:3,0:3])
                     pic_write_batch(vWriteSetMatrix, vGateSetMatrix, array=array, mode=1)
                     GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
                     if np.all(GMatrix >= targetGLow):
@@ -419,7 +419,74 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
         currentLoops=currentLoops+1
         print('Current loop = ', currentLoops)
     print('Completed with total loops = ', currentLoops)
-    return GMatrix
+    return GMatrix    
+
+def cell_program(array, targetRow, targetCol, targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, maxLoops=5):
+    ''' 
+    Program a cell to a target conductance
+
+    Args:
+        array = targeted array
+        [targetRow, targetCol] = targeted cell location
+
+        targetG: target conductances (Siemens)
+        targetTolerance: acceptable tolerance in targetG. Thus, the programming will stop when 
+            (targetG-targetTolerance) <= G <=(targetG+targetTolerance) 
+
+        vSetRamp: a vector providing the sequence of Set voltages to be applied in the inner loop
+        vResetRamp: a vector providing the sequence of Reset voltages to be applied in the inner loop
+        vGateSetRamp: a vector providing the sequence of Set Gate voltages to be applied in the outer loop
+        vGateResetRamp: a vector providing the sequence of Reset Gate voltages to be applied in the outer loop
+        maxLoops: the maximum number of times the program will run the full inner+outer loop for a Set and Reset sequence before giving up
+        
+    Returns:
+        currG: The final read of the device
+
+    '''
+    targetGLow = targetG-targetTolerance
+    targetGHigh = targetG+targetTolerance
+    currentLoops = 0
+    vRead=0.2
+    Vgate=5.0
+
+    # Do initial reading
+    #currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+    currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+    initG = currG
+    # Now loop as long as the device is out of tolerance for target conductance and we haven't maxed out loops
+    while ( ( (currG < targetGLow) | (currG > targetGHigh) ) & (currentLoops < maxLoops) ):
+        # Do SET operations if device too low        
+        if (currG < targetGLow):
+            for vGateSet in vGateSetRamp:
+                for vSet in vSetRamp:
+                    set_single_int(vSet, vGateSet, array=array, row=targetRow, col=targetCol)
+                    #currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+                    currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+                    if (currG >= targetGLow):
+                        break
+                if (currG >= targetGLow):
+                        break
+            # IF the device did not switch, we may be unformed and do not want to repeat this too many times
+            if (currG < targetGLow):
+                currentLoops=currentLoops+2
+            else:
+                currentLoops=currentLoops+1
+
+        # Do RESET operations if device too high
+        if (currG > targetGHigh):
+            for vGateReset in vGateResetRamp:
+                for vReset in vResetRamp:
+                    reset_single_int(vReset, vGateReset, array=array, row=targetRow, col=targetCol)
+                    #currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+                    currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+                    if (currG <= targetGHigh):
+                        break
+                if (currG <= targetGHigh):
+                        break
+            currentLoops=currentLoops+1
+            
+    #print('InitG=', initG, 'FinalG=', currG, ', Total loops =', currentLoops)
+    return currG
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
     '''
