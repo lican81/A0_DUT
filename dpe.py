@@ -32,7 +32,6 @@ def with_ser(func):
         return result
     return wrapper_with_ser
 
-
 class DPE:
     ser_name = None
     N_BIT = 8
