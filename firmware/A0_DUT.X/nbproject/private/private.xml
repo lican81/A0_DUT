@@ -3,17 +3,11 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/cmd.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/main.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_func.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default/system_interrupt.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_ports.h</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/app.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default/framework/system/clk/src/sys_clk_pic32mz.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/cmd.h</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default/system_init.c</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_func.h</file>
-            <file>file:/Users/canli/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_ports.c</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_func.c</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/cmd.c</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_ports.c</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_func.h</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/app.c</file>
         </group>
     </open-files>
 </project-private>
