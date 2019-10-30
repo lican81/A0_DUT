@@ -222,6 +222,7 @@ class DPE:
         '''
 
         Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
+        gain = kwargs['gain'] if 'gain' in kwargs.keys() else -1
 
         if mode == 0:
             # shift and add
@@ -250,7 +251,7 @@ class DPE:
                     if i % 50 == 0:
                         print(f'[DEBUG] processing vector {i}')
 
-                output_single = a0.pic_dpe_batch(array, [input_single], gain=-1, mode=1,
+                output_single = a0.pic_dpe_batch(array, [input_single], gain=gain, mode=1,
                                                  skip_conf=True)
                 outputs_dpe.append(output_single)
                 time.sleep(delay / 1000)
