@@ -168,6 +168,11 @@ def gpio_pin_set_output(portName, pinPos):
               + portName.encode() + b','
               + str(pinPos).encode() + b'\0')
 
+def pic_dac_init(span=0):
+    ser.write(f'304,{span}\0'.encode())
+
+def pic_dac_set(raw=0):
+    ser.write(f'302,{raw}\0'.encode())
 
 # def register_write(addr, data):
 #     gpio_addr_write(addr)  # safer to write register bits first incase dataio is being pointed to -> PIC_STROBE_REG_N is always propogating through the address decoder circuit so good practice to change 'path' before changing signal
@@ -212,15 +217,23 @@ def spi_serial_write(addr, data):
     # if 3, SERIAL_CHAIN_SEL0 is 1 and SEL1 is 1 # No scan chain (empty)
     # DEFAULt IS SERIAL_CHAIN_SEL0 and 1 are low when not explicitly addressed
 
-    # print(b'215,' +
-    #       str(addr).encode() + b',' +
-    #       str(len(data)).encode() + b',' +
-    #       data + b'\0')
+    # ser.write(b'215,' +
+    #           str(addr).encode() + b',' +
+    #           str(len(data)).encode() + b',\1' +
+    #           data + b'\0')
 
-    ser.write(b'215,' +
-              str(addr).encode() + b',' +
-              str(len(data)).encode() + b',\1' +
-              data + b'\0')
+    ser.write(b'303,' +
+                  str(addr).encode() + b',' +
+                  str(len(data)).encode() + b',\1,' +
+                  data + b'\0')
+
+    ret = ser.read(1)
+
+    if ret != b'0':
+        print('[ERROR] SPI return wrong value')
+
+    return ret
+
 
 
 def spi_serial_write_and_read(addr, data):
@@ -240,7 +253,7 @@ def spi_serial_write_and_read(addr, data):
     ser.write(b'219,' +
               str(addr).encode() + b',' +
               str(sz_data).encode() + b',\1' +
-              data + b'\0')
+              data + b'\0,')
 
     line = ser.read(4 * sz_data)
 

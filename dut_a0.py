@@ -23,6 +23,15 @@ _gain_ratio = [
     1e6
 ]
 
+_sh_default = [
+    # This table assumes the chip runs at 50 MHz
+    12,
+    12,
+    12,
+    25,
+    100
+]
+
 
 def adc2current(data, Vref):
     '''
@@ -36,6 +45,7 @@ def adc2current(data, Vref):
     '''
     gain = data >> 10
     return (dut.adc2volt(data) - Vref) / _gain_ratio[gain]
+
 
 def adc2current_array(data, Vref):
     '''
@@ -55,12 +65,6 @@ def adc2current_array(data, Vref):
 
     currents = (dut.adc2volt(data) - Vref) / ratio
 
-    # FOR LOOP VERSION
-    # currents = np.empty( data.shape )
-    # for i in range( data.shape[0] ):
-    #     for j in range( data.shape[1] ):
-    #         currents[i,j] = adc2current(data[i, j],  Vref)
-
     return currents
 
 
@@ -73,17 +77,21 @@ def pic_read_config(**kwargs):
     Vread = kwargs['Vread'] if 'Vread' in kwargs.keys() else 0.2
     Vgate = kwargs['Vgate'] if 'Vgate' in kwargs.keys() else 5
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
-    Tsh = kwargs['Tsh'] if 'Tsh' in kwargs.keys() else 0x0c
+    Tsh = kwargs['Tsh'] if 'Tsh' in kwargs.keys() else _sh_default[gain]
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.425
+    Tagc = kwargs['Tagc'] if 'Tagc' in kwargs.keys() else 0x24
 
     VREF_TIA = Vref
 
-    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
+    # print(vars())
+    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, Tagc, 0x10,
                                            Tsh, 0x01, 0x02]))
 
     dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
 
     assert VREF_TIA - Vread > -0.2 and VREF_TIA - Vread <= 1
+
+    # print(vars())
 
     dut.dac_set('PLANE_VPP', VREF_TIA - Vread)
     dut.dac_set('P_VREF_TIA', VREF_TIA)
@@ -93,7 +101,7 @@ def pic_read_config(**kwargs):
     dut.reset_dpe()
 
 
-def pic_read_single(array, row, col, skip_conf=False, raw=False, \
+def pic_read_single(array, row, col, skip_conf=False, raw=False,
                     **kwargs):
     '''
     Read a single device with PIC control
@@ -102,13 +110,11 @@ def pic_read_single(array, row, col, skip_conf=False, raw=False, \
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     # autogain if gain=-1
-    mode = 1 if gain==-1 else 0
+    mode = 1 if gain == -1 else 0
 
     if not skip_conf:
         pic_read_config(**kwargs)
 
-    
-        
     drv.ser.write(f'401,{array},{row},{col},{mode}\0'.encode())
     value = drv.ser.read(2)
     value = struct.unpack('<H', value)[0]
@@ -133,7 +139,7 @@ def pic_read_batch(array, raw=False, **kwargs):
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     # autogain if gain=-1
-    mode = 1 if gain==-1 else 0
+    mode = 1 if gain == -1 else 0
 
     pic_read_config(**kwargs)
 
@@ -163,15 +169,15 @@ def pic_read_batch(array, raw=False, **kwargs):
         return adc2current_array(data, Vref)
 
 
-def pic_dpe_cols(array, col_en = [0xffff, 0xffff, 0xffff, 0xffff]):
+def pic_dpe_cols(array, col_en=[0xffff, 0xffff, 0xffff, 0xffff]):
     data_load = dut.data_generate_vector(
-    [0x0, 0x0, 0x0, 0x0], col_en )
+        [0x0, 0x0, 0x0, 0x0], col_en)
     dut.load_vectors(array=array, data=data_load)
 
 
-def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
-               col_en = [0xffff, 0xffff, 0xffff, 0xffff], \
-               **kwargs):
+def pic_dpe_batch(array, input, skip_conf=False, raw=False,
+                  col_en=[0xffff, 0xffff, 0xffff, 0xffff],
+                  **kwargs):
     '''
     Perform DPE (vector-matrix multiplication) operation
 
@@ -207,11 +213,12 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
 
     if not skip_conf:
         pic_read_config(**kwargs)
-        pic_dpe_cols(array, col_en = col_en)
-    
+        pic_dpe_cols(array, col_en=col_en)
+
     n_input = len(input)
     data = []
 
+    # Process 60 vectors at a time
     r_start = 0
     while True:
         r_stop = r_start+60 if r_start+60 < n_input else n_input
@@ -219,7 +226,7 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
 
         # print(f'DPE: {r_start}-{r_stop}, len={r_size}')
 
-        cmd = f'403,{array},{r_size},{mode},\1'.encode()
+        cmd = f'403,{array},{r_size},{mode},\1,'.encode()
         cmd += struct.pack('>' + 'Q'*(r_size), *input[r_start:r_stop])
         cmd += b'\0'
 
@@ -254,6 +261,399 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False, \
     else:
         return adc2current_array(data[:n_input], Vref)
 
+
+def pic_write_single(Vwrite, Vgate, array=0, row=0, col=0, mode=-1):
+    ''' 
+    Program a device with PIC control
+
+    Args:
+        Vwrite(float): Set or Reset voltage
+        Vgate(float):  Corresponding gate voltage
+        array(int):    The array to program
+        row(int):      Row #
+        col(int):      col #
+        mode(int): 0 -> Reset
+                   1 -> Set
+                   others -> invalid
+
+    Returns:
+        np.ndarray: The outputs
+
+    '''
+    # Configure timing
+    dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
+                                           0x20, 0x01, 0x02]))
+
+    dut.pads_defaults()
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+    Vwrite_raw = dut.dac_volt2raw(Vwrite)
+    Vgate_raw = dut.dac_volt2raw(Vgate)
+
+    if mode in [0,1]:
+
+        # print(f'404,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw}\0'.encode())
+        drv.ser.write(f'404,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw}\0'.encode())
+
+        # wait for completion
+        ret = drv.ser.read(1)
+
+        if ret != b'0':
+            print('[ERROR] Single device write return a wrong value')
+    else:
+        print(F'[ERROR] wrong writing mode = {mode}')
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+def pic_write_batch(Vwrite, Vgate, array=0, mode=-1):
+    ''' 
+    Program a device with PIC control
+
+    Args:
+        Vwrite(np.ndarray): Set or Reset voltage
+        Vgate(np.ndarray):  Corresponding gate voltage
+        array(int):    The array to program
+        row(int):      Row #
+        col(int):      col #
+        mode(int): 0 -> Reset
+                   1 -> Set
+                   others -> invalid
+
+    Returns:
+        np.ndarray: The outputs
+
+    '''
+
+    # Configure timing
+    dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
+                                           0x20, 0x01, 0x02]))
+
+    dut.pads_defaults()
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+    Vwrite_raw = dut.dac_volt2raw(Vwrite)
+    Vgate_raw = dut.dac_volt2raw(Vgate)
+
+    for row in range(0,64,2):
+        drv.ser.write(f'405,{array},{mode},{row},0,'.encode() 
+                    + Vwrite_raw[row:row+2,:].tobytes() + b'\0')
+
+    for row in range(0,64,2):
+        drv.ser.write(f'405,{array},{mode},{row+64},0,'.encode() 
+                    + Vgate_raw[row:row+2,:].tobytes() + b'\0')
+
+    ret = drv.ser.read(1)
+    if ret != b'0':
+        print('[ERROR] Single device write return a wrong value')
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+
+def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
+    ''' 
+    Program an array to a target conductance matrix using batch pic_write and pic_read operations
+
+    Args:
+        targetG: matrix of target conductances (Siemens) corresponding to each [row,col]
+        targetTolerance: matrix of acceptable tolerances in targetG. Thus, the programming will stop when 
+            (targetG-targetTolerance) <= GMatrix <=(targetG+targetTolerance) 
+            IF A PARTICULAR CELL [I,J] DOES NOT NEED TO BE PROGRAMMED, SET "targetTolerance[I,J] = inf"
+        vSetRamp: a vector providing the sequence of Set voltages to be applied in the inner loop
+        vResetRamp: a vector providing the sequence of Reset voltages to be applied in the inner loop
+        vGateSetRamp: a vector providing the sequence of Set Gate voltages to be applied in the outer loop
+        vGateResetRamp: a vector providing the sequence of Reset Gate voltages to be applied in the outer loop
+        array(int):    The array to program
+        maxLoops: the maximum number of times the program will run the full inner+outer loop for a Set and Reset sequence before giving up
+        row(int):      Row #
+        col(int):      col #
+        
+    Returns:
+        np.ndarray: The final read of the array
+
+    '''
+    #from dpe import DPE
+    # Configure matrices needed
+    targetGLow = targetG-targetTolerance
+    targetGHigh = targetG+targetTolerance
+    currentLoops = 0
+    zeroMatrix = np.zeros((64,64))
+    Vread=0.2
+    # Do initial reading
+    GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+    # Now loop as long as any device is out of tolerance for target conductance and we haven't maxed out loops
+    while ( (np.any(GMatrix < targetGLow) | np.any(GMatrix > targetGHigh)) & (currentLoops<=maxLoops) ):
+        # Do SET operations for any devices too low        
+        if np.any(GMatrix < targetGLow):
+            print('Now turning ON')
+            for vGateSet in vGateSetRamp:
+                print('Set, Vgate = ', vGateSet)
+                for vSet in vSetRamp:
+                    vGateSetMatrix = zeroMatrix + vGateSet * (GMatrix < targetGLow)
+                    vWriteSetMatrix = zeroMatrix + vSet * (GMatrix < targetGLow)
+                    #print('VWrite:', vWriteSetMatrix[0:3,0:3])
+                    #print('VGate:', vGateSetMatrix[0:3,0:3])
+                    pic_write_batch(vWriteSetMatrix, vGateSetMatrix, array=array, mode=1)
+                    GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    if np.all(GMatrix >= targetGLow):
+                        break
+                if np.all(GMatrix >= targetGLow):
+                        break
+
+        # Do RESET operations for any devices too high
+        if np.any(GMatrix > targetGHigh):
+            print('Now turning OFF')
+            for vGateReset in vGateResetRamp:
+                print('Reset, Vgate = ', vGateReset)
+                for vReset in vResetRamp:
+                    vGateResetMatrix = zeroMatrix + vGateReset * (GMatrix > targetGHigh)
+                    vWriteResetMatrix = zeroMatrix + vReset * (GMatrix > targetGHigh)
+                    pic_write_batch(vWriteResetMatrix, vGateResetMatrix, array=array, mode=0)
+                    GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    if np.all(GMatrix <= targetGHigh):
+                        break
+                if np.all(GMatrix <= targetGHigh):
+                        break
+            
+        currentLoops=currentLoops+1
+        print('Current loop = ', currentLoops)
+    print('Completed with total loops = ', currentLoops)
+    return GMatrix    
+
+def cell_program(array, targetRow, targetCol, targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, maxLoops=5):
+    ''' 
+    Program a cell to a target conductance
+
+    Args:
+        array = targeted array
+        [targetRow, targetCol] = targeted cell location
+
+        targetG: target conductances (Siemens)
+        targetTolerance: acceptable tolerance in targetG. Thus, the programming will stop when 
+            (targetG-targetTolerance) <= G <=(targetG+targetTolerance) 
+
+        vSetRamp: a vector providing the sequence of Set voltages to be applied in the inner loop
+        vResetRamp: a vector providing the sequence of Reset voltages to be applied in the inner loop
+        vGateSetRamp: a vector providing the sequence of Set Gate voltages to be applied in the outer loop
+        vGateResetRamp: a vector providing the sequence of Reset Gate voltages to be applied in the outer loop
+        maxLoops: the maximum number of times the program will run the full inner+outer loop for a Set and Reset sequence before giving up
+        
+    Returns:
+        currG: The final read of the device
+
+    '''
+    targetGLow = targetG-targetTolerance
+    targetGHigh = targetG+targetTolerance
+    currentLoops = 0
+    vRead=0.2
+    Vgate=5.0
+
+    # Do initial reading
+    currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+    #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+    initG = currG
+    # Now loop as long as the device is out of tolerance for target conductance and we haven't maxed out loops
+    while ( ( (currG < targetGLow) | (currG > targetGHigh) ) & (currentLoops < maxLoops) ):
+        # Do SET operations if device too low        
+        if (currG < targetGLow):
+            for vGateSet in vGateSetRamp:
+                for vSet in vSetRamp:
+                    set_single_int(vSet, vGateSet, array=array, row=targetRow, col=targetCol)
+                    currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+                    #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+                    if (currG >= targetGLow):
+                        break
+                if (currG >= targetGLow):
+                        break
+            # IF the device did not switch, we may be unformed and do not want to repeat this too many times
+            if (currG < targetGLow):
+                currentLoops=currentLoops+2
+            else:
+                currentLoops=currentLoops+1
+
+        # Do RESET operations if device too high
+        if (currG > targetGHigh):
+            for vGateReset in vGateResetRamp:
+                for vReset in vResetRamp:
+                    reset_single_int(vReset, vGateReset, array=array, row=targetRow, col=targetCol)
+                    currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+                    #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+                    if (currG <= targetGHigh):
+                        break
+                if (currG <= targetGHigh):
+                        break
+            currentLoops=currentLoops+1
+            
+    #print('InitG=', initG, 'FinalG=', currG, ', Total loops =', currentLoops)
+    return currG
+def cell_program_with_fb(array, targetRow, targetCol, targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, maxLoops=5):
+    ''' 
+    Program a cell to a target conductance
+
+    Args:
+        array = targeted array
+        [targetRow, targetCol] = targeted cell location
+
+        targetG: target conductances (Siemens)
+        targetTolerance: acceptable tolerance in targetG. Thus, the programming will stop when 
+            (targetG-targetTolerance) <= G <=(targetG+targetTolerance) 
+
+        vSetRamp: a vector providing the sequence of Set voltages to be applied in the inner loop
+        vResetRamp: a vector providing the sequence of Reset voltages to be applied in the inner loop
+        vGateSetRamp: a vector providing the sequence of Set Gate voltages to be applied in the outer loop
+        vGateResetRamp: a vector providing the sequence of Reset Gate voltages to be applied in the outer loop
+        maxLoops: the maximum number of times the program will run the full inner+outer loop for a Set and Reset sequence before giving up
+        
+    Returns:
+        currG: The final read of the device
+
+    '''
+    targetGLow = targetG-targetTolerance
+    targetGHigh = targetG+targetTolerance
+    currentLoops = 0
+    vRead=0.2
+    Vgate=5.0
+
+    # Do initial reading
+    currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+    #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+    initG = currG
+    # Now loop as long as the device is out of tolerance for target conductance and we haven't maxed out loops
+    while ( ( (currG < targetGLow) | (currG > targetGHigh) ) & (currentLoops < maxLoops) ):
+        # Do SET operations if device too low        
+        if (currG < targetGLow):
+            for vGateSet in vGateSetRamp:
+                for vSet in vSetRamp:
+                    set_single_int(vSet, vGateSet, array=array, row=targetRow, col=targetCol)
+                    currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+                    #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+                    if (currG >= targetGLow):
+                        print('Device (row=', targetRow, 'col=', targetColcc, ') switched ON at V=', vSet)
+                        break
+                if (currG >= targetGLow):
+                    print('Device (row=', targetRow, 'col=', targetColcc, ') switched ON at Vgate=', vGateSet)
+                    break
+            # IF the device did not switch, we may be unformed and do not want to repeat this too many times
+            if (currG < targetGLow):
+                print('Device (row=', targetRow, 'col=', targetColcc, ') never switched ON sufficiently')
+                currentLoops=currentLoops+2
+            else:
+                currentLoops=currentLoops+1
+
+        # Do RESET operations if device too high
+        if (currG > targetGHigh):
+            for vGateReset in vGateResetRamp:
+                for vReset in vResetRamp:
+                    reset_single_int(vReset, vGateReset, array=array, row=targetRow, col=targetCol)
+                    currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+                    #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
+                    if (currG <= targetGHigh):
+                        print('Device (row=', targetRow, 'col=', targetColcc, ') switched OFF at V=', vReset)
+                        break
+                if (currG <= targetGHigh):
+                    print('Device (row=', targetRow, 'col=', targetColcc, ') switched OFF at Vgate=', vGateReset)
+                    break
+            currentLoops=currentLoops+1
+            
+    #print('InitG=', initG, 'FinalG=', currG, ', Total loops =', currentLoops)
+    return currG
+
+def hybrid_array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
+    ''' 
+    Hybrid scheme until batch reads work.
+    Programs an array to a target conductance matrix using single cell reads with batch pic_write operations
+
+    Args:
+        targetG: matrix of target conductances (Siemens) corresponding to each [row,col]
+        targetTolerance: matrix of acceptable tolerances in targetG. Thus, the programming will stop when 
+            (targetG-targetTolerance) <= GMatrix <=(targetG+targetTolerance) 
+            IF A PARTICULAR CELL [I,J] DOES NOT NEED TO BE PROGRAMMED, SET "targetTolerance[I,J] = inf"
+        vSetRamp: a vector providing the sequence of Set voltages to be applied in the inner loop
+        vResetRamp: a vector providing the sequence of Reset voltages to be applied in the inner loop
+        vGateSetRamp: a vector providing the sequence of Set Gate voltages to be applied in the outer loop
+        vGateResetRamp: a vector providing the sequence of Reset Gate voltages to be applied in the outer loop
+        array(int):    The array to program
+        maxLoops: the maximum number of times the program will run the full inner+outer loop for a Set and Reset sequence before giving up
+        row(int):      Row #
+        col(int):      col #
+        
+    Returns:
+        np.ndarray: The final read of the array
+
+    '''
+    #from dpe import DPE
+    # Configure matrices needed
+    targetGLow = targetG-targetTolerance
+    targetGHigh = targetG+targetTolerance
+    currentLoops = 0
+    zeroMatrix = np.zeros((64,64))
+    GMatrix = zeroMatrix
+    vRead=0.2
+    Vgate = 5
+    numRows = 64
+    numCols = 64
+    # Do initial reading
+    #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+    for rr in range(numRows):
+        for cc in range(numCols):
+            GMatrix[rr,cc] = pic_read_single(array, rr, cc, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+    # Now loop as long as any device is out of tolerance for target conductance and we haven't maxed out loops
+    while ( (np.any(GMatrix < targetGLow) | np.any(GMatrix > targetGHigh)) & (currentLoops<maxLoops) ):
+        # Do SET operations for any devices too low        
+        if np.any(GMatrix < targetGLow):
+            print('Now turning ON')
+            for vGateSet in vGateSetRamp:
+                print('Set, Vgate = ', vGateSet)
+                for vSet in vSetRamp:
+                    vGateSetMatrix = zeroMatrix + vGateSet * (GMatrix < targetGLow)
+                    vWriteSetMatrix = zeroMatrix + vSet * (GMatrix < targetGLow)
+                    print(np.sum(GMatrix < targetGLow), ' are still too far below target Conductance')
+                    #print('VWrite:', vWriteSetMatrix[0:3,0:3])
+                    #print('VGate:', vGateSetMatrix[0:3,0:3])
+                    pic_write_batch(vWriteSetMatrix, vGateSetMatrix, array=array, mode=1)
+                    #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    rowscols=np.nonzero(GMatrix < targetGLow)
+                    testRows = rowscols[0]
+                    testCols = rowscols[1]
+                    for ii in range(np.size(testRows)):
+                        GMatrix[testRows[ii],testCols[ii]] = pic_read_single(array, testRows[ii], testCols[ii], Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+
+                    if np.all(GMatrix >= targetGLow):
+                        break
+                if np.all(GMatrix >= targetGLow):
+                        break
+            currentLoops=currentLoops+1
+        #Do a full array read before starting Reset operations    
+        for rr in range(numRows):
+            for cc in range(numCols):
+                GMatrix[rr,cc] = pic_read_single(array, rr, cc, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+
+        # Do RESET operations for any devices too high
+        if np.any(GMatrix > targetGHigh):
+            print('Now turning OFF')
+            for vGateReset in vGateResetRamp:
+                print('Reset, Vgate = ', vGateReset)
+                for vReset in vResetRamp:
+                    vGateResetMatrix = zeroMatrix + vGateReset * (GMatrix > targetGHigh)
+                    vWriteResetMatrix = zeroMatrix + vReset * (GMatrix > targetGHigh)
+                    print(np.sum(GMatrix > targetGHigh), ' are still too far above target Conductance')
+                    pic_write_batch(vWriteResetMatrix, vGateResetMatrix, array=array, mode=0)
+                    #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    rowscols=np.nonzero(GMatrix > targetGHigh)
+                    testRows = rowscols[0]
+                    testCols = rowscols[1]
+                    for ii in range(np.size(testRows)):
+                        GMatrix[testRows[ii],testCols[ii]] = pic_read_single(array, testRows[ii], testCols[ii], Vread=vRead, Vgate=Vgate, gain=-1) / vRead
+                    if np.all(GMatrix <= targetGHigh):
+                        break
+                if np.all(GMatrix <= targetGHigh):
+                        break
+            currentLoops=currentLoops+1
+        #currentLoops=currentLoops+1
+        print('Current loop = ', currentLoops)
+    print('Completed with total loops = ', currentLoops)
+    return GMatrix    
 
 def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
     '''
@@ -310,7 +710,7 @@ def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
 
 
 def read_single_int(Vread, Vgate, array=0, row=0, col=0, 
-                    gain=0, Tsh=0x0c, Vref=0.5,
+                    gain=0, Tsh=-1, Vref=0.5,
                     raw=False):
     '''
     Args,
@@ -322,14 +722,19 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
     VREF_TIA = Vref
     VREF_LO = 0.5
 
-    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c, 0x10,
+    if Tsh<0:
+        Tsh = _sh_default[gain]
+
+    dut.scan_control(scan_ctrl_bits=bytes([0x10, 0x02, 0x0c*3, 0x10,
                                            Tsh, 0x01, 0x02]))
 
     if gain >= 0 and gain <= 4:
         AGC = False
         dut.scan_tia(BitArray(_gain_table[gain]*96).bytes)
+        time.sleep(5e-3)
     else:
         AGC = True
+        
 
 
     # Make sure the VPP is reasonable
@@ -367,7 +772,6 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
         time.sleep(2e-7)
         drv.gpio_pin_reset(*PIC_PINS['DPE_PULSE'])
 
-
     [fifo_en, channel] = dut.which_fifo([array, col])
 
     data = dut.download_fifo(fifo_en)
@@ -381,10 +785,9 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
     # volt / _gain_ratio[gain]
 
 
-def reset_single(Vreset, Vgate, array=0, row=0, col=0):
+def reset_single(Vreset, Vgate, array=0, row=0, col=0, Twidth=1e-6):
     #     Vreset = 1
     # Vgate = 5
-    Twidth = 1e-6
 
     ar = array
     r = row

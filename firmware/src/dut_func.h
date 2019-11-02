@@ -61,13 +61,19 @@ void load_vectors(uint8_t arr, uint16_t * vector, bool is_row);
 
 void download_fifo( uint8_t fifo_en, uint16_t * data );
 int dac_set( DAC_CH ch, uint16_t value);
+int serial_set(uint8_t addr,  int size, uint8_t * buffer);
+int dac_init(uint8_t span);
 
 uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col, int mode);
 void A0_read_batch( uint8_t arr, uint16_t *read_buffer, int mode );
 void A0_read_batch2( uint8_t arr, uint16_t *read_buffer, int mode );
 void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16_t *output_buffer);
 
+int A0_write_single(uint8_t arr, uint8_t row, uint8_t col, 
+                        uint16_t Vwrite_raw, uint16_t Vgate_raw, 
+                        uint8_t is_set);
 
+int A0_write_batch(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_t * Vgate_raw);
 
 #ifdef	__cplusplus
 }

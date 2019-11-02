@@ -17,6 +17,9 @@ uint16_t read_buffer[64][64];
 uint16_t read_row;
 uint16_t n_row_to_send;
 
+uint16_t dac_buffer[64][64];
+uint16_t dac_buffer2[64][64];
+
 void CMD_Initialize ( void )
 {
 //    SYS_WDT_Enable( false );
@@ -91,7 +94,7 @@ void CMD_Tasks ( void )
                     int icmd = atoi(ptr);
                     SYS_PRINT("\t Command = %d\r\n", icmd);
 
-                    int i;
+                    int i, j;
                     int channel;
                     char portName;
                     uint32_t portValue;
@@ -255,7 +258,7 @@ void CMD_Tasks ( void )
                             ser_len = atoi(ptr); 
                             
                             ptr = strtok(NULL, ","); //expecting a non-zero character
-                            ptr += 1;
+                            ptr += 2;
                             SYS_PRINT("\t Sending data '%s' with addr=%x, size=%d\r\n", ptr, ser_addr, ser_len);
                             
 //                            PLIB_PORTS_PinSet(PORTS_ID_0, PORT_CHANNEL_D, PORTS_BIT_POS_14);
@@ -409,6 +412,39 @@ void CMD_Tasks ( void )
                             cmdData.state = CMD_STATE_INIT;
                             break; 
 
+                        case 303:
+                            /*
+                             * test blocking scan chain
+                             */
+                            
+                            ptr = strtok(NULL, ",");
+                            ser_addr = atoi(ptr) & 0x3; // address
+                            
+                            ptr = strtok(NULL, ",");
+                            ser_len = atoi(ptr); 
+                            
+                            ptr = strtok(NULL, ","); //expecting a non-zero character
+                            ptr += 2;
+                            SYS_PRINT("\t Sending data '%s' with addr=%x, size=%d\r\n", ptr, ser_addr, ser_len);
+
+                            serial_set( ser_addr, ser_len, ptr);
+                            
+                            //Handshake
+                            USB_Write( "0", 1 );
+
+                            cmdData.state = CMD_STATE_INIT;
+                            break;
+                        case 304:
+                            /*
+                             * test dac_init
+                             */
+                            ptr = strtok(NULL, ",");
+                            portValue = atoi(ptr);
+                            
+                            dac_init(portValue);  
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break;
                         case 401:
                             /*
                              * read_single
@@ -451,7 +487,7 @@ void CMD_Tasks ( void )
                             break; 
                         case 502:
                             /*
-                             * read_batch
+                             * read_batch2
                              */
                             ptr = strtok(NULL, ",");
                             arr = atoi(ptr);        // array number
@@ -489,7 +525,7 @@ void CMD_Tasks ( void )
                                 // usb buffer limit is 512, so one packet can accommodate (512-11) / 8 
                                 SYS_PRINT("\t In valid # of vectors! exit...\r\n", arr, ser_len);
                             } else {
-                                ptr += 1;
+                                ptr += 2;
 
                                 A0_dpe_batch(arr, ser_len, channel, ptr, (uint16_t *)read_buffer);
                                 
@@ -501,8 +537,81 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
-
                             
+                        case 404:
+                            /*
+                             * Write single
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);        // array number
+
+                            ptr = strtok(NULL, ",");
+                            row = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            col = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode: 0 is reset, 1 is set
+                            
+                            ptr = strtok(NULL, ",");
+                            uint16_t Vwrite_raw = atoi(ptr); 
+                            
+                            ptr = strtok(NULL, ",");
+                            uint16_t Vgate_raw = atoi(ptr); 
+
+                            SYS_PRINT("\t Write single arr=%d, row=%d, col=%d, mode=%d\r\n", arr, row, col, channel);
+                            SYS_PRINT("\t              Vwrite_raw=0x_%x, Vgate_raw=0x_%x\r\n", Vwrite_raw, Vgate_raw);
+                            
+                            A0_write_single(arr, row, col, Vwrite_raw, Vgate_raw, channel);
+                            //Handshake programming complete
+                            USB_Write( "0", 1 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+                            
+                        case 405:
+                            /*
+                             * Write batch
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);         // array number
+                            
+                            ptr = strtok(NULL, ",");
+                            int mode = atoi(ptr);    // mode: 0 is reset, 1 is set
+                            
+                            ptr = strtok(NULL, ",");
+                            row = atoi(ptr);         // current row
+                            
+                            SYS_PRINT("\t Write batch  arr=%d, mode=%d, row=%d\r\n", arr, mode, row);
+                            
+                            ptr = strtok(NULL, ","); //expecting a non-zero character
+                            ptr += 2;
+                            
+                            SYS_PRINT("\t ptr=%c\r\n", *ptr);
+                            
+                            if (row < 64) {
+                                // Vwrite
+                                // Two rows at a time
+                                memcpy( &dac_buffer[row][0], ptr, 256);
+                            } else if (row<128) {
+                                // Vgate
+                                memcpy( &dac_buffer2[row-64][0], ptr, 256);
+                            }
+                            
+                            if (row == 126){
+                                // Start programming
+                                A0_write_batch(arr, mode, (uint16_t *)dac_buffer, (uint16_t *)dac_buffer2);
+                                
+                                // Handshake
+                                USB_Write( "0", 1 );
+                            }
+
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+                             
                         // Test commands
                         // Command start from 101 for fault tolerance
                         case 101:

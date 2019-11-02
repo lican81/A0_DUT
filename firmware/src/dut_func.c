@@ -542,6 +542,13 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
 
 
 int dac_set( DAC_CH ch, uint16_t value) {
+    /*
+     * Set the DAC value. It is pre-configured beforehand. 
+     * 
+     * @param ch The DAC channel
+     * @param value The raw DAC value in 16-bit binaries
+     */
+
     PIC_CSOn();
     PIC_CSOff();
 
@@ -553,7 +560,50 @@ int dac_set( DAC_CH ch, uint16_t value) {
     cmd_b[1] = (uint8_t) (cmd >> 16u);
     cmd_b[0] = (uint8_t) (cmd >> 24u);
 
-    SYS_PRINT("\t DAC cmd=%x\r\n", cmd);
+//    SYS_PRINT("\t DAC cmd=%x\r\n", cmd);
+//    SYS_PRINT("\t DAC re cmd=%x %x %x %x\r\n", cmd_b[0], cmd_b[1] , cmd_b[2] , cmd_b[3] );
+    
+    DRV_SPI_BUFFER_HANDLE spi_handle = DRV_SPI1_BufferAddWrite( cmd_b, 4, NULL, NULL); 
+
+    while (DRV_SPI0_BufferStatus(spi_handle) != DRV_SPI_BUFFER_EVENT_COMPLETE) {
+//        SYS_PRINT("\t Wait spi (DAC) to complete...\r\n");
+    }
+    
+//    BSP_DelayUs(10);
+
+    PIC_CSOn();
+    return 0;
+}
+
+int dac_init(uint8_t span) {
+    /*
+     * Initialize the DAC
+     * 
+     * @param span The span code
+     */
+    
+    PIC_LDACOn();
+    PIC_TGPOn();
+
+    PIC_CLROff();
+    BSP_DelayUs(1);
+    PIC_CLROn();
+
+    PIC_CSOn();
+    PIC_CSOff();
+
+    // Hardcoded to 0-5 V for now
+    // span = 0;
+    
+    uint32_t cmd = (0xe<<20) | span;
+
+    uint8_t cmd_b[4];
+    cmd_b[3] = (uint8_t) (cmd >>  0u);
+    cmd_b[2] = (uint8_t) (cmd >>  8u);
+    cmd_b[1] = (uint8_t) (cmd >> 16u);
+    cmd_b[0] = (uint8_t) (cmd >> 24u);
+
+    SYS_PRINT("\t DAC cmd=%x, span=%x\r\n", cmd, span);
     SYS_PRINT("\t DAC re cmd=%x %x %x %x\r\n", cmd_b[0], cmd_b[1] , cmd_b[2] , cmd_b[3] );
     
     DRV_SPI_BUFFER_HANDLE spi_handle = DRV_SPI1_BufferAddWrite( cmd_b, 4, NULL, NULL); 
@@ -562,9 +612,139 @@ int dac_set( DAC_CH ch, uint16_t value) {
         SYS_PRINT("\t Wait spi (DAC) to complete...\r\n");
     }
     
-//    BSP_DelayUs(10);
-
     PIC_CSOn();
+    return 0;
+}
 
+int serial_set(uint8_t addr,  int size, uint8_t * buffer) {
+    /*
+     * Send the scan_chain data to the A0 chip
+     * 
+     * @param addr The scan chain address
+     * @param size The size of the data to send, in bytes
+     * @param buffer The data to send
+     */
+
+    // Setting the address
+    switch (addr) {
+        case 0b00:
+            SERIAL_CHAIN_SEL_0Off();
+            SERIAL_CHAIN_SEL_1Off();
+            break;
+        case 0b01:
+            SERIAL_CHAIN_SEL_0On();
+            SERIAL_CHAIN_SEL_1Off();
+            break;
+        case 0b10:
+            SERIAL_CHAIN_SEL_0Off();
+            SERIAL_CHAIN_SEL_1On();
+            break;
+        default:
+            SERIAL_CHAIN_SEL_0On();
+            SERIAL_CHAIN_SEL_1On();
+            SYS_PRINT("\t Wrong address!!!");
+    }
+    
+    DRV_SPI_BUFFER_HANDLE spi_handle = DRV_SPI0_BufferAddWrite( buffer, size, NULL, NULL);
+
+    while (DRV_SPI0_BufferStatus(spi_handle) != DRV_SPI_BUFFER_EVENT_COMPLETE) {
+    }
+
+    // Clear the address to a safe state
+    SERIAL_CHAIN_SEL_0On();
+    SERIAL_CHAIN_SEL_1On();
+}
+
+
+int A0_write_single(uint8_t arr, uint8_t row, uint8_t col, 
+                        uint16_t Vwrite_raw, uint16_t Vgate_raw, 
+                        uint8_t is_set) {
+    /*
+     * Program a single device
+     * 
+     */
+    uint16_t data_row[4];
+    uint16_t data_col[4];
+    
+    uint8_t fifo_en, fifo_ch;
+    int i;
+    
+    for (i=0; i<4; i++) {
+        data_row[i] = 0;
+        data_col[i] = 0;
+    }
+    
+    gen_data_row(row, data_row);
+    gen_data_col(col, data_col);
+    
+    load_vectors(arr, data_row, true);
+    load_vectors(arr, data_col, false);
+    
+    WRT_INTERNAL_ENOn();
+    WRITE_ADD_CAPOff();
+
+    reset_dpe();
+
+    // dac_set( DAC_VP_PAD, 0x00);
+    
+    NFORCE_SAFE_Set( 0x1 << arr );
+
+    if (is_set==true) {
+        WRITE_FWDOn();
+        ROW_WRITE_CONNECTOn();
+    } else {
+        WRITE_FWDOff();
+        COL_WRITE_CONNECTOn();
+    }
+    
+    CONNECT_COLUMN_TOn();
+
+    dac_set( P_TVDD, Vgate_raw);
+    dac_set( DAC_VP_PAD, Vwrite_raw);
+    
+    // Wait for the DAC
+    BSP_DelayUs(5);
+    
+    WRT_PULSEOn();
+    BSP_DelayUs(0.2);
+    WRT_PULSEOff();
+    
+    BSP_DelayUs(1);
+
+    CONNECT_COLUMN_TOff();
+    ROW_WRITE_CONNECTOff();
+    NFORCE_SAFE_Set( 0x0 );
+    
+    return 0;
+}
+
+int A0_write_batch(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_t * Vgate_raw) {
+  
+    SYS_PRINT("\tStart Prog.\r\n", arr, mode);
+    
+    int i, j;
+    
+    for (i=0; i<4; i++) {
+        SYS_PRINT("[DW] r=%d | ", i*16);
+        for (j=0; j<4; j++) {
+            SYS_PRINT("%x, ", Vwrite_raw[(i*16)*64 + j*16]);
+        }
+        SYS_PRINT("\r\n");
+    }
+
+    for (i=0; i<4; i++) {
+        SYS_PRINT("[DG] r=%d | ", i*16);
+        for (j=0; j<4; j++) {
+            SYS_PRINT("%x, ", Vgate_raw[(i*16)*64 + j*16]);
+        }
+        SYS_PRINT("\r\n");
+    }
+    
+    for (i=0; i<64; i++) {
+        for (j=0; j<64; j++) {
+            A0_write_single(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], mode);
+        }
+    }
+    
     return 0;
 }
