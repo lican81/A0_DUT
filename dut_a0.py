@@ -529,14 +529,14 @@ def cell_program_with_fb(array, targetRow, targetCol, targetG, targetTolerance, 
                     currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
                     #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
                     if (currG >= targetGLow):
-                        print('Device (row=', targetRow, 'col=', targetColcc, ') switched ON at V=', vSet)
+                        print('Device (row=', targetRow, 'col=', targetCol, ') switched ON at V=', vSet)
                         break
                 if (currG >= targetGLow):
-                    print('Device (row=', targetRow, 'col=', targetColcc, ') switched ON at Vgate=', vGateSet)
+                    print('Device (row=', targetRow, 'col=', targetCol, ') switched ON at Vgate=', vGateSet)
                     break
             # IF the device did not switch, we may be unformed and do not want to repeat this too many times
             if (currG < targetGLow):
-                print('Device (row=', targetRow, 'col=', targetColcc, ') never switched ON sufficiently')
+                print('Device (row=', targetRow, 'col=', targetCol, ') never switched ON sufficiently')
                 currentLoops=currentLoops+2
             else:
                 currentLoops=currentLoops+1
@@ -549,10 +549,10 @@ def cell_program_with_fb(array, targetRow, targetCol, targetG, targetTolerance, 
                     currG = pic_read_single(array, targetRow, targetCol, Vread=vRead, Vgate=Vgate, gain=-1) / vRead
                     #currG = read_single_int(vRead, Vgate, array=array, row=targetRow, col=targetCol, gain=-1) / vRead
                     if (currG <= targetGHigh):
-                        print('Device (row=', targetRow, 'col=', targetColcc, ') switched OFF at V=', vReset)
+                        print('Device (row=', targetRow, 'col=', targetCol, ') switched OFF at V=', vReset)
                         break
                 if (currG <= targetGHigh):
-                    print('Device (row=', targetRow, 'col=', targetColcc, ') switched OFF at Vgate=', vGateReset)
+                    print('Device (row=', targetRow, 'col=', targetCol, ') switched OFF at Vgate=', vGateReset)
                     break
             currentLoops=currentLoops+1
             
