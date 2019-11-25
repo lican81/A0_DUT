@@ -473,7 +473,7 @@ def cell_program(array, targetRow, targetCol, targetG, targetTolerance, vSetRamp
                 currentLoops=currentLoops+1
 
         # Do RESET operations if device too high
-        if (currG > targetGHigh):
+        elif (currG > targetGHigh):
             for vGateReset in vGateResetRamp:
                 for vReset in vResetRamp:
                     reset_single_int(vReset, vGateReset, array=array, row=targetRow, col=targetCol)
@@ -542,7 +542,7 @@ def cell_program_with_fb(array, targetRow, targetCol, targetG, targetTolerance, 
                 currentLoops=currentLoops+1
 
         # Do RESET operations if device too high
-        if (currG > targetGHigh):
+        elif (currG > targetGHigh):
             for vGateReset in vGateResetRamp:
                 for vReset in vResetRamp:
                     reset_single_int(vReset, vGateReset, array=array, row=targetRow, col=targetCol)
