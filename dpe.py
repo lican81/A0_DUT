@@ -20,15 +20,15 @@ def with_ser(func):
     A decorator handles all the functions require a serial communication
     '''
     def wrapper_with_ser(*args, **kwargs):
-        print(f'Running {func} with serial')
+        #print(f'Running {func} with serial')
         with serial.Serial(args[0].ser_name, 9600, timeout=1) as ser:
             dut.connect(ser)
 
             ts = time.time()
             result = func(*args, **kwargs)
-            print(f'[INFO] Elapsed time = {time.time()-ts:.2f}s')
+            #print(f'[INFO] Elapsed time = {time.time()-ts:.2f}s')
 
-        print('Serial disconnected')
+        #print('Serial disconnected')
         return result
     return wrapper_with_ser
 
