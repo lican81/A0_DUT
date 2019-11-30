@@ -786,9 +786,12 @@ def read_single_int(Vread, Vgate, array=0, row=0, col=0,
 
 
 def reset_single(Vreset, Vgate, array=0, row=0, col=0, Twidth=1e-6):
-    #     Vreset = 1
-    # Vgate = 5
+    '''
+    Reset a single device with PIC timing control
 
+    Args,
+        Twidth(int):    The pulse width in seconds.
+    '''
     ar = array
     r = row
     c = col
@@ -819,10 +822,14 @@ def reset_single(Vreset, Vgate, array=0, row=0, col=0, Twidth=1e-6):
     drv.gpio_nforce_safe_write(0)
 
 
-def set_single(Vset, Vgate, array=0, row=0, col=0):
-    #     Vset = 1
-    #     Vgate = 1
-    Twidth = 1e-6
+def set_single(Vset, Vgate, array=0, row=0, col=0, Twidth=1e-6):
+    '''
+    Set a single device with PIC timing control
+
+    Args,
+        Twidth(int):    The pulse width in seconds.\
+    '''
+
     ar = array
     r = row
     c = col
