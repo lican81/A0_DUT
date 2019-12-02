@@ -45,7 +45,7 @@ typedef enum
 } DAC_CH;
 
 
-void BSP_DelayUs(uint16_t microseconds);
+void BSP_DelayUs(uint32_t microseconds);
 void I2C_Write(uint8_t addr, uint32_t data);
 
 

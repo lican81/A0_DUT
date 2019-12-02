@@ -8,7 +8,7 @@
 
 #include "dut_func.h"
 
-void BSP_DelayUs(uint16_t microseconds)
+void BSP_DelayUs(uint32_t microseconds)
 {
     /**
      * Pause for certain microseconds
@@ -658,7 +658,7 @@ int serial_set(uint8_t addr,  int size, uint8_t * buffer) {
 
 int A0_write_single_ext(uint8_t arr, uint8_t row, uint8_t col, 
                         uint16_t Vwrite_raw, uint16_t Vgate_raw, uint16_t Vzero_raw,
-                        uint8_t is_set, uint16_t Twidth) {
+                        uint8_t is_set, uint32_t Twidth) {
     /*
      * Program a single device
      * 
