@@ -701,21 +701,21 @@ int A0_write_single_ext(uint8_t arr, uint8_t row, uint8_t col,
         COL_WRITE_CONNECTOn();
     }
     
-    CONNECT_COLUMN_TOn();
-
     dac_set( P_TVDD, Vgate_raw);
     dac_set( DAC_VP_PAD, Vwrite_raw);
     
-    // Wait for the DAC
-    BSP_DelayUs(Twidth);
-
-    // Clear DAC
-    dac_set( DAC_VP_PAD, Vzero_raw);
-    dac_set( P_TVDD, Vzero_raw);
+    //wait for DAC settling
+    BSP_DelayUs(10);
     
+    CONNECT_COLUMN_TOn();
+    BSP_DelayUs(Twidth);
     CONNECT_COLUMN_TOff();
     ROW_WRITE_CONNECTOff();
     NFORCE_SAFE_Set( 0x0 );
+    
+    // Clear DAC
+    dac_set( DAC_VP_PAD, Vzero_raw);
+    dac_set( P_TVDD, Vzero_raw);
     
     return 0;
 }

@@ -354,7 +354,8 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
     ''' 
     Program a device with PIC control
 
-    The actual Twidth is around the 40 us + Twidth!!!
+    The pulse is gated through P_CONNECT_COLUMN_T accurately (< +/- 1us).
+    But the actual Twidth on VP_PAD is around the 40 us + Twidth
 
     Args:
         Vwrite(float): Set or Reset voltage
