@@ -377,7 +377,7 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
     #                                        0x20, 0x01, 0x02]))
 
     dut.pads_defaults()
-    dut.dac_init()
+    #dut.dac_init()
     #dut.dac_set('DAC_VP_PAD', 0)
 
     Vwrite_raw = dut.dac_volt2raw(Vwrite)
