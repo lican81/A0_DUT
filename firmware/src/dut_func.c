@@ -656,6 +656,73 @@ int serial_set(uint8_t addr,  int size, uint8_t * buffer) {
 }
 
 
+int A0_write_single_ext(uint8_t arr, uint8_t row, uint8_t col, 
+                        uint16_t Vwrite_raw, uint16_t Vgate_raw, 
+                        uint8_t is_set, uint16_t Twidth) {
+    /*
+     * Program a single device
+     * 
+     */
+    uint16_t data_row[4];
+    uint16_t data_col[4];
+    
+    uint8_t fifo_en, fifo_ch;
+    int i;
+    
+    for (i=0; i<4; i++) {
+        data_row[i] = 0;
+        data_col[i] = 0;
+    }
+    
+    gen_data_row(row, data_row);
+    gen_data_col(col, data_col);
+    
+    load_vectors(arr, data_row, true);
+    load_vectors(arr, data_col, false);
+    
+    WRT_INTERNAL_ENOff();
+    WRITE_ADD_CAPOff();
+    WRITE_SEL_EXTOn();
+
+    reset_dpe();
+
+    // Clear DAC
+    // dac_set( DAC_VP_PAD, 0x00);
+    PIC_CLROff();
+    BSP_DelayUs(1);
+    PIC_CLROn();
+    
+    NFORCE_SAFE_Set( 0x1 << arr );
+
+    if (is_set==true) {
+        WRITE_FWDOn();
+        ROW_WRITE_CONNECTOn();
+    } else {
+        WRITE_FWDOff();
+        COL_WRITE_CONNECTOn();
+    }
+    
+    CONNECT_COLUMN_TOn();
+
+    dac_set( P_TVDD, Vgate_raw);
+    dac_set( DAC_VP_PAD, Vwrite_raw);
+    
+    // Wait for the DAC
+    BSP_DelayUs(Twidth);
+
+    // Clear DAC
+    // dac_set( DAC_VP_PAD, 0x00);
+    PIC_CLROff();
+    BSP_DelayUs(1);
+    PIC_CLROn();
+
+    CONNECT_COLUMN_TOff();
+    ROW_WRITE_CONNECTOff();
+    NFORCE_SAFE_Set( 0x0 );
+    
+    return 0;
+}
+
 int A0_write_single(uint8_t arr, uint8_t row, uint8_t col, 
                         uint16_t Vwrite_raw, uint16_t Vgate_raw, 
                         uint8_t is_set) {
@@ -682,6 +749,7 @@ int A0_write_single(uint8_t arr, uint8_t row, uint8_t col,
     
     WRT_INTERNAL_ENOn();
     WRITE_ADD_CAPOff();
+    WRITE_SEL_EXTOff();
 
     reset_dpe();
 

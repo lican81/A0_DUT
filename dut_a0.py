@@ -277,7 +277,7 @@ def pic_write_single(Vwrite, Vgate, array=0, row=0, col=0, mode=-1):
                    others -> invalid
 
     Returns:
-        np.ndarray: The outputs
+        None
 
     '''
     # Configure timing
@@ -350,6 +350,50 @@ def pic_write_batch(Vwrite, Vgate, array=0, mode=-1):
 
     dut.dac_set('DAC_VP_PAD', 0)
 
+def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5):
+    ''' 
+    Program a device with PIC control
+
+    Args:
+        Vwrite(float): Set or Reset voltage
+        Vgate(float):  Corresponding gate voltage
+        array(int):    The array to program
+        row(int):      Row #
+        col(int):      col #
+        mode(int): 0 -> Reset
+                   1 -> Set
+                   others -> invalid
+        Twidth(int):    Programming pulse width in microseconds
+
+    Returns:
+        None
+
+    '''
+    # Configure timing
+    dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
+                                           0x20, 0x01, 0x02]))
+
+    dut.pads_defaults()
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+    Vwrite_raw = dut.dac_volt2raw(Vwrite)
+    Vgate_raw = dut.dac_volt2raw(Vgate)
+
+    if mode in [0,1]:
+
+        # print(f'404,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw}\0'.encode())
+        drv.ser.write(f'406,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw},{Twidth}\0'.encode())
+
+        # wait for completion
+        ret = drv.ser.read(1)
+
+        if ret != b'0':
+            print('[ERROR] Single device write return a wrong value')
+    else:
+        print(F'[ERROR] wrong writing mode = {mode}')
+
+    dut.dac_set('DAC_VP_PAD', 0)
 
 def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
     ''' 

@@ -611,6 +611,42 @@ void CMD_Tasks ( void )
 
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+
+                        case 406:
+                            /*
+                             * Write single with external timing
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);        // array number
+
+                            ptr = strtok(NULL, ",");
+                            row = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            col = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode: 0 is reset, 1 is set
+                            
+                            ptr = strtok(NULL, ",");
+                            uint16_t Vwrite_raw = atoi(ptr); 
+                            
+                            ptr = strtok(NULL, ",");
+                            uint16_t Vgate_raw = atoi(ptr); 
+
+                            ptr = strtok(NULL, ",");
+                            uint16_t Twidth = atoi(ptr); 
+
+                            SYS_PRINT("\t Write single arr=%d, row=%d, col=%d, mode=%d\r\n", arr, row, col, channel);
+                            SYS_PRINT("\t             Vwrite_raw=0x_%x, Vgate_raw=0x_%x, Twidth=0x_%x us, \r\n", Vwrite_raw, Vgate_raw, Twidth);
+                            
+                            A0_write_single_ext(arr, row, col, Vwrite_raw, Vgate_raw, channel, Twidth);
+                            //Handshake programming complete
+                            USB_Write( "0", 1 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
                              
                         // Test commands
                         // Command start from 101 for fault tolerance
