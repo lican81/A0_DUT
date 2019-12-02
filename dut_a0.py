@@ -354,6 +354,8 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
     ''' 
     Program a device with PIC control
 
+    The actual Twidth is around the 40 us + Twidth!!!
+
     Args:
         Vwrite(float): Set or Reset voltage
         Vgate(float):  Corresponding gate voltage
@@ -370,20 +372,21 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
 
     '''
     # Configure timing
-    dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
-                                           0x20, 0x01, 0x02]))
+    # dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
+    #                                        0x20, 0x01, 0x02]))
 
     dut.pads_defaults()
-
-    dut.dac_set('DAC_VP_PAD', 0)
+    dut.dac_init()
+    #dut.dac_set('DAC_VP_PAD', 0)
 
     Vwrite_raw = dut.dac_volt2raw(Vwrite)
     Vgate_raw = dut.dac_volt2raw(Vgate)
+    Vzero_raw = dut.dac_volt2raw(0)
 
     if mode in [0,1]:
 
         # print(f'404,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw}\0'.encode())
-        drv.ser.write(f'406,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw},{Twidth}\0'.encode())
+        drv.ser.write(f'406,{array},{row},{col},{mode},{Vwrite_raw},{Vgate_raw},{Vzero_raw},{Twidth}\0'.encode())
 
         # wait for completion
         ret = drv.ser.read(1)
@@ -393,7 +396,7 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
     else:
         print(F'[ERROR] wrong writing mode = {mode}')
 
-    dut.dac_set('DAC_VP_PAD', 0)
+    #dut.dac_set('DAC_VP_PAD', 0)
 
 def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
     ''' 

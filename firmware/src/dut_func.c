@@ -657,7 +657,7 @@ int serial_set(uint8_t addr,  int size, uint8_t * buffer) {
 
 
 int A0_write_single_ext(uint8_t arr, uint8_t row, uint8_t col, 
-                        uint16_t Vwrite_raw, uint16_t Vgate_raw, 
+                        uint16_t Vwrite_raw, uint16_t Vgate_raw, uint16_t Vzero_raw,
                         uint8_t is_set, uint16_t Twidth) {
     /*
      * Program a single device
@@ -687,10 +687,9 @@ int A0_write_single_ext(uint8_t arr, uint8_t row, uint8_t col,
     reset_dpe();
 
     // Clear DAC
-    // dac_set( DAC_VP_PAD, 0x00);
-    PIC_CLROff();
+    dac_set( P_TVDD, Vzero_raw);
+    dac_set( DAC_VP_PAD, Vzero_raw);
     BSP_DelayUs(1);
-    PIC_CLROn();
     
     NFORCE_SAFE_Set( 0x1 << arr );
 
@@ -711,11 +710,9 @@ int A0_write_single_ext(uint8_t arr, uint8_t row, uint8_t col,
     BSP_DelayUs(Twidth);
 
     // Clear DAC
-    // dac_set( DAC_VP_PAD, 0x00);
-    PIC_CLROff();
-    BSP_DelayUs(1);
-    PIC_CLROn();
-
+    dac_set( DAC_VP_PAD, Vzero_raw);
+    dac_set( P_TVDD, Vzero_raw);
+    
     CONNECT_COLUMN_TOff();
     ROW_WRITE_CONNECTOff();
     NFORCE_SAFE_Set( 0x0 );
