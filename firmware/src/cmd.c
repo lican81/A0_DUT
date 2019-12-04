@@ -467,6 +467,43 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+
+                        case 411:
+                            /*
+                             * read_single_test
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            row = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            col = atoi(ptr);
+                            
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode: 0 is normal read, 1 is autogain
+
+                            ptr = strtok(NULL, ",");
+                            uint32_t T1 = atoi(ptr); 
+
+                            ptr = strtok(NULL, ",");
+                            uint32_t T2 = atoi(ptr); 
+
+                            ptr = strtok(NULL, ",");
+                            uint32_t T3 = atoi(ptr); 
+
+                            ptr = strtok(NULL, ",");
+                            uint32_t Nt = atoi(ptr); 
+
+                            SYS_PRINT("\t T1=%d, T1=%d, T1=%d, Nt=%d, \r\n", T1, T2, T3, Nt);
+                            
+                            res_read = A0_read_single_test(arr, row, col, channel, T1, T2, T3, Nt);
+                            SYS_PRINT("\t Read res_read=%x, mode=%d\r\n", res_read, channel);
+                            USB_Write( (char *) &res_read, 2 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
                             
                         case 402:
                             /*
@@ -478,7 +515,10 @@ void CMD_Tasks ( void )
                             ptr = strtok(NULL, ",");
                             channel = atoi(ptr);    // mode: 0 is normal read, 1 is autogain
 
-                            A0_read_batch(arr, (uint16_t *)read_buffer, channel);
+                            ptr = strtok(NULL, ",");
+                            uint32_t Tdly = atoi(ptr);    // Pause between reads
+
+                            A0_read_batch(arr, (uint16_t *)read_buffer, channel, Tdly);
                             SYS_PRINT("\t READ: batch read completed.\r\n");
                             
                             read_row = 0;
@@ -518,8 +558,11 @@ void CMD_Tasks ( void )
                             ptr = strtok(NULL, ",");
                             channel = atoi(ptr);    // mode
 
+                            ptr = strtok(NULL, ",");
+                            Tdly = atoi(ptr);    // Pause between reads
+
                             ptr = strtok(NULL, ","); // expecting a non-zero byte after , character
-                            SYS_PRINT("\t DPE on array %d, # of vectors sz=%d\r\n", arr, ser_len);
+                            SYS_PRINT("\t DPE on array %d, # of vectors sz=%d, Tdly=%d\r\n", arr, ser_len, Tdly);
 
                             if (ser_len>60) {
                                 // usb buffer limit is 512, so one packet can accommodate (512-11) / 8 
@@ -527,7 +570,7 @@ void CMD_Tasks ( void )
                             } else {
                                 ptr += 2;
 
-                                A0_dpe_batch(arr, ser_len, channel, ptr, (uint16_t *)read_buffer);
+                                A0_dpe_batch(arr, ser_len, channel, Tdly, ptr, (uint16_t *)read_buffer);
                                 
                                 read_row = 0;
                                 n_row_to_send = ser_len;

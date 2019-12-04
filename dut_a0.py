@@ -106,7 +106,7 @@ def pic_read_single(array, row, col, skip_conf=False, raw=False,
     '''
     Read a single device with PIC control
     '''
-    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else -1
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
 
     # autogain if gain=-1
@@ -124,6 +124,33 @@ def pic_read_single(array, row, col, skip_conf=False, raw=False,
     else:
         return adc2current(value, Vref)
 
+def pic_read_single_test(array, row, col, skip_conf=False, raw=False,
+                    **kwargs):
+    '''
+    Read a single device with PIC control
+    '''
+    gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
+    Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+
+    T1 = kwargs['T1'] if 'T1' in kwargs.keys() else 0
+    T2 = kwargs['T2'] if 'T2' in kwargs.keys() else 0
+    T3 = kwargs['T3'] if 'T3' in kwargs.keys() else 0
+    Nt = kwargs['Nt'] if 'Nt' in kwargs.keys() else 1
+
+    # autogain if gain=-1
+    mode = 1 if gain == -1 else 0
+
+    if not skip_conf:
+        pic_read_config(**kwargs)
+
+    drv.ser.write(f'411,{array},{row},{col},{mode},{T1},{T2},{T3},{Nt}\0'.encode())
+    value = drv.ser.read(2)
+    value = struct.unpack('<H', value)[0]
+
+    if raw:
+        return value
+    else:
+        return adc2current(value, Vref)
 
 def pic_read_batch(array, raw=False, **kwargs):
     '''
@@ -137,6 +164,7 @@ def pic_read_batch(array, raw=False, **kwargs):
     '''
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else 0
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
+    Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 1000
 
     # autogain if gain=-1
     mode = 1 if gain == -1 else 0
@@ -144,14 +172,14 @@ def pic_read_batch(array, raw=False, **kwargs):
     pic_read_config(**kwargs)
 
     drv.ser.flushInput()
-    drv.ser.write(f'502,{array},{mode}\0'.encode())
+    drv.ser.write(f'402,{array},{mode},{Tdly}\0'.encode())
     data = []
 
     r = 0
     while True:
         value = drv.ser.read(2 * 256)
         if len(value) == 0:
-            print(f'Wait for data r={r}')
+            print(f'.', end='')
             continue
         value = struct.unpack('<' + 'H'*256, value)
         data.append(value)
@@ -204,12 +232,14 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False,
     '''
     gain = kwargs['gain'] if 'gain' in kwargs.keys() else -1
     Vref = kwargs['Vref'] if 'Vref' in kwargs.keys() else 0.5
-    mode = kwargs['mode'] if 'mode' in kwargs.keys() else 0
+    mode = kwargs['mode'] if 'mode' in kwargs.keys() else 1
+    Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 1000
 
     if gain == -1:
         mode = mode | 0x2
     else:
         mode = mode & (~0x2)
+
 
     if not skip_conf:
         pic_read_config(**kwargs)
@@ -226,7 +256,7 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False,
 
         # print(f'DPE: {r_start}-{r_stop}, len={r_size}')
 
-        cmd = f'403,{array},{r_size},{mode},\1,'.encode()
+        cmd = f'403,{array},{r_size},{mode},{Tdly},\1,'.encode()
         cmd += struct.pack('>' + 'Q'*(r_size), *input[r_start:r_stop])
         cmd += b'\0'
 
@@ -239,7 +269,7 @@ def pic_dpe_batch(array, input, skip_conf=False, raw=False,
         while True:
             value = drv.ser.read(2 * 256)
             if len(value) == 0:
-                print(f'Wait for data r={r}')
+                print(f'.', end='')
                 continue
             value = struct.unpack('<' + 'H'*256, value)
             data.append(value)

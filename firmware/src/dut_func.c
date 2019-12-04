@@ -8,7 +8,7 @@
 
 #include "dut_func.h"
 
-void BSP_DelayUs(uint32_t microseconds)
+void BSP_DelayUs(double microseconds)
 {
     /**
      * Pause for certain microseconds
@@ -19,9 +19,14 @@ void BSP_DelayUs(uint32_t microseconds)
      */
 
     uint32_t time;
+
+    //SYS_PRINT("\t [D] T = %f\r\n", microseconds);
     
     time = READ_CORE_TIMER(); // Read Core Timer    
+    //SYS_PRINT("\t [D] T1 = %d, ", time);
     time += (SYS_CLK_FREQ / 2 / 1000000) * microseconds; // calc the Stop Time    
+    //SYS_PRINT("T2 = %d\r\n", time);
+    
     while ((int32_t)(time - READ_CORE_TIMER()) > 0){};    
 }
 
@@ -312,7 +317,7 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col, int mode) {
     }
     
     READ_BITOn();
-    READ_BITOff();
+    READ_DPEOff();
     
     NFORCE_SAFE_Set( 0x1 << arr );
     
@@ -333,6 +338,7 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col, int mode) {
     fifo_ch = get_fifo_ch(arr, col);
     
     //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
+//    BSP_DelayUs(5.2);
     
     while ( ADC_DONEStateGet() == 0) {
 //        SYS_PRINT("\t Wait for ADC_DONE\r\n");
@@ -340,14 +346,108 @@ uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col, int mode) {
     BSP_DelayUs(0.2);
     
     download_fifo( fifo_en, res_buff);
+//
+//    CONNECT_COLUMN_TOff();
+//    CONNECT_TIAOff();
+//    NFORCE_SAFE_Set( 0 );
+//    READ_BITOff();
+//    
     return res_buff[fifo_ch];
 }
 
-void A0_read_batch( uint8_t arr, uint16_t *read_buffer, int mode) {
+uint16_t A0_read_single_test(uint8_t arr, uint8_t row, uint8_t col, int mode, 
+                            uint32_t T1, uint32_t T2, uint32_t T3, uint32_t Nt ) {
+    /*
+     * Read a single device
+     * 
+     */
+    
+    uint16_t data_row[4];
+    uint16_t data_col[4];
+    
+    uint16_t res_buff[16];
+    
+    uint8_t fifo_en, fifo_ch;
+    int i;
+    
+    // for (i=0; i<4; i++) {
+    //     data_row[i] = 0;
+    //     data_col[i] = 0;
+    // }
+    
+    // gen_data_row(row, data_row);
+    // gen_data_col(col, data_col);
+    
+    // load_vectors(arr, data_row, true);
+    // load_vectors(arr, data_col, false);
+
+    // BSP_DelayUs(T1);    
+
+//    BSP_DelayUs(Nt*2 * 0.02);
+//    
+//    if (mode==0) {
+//        DPE_INTERNAL_ENOn();
+//    } else {
+//        AGC_INTERNAL_ENOn();
+//    }
+    
+//    READ_BITOn();
+//    READ_BITOff();
+    
+//    BSP_DelayUs(Nt*1 * 0.02);
+//    NFORCE_SAFE_Set( 0x1 << arr );
+//    BSP_DelayUs(Nt*1 * 0.02);
+    
+//    CONNECT_TIAOn();
+//    BSP_DelayUs(Nt*2 * 0.02);
+//    CONNECT_COLUMN_TOn();
+//    BSP_DelayUs(Nt*2 * 0.02);
+    
+    reset_dpe();
+    BSP_DelayUs(T1);
+
+    if (mode==0) {
+        DPE_PULSEOn();
+        BSP_DelayUs(Nt*2 * 0.02);
+        DPE_PULSEOff();
+    } else {
+        AGC_PULSEOn();
+        BSP_DelayUs(Nt*2 * 0.02);
+        AGC_PULSEOff();
+    }
+    
+    fifo_en = get_fifo_en(arr, col);
+    fifo_ch = get_fifo_ch(arr, col);
+    
+    //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
+    BSP_DelayUs(T2);
+    
+    while ( ADC_DONEStateGet() == 0) {
+//        SYS_PRINT("\t Wait for ADC_DONE\r\n");
+    }
+    BSP_DelayUs(Nt*2 * 0.02);
+    
+    download_fifo( fifo_en, res_buff);
+
+//    CONNECT_COLUMN_TOff();
+//    BSP_DelayUs(Nt*2 * 0.02);
+//    CONNECT_TIAOff();
+//    BSP_DelayUs(Nt*2 * 0.02);
+//    NFORCE_SAFE_Set( 0 );
+//    BSP_DelayUs(Nt*2 * 0.02);
+//    READ_BITOff();
+
+    BSP_DelayUs(T3);
+    
+    return res_buff[fifo_ch];
+}
+
+void A0_read_batch( uint8_t arr, uint16_t *read_buffer, int mode, uint32_t Tdly) {
     /*
      * Read the entire array.
      * 
      * @param read_buffer The raw adc buffer for the readout result
+     * @param Tdly          The pause time between reads, in microseconds
      * 
      */
     int r, c; // row, column
@@ -355,6 +455,7 @@ void A0_read_batch( uint8_t arr, uint16_t *read_buffer, int mode) {
     for (r=0; r<64; r++) {
         for (c=0; c<64; c++) {
             read_buffer[ r*64 + c] = A0_read_single(arr, r, c, mode);
+            BSP_DelayUs(Tdly);
         }
     }
 }
@@ -438,7 +539,7 @@ void A0_read_batch2( uint8_t arr, uint16_t *read_buffer, int mode ) {
 
 // void A0_dpe_single( uint_8 arr, )
 
-void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16_t *output_buffer) {
+void A0_dpe_batch( uint8_t arr, int len, int mode, uint32_t Tdly, uint8_t *input_buffer, uint16_t *output_buffer) {
     /*
      * Perform vector-matrix multiplication
      * 
@@ -515,7 +616,6 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
             AGC_PULSEOff();
         }
         
-        
         //SYS_PRINT("\t FIFO_%d, ch=%d\r\n", fifo_en, fifo_ch);
         
         while ( ADC_DONEStateGet() == 0) {
@@ -536,8 +636,15 @@ void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16
 
             output_buffer += 16;
         }
-    } //end for i_vector
 
+        BSP_DelayUs(Tdly);
+
+    } //end for i_vector
+    
+    CONNECT_COLUMN_TOff();
+    CONNECT_TIAOff();
+    NFORCE_SAFE_Set( 0 );
+    READ_BITOff();
 }
 
 
