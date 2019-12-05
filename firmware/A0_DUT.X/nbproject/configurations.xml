@@ -303,6 +303,9 @@
     <Elem>../..</Elem>
     <Elem>../src/default</Elem>
     <Elem>../src/system_config/default</Elem>
+    <Elem>..\src</Elem>
+    <Elem>..\src\default</Elem>
+    <Elem>..\src\system_config\default</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>

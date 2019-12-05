@@ -45,7 +45,7 @@ typedef enum
 } DAC_CH;
 
 
-void BSP_DelayUs(uint16_t microseconds);
+void BSP_DelayUs(double microseconds);
 void I2C_Write(uint8_t addr, uint32_t data);
 
 
@@ -65,9 +65,9 @@ int serial_set(uint8_t addr,  int size, uint8_t * buffer);
 int dac_init(uint8_t span);
 
 uint16_t A0_read_single(uint8_t arr, uint8_t row, uint8_t col, int mode);
-void A0_read_batch( uint8_t arr, uint16_t *read_buffer, int mode );
+void A0_read_batch( uint8_t arr, uint16_t *read_buffer, int mode, uint32_t Tdly );
 void A0_read_batch2( uint8_t arr, uint16_t *read_buffer, int mode );
-void A0_dpe_batch( uint8_t arr, int len, int mode, uint8_t *input_buffer, uint16_t *output_buffer);
+void A0_dpe_batch( uint8_t arr, int len, int mode, uint32_t Tdly, uint8_t *input_buffer, uint16_t *output_buffer);
 
 int A0_write_single(uint8_t arr, uint8_t row, uint8_t col, 
                         uint16_t Vwrite_raw, uint16_t Vgate_raw, 
