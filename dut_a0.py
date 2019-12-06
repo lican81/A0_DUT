@@ -459,7 +459,9 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
     zeroMatrix = np.zeros((64,64))
     Vread=0.2
     # Do initial reading
-    GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+    #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+    input = [0x1<<i for i in range(64)]
+    GMatrix = pic_dpe_batch(array, input, gain=-1, Vread=Vread, Tdly=1000) / Vread
     # Now loop as long as any device is out of tolerance for target conductance and we haven't maxed out loops
     while ( (np.any(GMatrix < targetGLow) | np.any(GMatrix > targetGHigh)) & (currentLoops<=maxLoops) ):
         # Do SET operations for any devices too low        
@@ -473,7 +475,8 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
                     #print('VWrite:', vWriteSetMatrix[0:3,0:3])
                     #print('VGate:', vGateSetMatrix[0:3,0:3])
                     pic_write_batch(vWriteSetMatrix, vGateSetMatrix, array=array, mode=1)
-                    GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    GMatrix = pic_dpe_batch(array, input, gain=-1, Vread=Vread, Tdly=1000) / Vread
                     if np.all(GMatrix >= targetGLow):
                         break
                 if np.all(GMatrix >= targetGLow):
@@ -488,7 +491,8 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
                     vGateResetMatrix = zeroMatrix + vGateReset * (GMatrix > targetGHigh)
                     vWriteResetMatrix = zeroMatrix + vReset * (GMatrix > targetGHigh)
                     pic_write_batch(vWriteResetMatrix, vGateResetMatrix, array=array, mode=0)
-                    GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
+                    GMatrix = pic_dpe_batch(array, input, gain=-1, Vread=Vread, Tdly=1000) / Vread
                     if np.all(GMatrix <= targetGHigh):
                         break
                 if np.all(GMatrix <= targetGHigh):
