@@ -505,6 +505,24 @@ void CMD_Tasks ( void )
                             cmdData.state = CMD_STATE_INIT;
                             break; 
                             
+                        case 412:
+                            /*
+                             * read_ADC_test
+                             */
+
+                            ptr = strtok(NULL, ",");
+                            channel = atoi(ptr);    // mode: 0 is normal read, 1 is autogain
+
+
+                            SYS_PRINT("\t ch=%d \r\n", channel);
+                            
+                            res_read = exp_adc_test(channel);
+                            SYS_PRINT("\t Read res_read=%x, ch=%d\r\n", res_read, channel);
+                            USB_Write( (char *) &res_read, 2 );
+                            
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
+
                         case 402:
                             /*
                              * read_batch
