@@ -338,7 +338,10 @@ def pic_write_single(Vwrite, Vgate, array=0, row=0, col=0, mode=-1):
 
 def pic_write_batch(Vwrite, Vgate, array=0, mode=-1, P_RESET=0x02):
     ''' 
-    Program a device with PIC control
+    Program a device with PIC control.
+
+    If any of Vwrite or Vgate is set to zero, the corresponding device 
+    will NOT be programmed during the batch operation.
 
     Args:
         Vwrite(np.ndarray): Set or Reset voltage
