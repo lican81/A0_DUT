@@ -336,7 +336,7 @@ def pic_write_single(Vwrite, Vgate, array=0, row=0, col=0, mode=-1):
 
     dut.dac_set('DAC_VP_PAD', 0)
 
-def pic_write_batch(Vwrite, Vgate, array=0, mode=-1):
+def pic_write_batch(Vwrite, Vgate, array=0, mode=-1, P_RESET=0x02):
     ''' 
     Program a device with PIC control
 
@@ -350,14 +350,22 @@ def pic_write_batch(Vwrite, Vgate, array=0, mode=-1):
                    1 -> Set
                    others -> invalid
 
+        P_RESET(int):    The write pulse reset counter for tuneable 
+                         pulse widtd, whicVh should be calculated by 
+                         ( P_reset - 0x01 ) * (1/CL_ARRAY)
+                         So, for a clock of 50 MHz, the time resolution
+                         is 20 ns.
+
     Returns:
         np.ndarray: The outputs
 
     '''
+    assert P_RESET<0xff and P_RESET>0x01
+    assert mode==0 or mode ==1
 
     # Configure timing
     dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
-                                           0x20, 0x01, 0x02]))
+                                           0x20, 0x01, P_RESET]))
 
     dut.pads_defaults()
 
@@ -365,6 +373,9 @@ def pic_write_batch(Vwrite, Vgate, array=0, mode=-1):
 
     Vwrite_raw = dut.dac_volt2raw(Vwrite)
     Vgate_raw = dut.dac_volt2raw(Vgate)
+
+    Vwrite_raw[Vwrite==0] = 0x0
+    Vgate_raw[Vgate==0] = 0x0
 
     for row in range(0,64,2):
         drv.ser.write(f'405,{array},{mode},{row},0,'.encode() 

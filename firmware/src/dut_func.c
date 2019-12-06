@@ -827,6 +827,39 @@ int A0_write_single_ext(uint8_t arr, uint8_t row, uint8_t col,
     return 0;
 }
 
+int A0_write_batch_ext(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_t * Vgate_raw, 
+                        uint16_t Vzero_raw, uint32_t Twidth) {
+  
+    SYS_PRINT("\tStart Prog.\r\n", arr, mode);
+    
+    int i, j;
+    
+    // for (i=0; i<4; i++) {
+    //     SYS_PRINT("[DW] r=%d | ", i*16);
+    //     for (j=0; j<4; j++) {
+    //         SYS_PRINT("%x, ", Vwrite_raw[(i*16)*64 + j*16]);
+    //     }
+    //     SYS_PRINT("\r\n");
+    // }
+
+    // for (i=0; i<4; i++) {
+    //     SYS_PRINT("[DG] r=%d | ", i*16);
+    //     for (j=0; j<4; j++) {
+    //         SYS_PRINT("%x, ", Vgate_raw[(i*16)*64 + j*16]);
+    //     }
+    //     SYS_PRINT("\r\n");
+    // }
+    
+    for (i=0; i<64; i++) {
+        for (j=0; j<64; j++) {
+            A0_write_single_ext(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], 
+                                Vzero_raw, mode, Twidth);
+        }
+    }
+    
+    return 0;
+}
+
 int A0_write_single(uint8_t arr, uint8_t row, uint8_t col, 
                         uint16_t Vwrite_raw, uint16_t Vgate_raw, 
                         uint8_t is_set) {
@@ -896,27 +929,69 @@ int A0_write_batch(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_t * 
     
     int i, j;
     
-    for (i=0; i<4; i++) {
-        SYS_PRINT("[DW] r=%d | ", i*16);
-        for (j=0; j<4; j++) {
-            SYS_PRINT("%x, ", Vwrite_raw[(i*16)*64 + j*16]);
-        }
-        SYS_PRINT("\r\n");
-    }
-
-    for (i=0; i<4; i++) {
-        SYS_PRINT("[DG] r=%d | ", i*16);
-        for (j=0; j<4; j++) {
-            SYS_PRINT("%x, ", Vgate_raw[(i*16)*64 + j*16]);
-        }
-        SYS_PRINT("\r\n");
-    }
-    
+//     for (i=0; i<4; i++) {
+//         SYS_PRINT("[DW] r=%d | ", i*16);
+//         for (j=0; j<4; j++) {
+//             SYS_PRINT("%x, ", Vwrite_raw[(i*16)*64 + j*16]);
+//         }
+//         SYS_PRINT("\r\n");
+//     }
+//
+//     for (i=0; i<4; i++) {
+//         SYS_PRINT("[DG] r=%d | ", i*16);
+//         for (j=0; j<4; j++) {
+//             SYS_PRINT("%x, ", Vgate_raw[(i*16)*64 + j*16]);
+//         }
+//         SYS_PRINT("\r\n");
+//     }
+//    
     for (i=0; i<64; i++) {
         for (j=0; j<64; j++) {
-            A0_write_single(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], mode);
+            if ( (Vwrite_raw[i*64 + j] == 0x0) || (Vgate_raw[i*64 + j]) ==0x0 ) {
+                // Skip
+                SYS_PRINT("(%d,%d) ", i, j);
+                continue;
+            } else {
+                A0_write_single(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], mode);
+            }
         }
     }
     
     return 0;
+}
+
+
+
+uint16_t exp_adc_test( uint8_t fifo_en) {
+    /*
+     * Read a single device
+     * 
+     */
+    uint16_t res_buff[16];
+    
+    reset_dpe();
+    
+    ARRAY_EN_Set(0x7);
+    NFORCE_SAFE_Set( 0x7 );
+    
+    CONNECT_TIAOff();
+    CONNECT_COLUMN_TOff();
+
+    ADC_SEL_EXTERNALOn();
+    DPE_EXT_OVERRIDE_ENOn();
+
+    // DPE_EXT_SHOn();
+    
+    DPE_EXT_SHOff();
+    reset_dpe();
+    DPE_EXT_SHOn();
+
+    while ( ADC_DONEStateGet() == 0) {}
+    BSP_DelayUs(0.2);
+
+    DPE_EXT_SHOff();
+    
+    download_fifo( fifo_en, res_buff);
+
+    return res_buff[15];
 }
