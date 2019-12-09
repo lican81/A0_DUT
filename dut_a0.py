@@ -460,11 +460,7 @@ def pic_write_batch_ext(Vwrite, Vgate, array=0, mode=-1, Twidth=5):
                    1 -> Set
                    others -> invalid
 
-        P_RESET(int):    The write pulse reset counter for tuneable 
-                         pulse widtd, which should be calculated by 
-                         ( P_reset - 0x01 ) * (1/CL_ARRAY)
-                         So, for a clock of 50 MHz, the time resolution
-                         is 20 ns.
+        Twidth(float):    The programming pulse width in microseconds
 
     Returns:
         np.ndarray: The outputs

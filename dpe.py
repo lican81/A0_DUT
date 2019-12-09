@@ -35,6 +35,8 @@ def with_ser(func):
 class DPE:
     ser_name = None
     N_BIT = 8
+    clk_adc = 5
+    clk_array = 5
 
     shape = [64, 64]
 
@@ -75,6 +77,9 @@ class DPE:
         drv.clk_start('ADC_CK')
         drv.clk_start('CK_ARRAY')
 
+        self.clk_adc = Mhz
+        self.clk_array = Mhz
+
     @with_ser
     def read(self, array, Vread=0.2, gain=-1, method='slow', **kwargs):
         '''
@@ -100,7 +105,27 @@ class DPE:
         return Gmap
 
     @with_ser
-    def set(self, array, Vset, Vgate, mask=1, **kwargs):
+    def set(self, array, Vset, Vgate, mask=1, Twidth=20e-9, 
+            verbose=False, **kwargs):
+        '''
+        Batch set function
+
+        Args:
+            array(int):      The array number, 0|1|2 for superT A0
+            Vset(int|np.array)  The set voltage(s). If it is a scalar
+                                value, all set voltages are set to the same value.
+                                Otherwise it is a set voltage matrix with
+                                each element corresponding to one device.
+            Vgate(int|np.array) The corresponding gate voltage during the 
+                                set programming operation.
+            mask(int|np.array)  If it is a scalar, then it will effectively 
+                                a scaling factor, with 1 enabling all.
+                                If it is an arary, element 1 indicates enable 
+                                for the corresponding device while 0 disable.
+            Twidth(float)       The programming pulse width in seconds
+            Verbose(bool)       Print detailed information for debug purpose.
+        '''
+        
         if np.isscalar(Vset):
             Vset = np.ones(self.shape) * Vset
         
@@ -111,10 +136,46 @@ class DPE:
         Vset *= mask
         Vgate *= mask
 
-        a0.pic_write_batch(Vset, Vgate, array, mode=1, **kwargs)
+        if verbose:
+            print(f'Setting {sum((Vset*Vgate).reshape(-1)!=0)} devices...')
+
+        P_RESET = 0x01 + int(Twidth * self.clk_array*1e6)
+
+        if P_RESET <= 0x01:
+            print(f'The pulse width {Twidth*1e9} ns is too small, skip..')
+        elif P_RESET <0Xff:
+            if verbose:
+                print(f'Programming with internal timing P_RESET={P_RESET}')
+            a0.pic_write_batch(Vset, Vgate, array, mode=1, P_RESET=P_RESET, 
+                               **kwargs)
+        else:
+            if verbose:
+                print(f'Programming with external timing Twidth={Twidth/1e-6} us')
+            a0.pic_write_batch_ext(Vset, Vgate, array, mode=1, Twidth=Twidth/1e-6, 
+                                   **kwargs)
 
     @with_ser
-    def reset(self, array, Vreset, Vgate, mask=1, **kwargs):
+    def reset(self, array, Vreset, Vgate, mask=1, Twidth=20e-9,
+              verbose=False, **kwargs):
+        '''
+        Batch set function
+
+        Args:
+            array(int):      The array number, 0|1|2 for superT A0
+            Vset(int|np.array)  The reset voltage(s). If it is a scalar
+                                value, all set voltages are set to the same value.
+                                Otherwise it is a set voltage matrix with
+                                each element corresponding to one device.
+            Vgate(int|np.array) The corresponding gate voltage during the 
+                                set programming operation.
+            mask(int|np.array)  If it is a scalar, then it will effectively 
+                                a scaling factor, with 1 enabling all.
+                                If it is an arary, element 1 indicates enable 
+                                for the corresponding device while 0 disable.
+            Twidth(float)       The programming pulse width in seconds
+            Verbose(bool)       Print detailed information for debug purpose.
+        '''
+
         if np.isscalar(Vreset):
             Vreset = np.ones(self.shape) * Vreset
 
@@ -124,7 +185,23 @@ class DPE:
         Vreset *= mask
         Vgate *= mask
 
-        a0.pic_write_batch(Vreset, Vgate, array, mode=0, **kwargs)
+        if verbose:
+            print(f'Resetting {sum((Vreset*Vgate).reshape(-1)!=0)} devices...')
+
+        P_RESET = 0x01 + int(Twidth * self.clk_array*1e6)
+
+        if P_RESET <= 0x01:
+            print(f'The pulse width {Twidth*1e9:.1f} ns is too small, skip..')
+        elif P_RESET <0Xff:
+            if verbose:
+                print(f'Programming with internal timing P_RESET={P_RESET}')
+            a0.pic_write_batch(Vreset, Vgate, array, mode=0, P_RESET=P_RESET, 
+                               **kwargs)
+        else:
+            if verbose:
+                print(f'Programming with external timing Twidth={Twidth/1e-6:.1f} us')
+            a0.pic_write_batch_ext(Vreset, Vgate, array, mode=0, Twidth=Twidth/1e-6, 
+                                   **kwargs)
 
     def binarize_shift(self, vectors):
         '''
