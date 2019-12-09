@@ -354,7 +354,7 @@ def pic_write_batch(Vwrite, Vgate, array=0, mode=-1, P_RESET=0x02):
                    others -> invalid
 
         P_RESET(int):    The write pulse reset counter for tuneable 
-                         pulse widtd, whicVh should be calculated by 
+                         pulse widtd, which should be calculated by 
                          ( P_reset - 0x01 ) * (1/CL_ARRAY)
                          So, for a clock of 50 MHz, the time resolution
                          is 20 ns.
@@ -442,6 +442,67 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
         print(F'[ERROR] wrong writing mode = {mode}')
 
     #dut.dac_set('DAC_VP_PAD', 0)
+
+def pic_write_batch_ext(Vwrite, Vgate, array=0, mode=-1, Twidth=5):
+    ''' 
+    Program a device with PIC control.
+
+    If any of Vwrite or Vgate is set to zero, the corresponding device 
+    will NOT be programmed during the batch operation.
+
+    Args:
+        Vwrite(np.ndarray): Set or Reset voltage
+        Vgate(np.ndarray):  Corresponding gate voltage
+        array(int):    The array to program
+        row(int):      Row #
+        col(int):      col #
+        mode(int): 0 -> Reset
+                   1 -> Set
+                   others -> invalid
+
+        P_RESET(int):    The write pulse reset counter for tuneable 
+                         pulse widtd, which should be calculated by 
+                         ( P_reset - 0x01 ) * (1/CL_ARRAY)
+                         So, for a clock of 50 MHz, the time resolution
+                         is 20 ns.
+
+    Returns:
+        np.ndarray: The outputs
+
+    '''
+    assert mode==0 or mode ==1
+
+    # Configure timing
+    # dut.scan_control(scan_ctrl_bits=bytes([0x80, 0x01, 0x0c, 0x10,
+    #                                        0x20, 0x01, P_RESET]))
+    dut.pads_defaults()
+
+    dut.dac_set('DAC_VP_PAD', 0)
+
+    Vwrite_raw = dut.dac_volt2raw(Vwrite)
+    Vgate_raw = dut.dac_volt2raw(Vgate)
+    Vzero_raw = dut.dac_volt2raw(0)
+
+    Vwrite_raw[Vwrite==0] = 0x0
+    Vgate_raw[Vgate==0] = 0x0
+    
+
+    for row in range(0,64,2):
+        drv.ser.write(f'407,{array},{mode},{Vzero_raw},{Twidth},{row},0,'.encode() 
+                    + Vwrite_raw[row:row+2,:].tobytes() + b'\0')
+
+    for row in range(0,64,2):
+        drv.ser.write(f'407,{array},{mode},{Vzero_raw},{Twidth},{row+64},0,'.encode() 
+                    + Vgate_raw[row:row+2,:].tobytes() + b'\0')
+
+    while True:
+        ret = drv.ser.read(1)
+        if ret != b'0':
+            print('.', end='')
+        else:
+            break
+
+    dut.dac_set('DAC_VP_PAD', 0)
 
 def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
     ''' 

@@ -711,6 +711,54 @@ void CMD_Tasks ( void )
                             
                             cmdData.state = CMD_STATE_INIT;
                             break; 
+
+                        case 407:
+                            /*
+                             * Write batch with external timing
+                             * 
+                             */
+                            ptr = strtok(NULL, ",");
+                            arr = atoi(ptr);         // array number
+                            
+                            ptr = strtok(NULL, ",");
+                            mode = atoi(ptr);    // mode: 0 is reset, 1 is set
+
+                            ptr = strtok(NULL, ",");
+                            Vzero_raw = atoi(ptr);    // 
+
+                            ptr = strtok(NULL, ",");
+                            Twidth = atoi(ptr);    // Twidth in microseconds
+                            
+                            ptr = strtok(NULL, ",");
+                            row = atoi(ptr);         // current row
+                            
+                            SYS_PRINT("\t Write batch  arr=%d, mode=%d, row=%d, Vz=%x, Twidth=%d,\r\n", 
+                                        arr, mode, row, Vzero_raw, Twidth);
+                            
+                            ptr = strtok(NULL, ","); //expecting a non-zero character
+                            ptr += 2;
+                            
+                            SYS_PRINT("\t ptr=%c\r\n", *ptr);
+                            
+                            if (row < 64) {
+                                // Vwrite
+                                // Two rows at a time
+                                memcpy( &dac_buffer[row][0], ptr, 256);
+                            } else if (row<128) {
+                                // Vgate
+                                memcpy( &dac_buffer2[row-64][0], ptr, 256);
+                            }
+                            
+                            if (row == 126){
+                                // Start programming
+                                A0_write_batch_ext(arr, mode, (uint16_t *)dac_buffer, (uint16_t *)dac_buffer2);
+                                
+                                // Handshake
+                                USB_Write( "0", 1 );
+                            }
+
+                            cmdData.state = CMD_STATE_INIT;
+                            break; 
                              
                         // Test commands
                         // Command start from 101 for fault tolerance

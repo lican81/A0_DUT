@@ -36,6 +36,8 @@ class DPE:
     ser_name = None
     N_BIT = 8
 
+    shape = [64, 64]
+
     def __init__(self, ser_name='COM6'):
         self.ser_name = ser_name
         self.a0 = a0
@@ -92,7 +94,37 @@ class DPE:
             print('[ERROR] invalid mode..')
             Gmap = 0
 
+        if not np.isscalar(Gmap):
+            self.shape = Gmap.shape
+
         return Gmap
+
+    @with_ser
+    def set(self, array, Vset, Vgate, mask=1, **kwargs):
+        if np.isscalar(Vset):
+            Vset = np.ones(self.shape) * Vset
+        
+
+        if np.isscalar(Vgate):
+            Vgate = np.ones(self.shape) * Vgate
+        
+        Vset *= mask
+        Vgate *= mask
+
+        a0.pic_write_batch(Vset, Vgate, array, mode=1, **kwargs)
+
+    @with_ser
+    def reset(self, array, Vreset, Vgate, mask=1, **kwargs):
+        if np.isscalar(Vreset):
+            Vreset = np.ones(self.shape) * Vreset
+
+        if np.isscalar(Vgate):
+            Vgate = np.ones(self.shape) * Vgate 
+
+        Vreset *= mask
+        Vgate *= mask
+
+        a0.pic_write_batch(Vreset, Vgate, array, mode=0, **kwargs)
 
     def binarize_shift(self, vectors):
         '''
