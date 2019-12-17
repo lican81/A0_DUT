@@ -443,7 +443,6 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
 
     #dut.dac_set('DAC_VP_PAD', 0)
 
-def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5, targetWriteTime=5.12):
 def pic_write_batch_ext(Vwrite, Vgate, array=0, mode=-1, Twidth=5):
     ''' 
     Program a device with PIC control.
@@ -500,8 +499,9 @@ def pic_write_batch_ext(Vwrite, Vgate, array=0, mode=-1, Twidth=5):
             break
 
     dut.dac_set('DAC_VP_PAD', 0)
-
-def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
+    
+def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5, targetWriteTime=5.12):
+#def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
     ''' 
     Program an array to a target conductance matrix using batch pic_write and pic_read operations
 
