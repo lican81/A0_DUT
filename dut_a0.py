@@ -443,7 +443,7 @@ def pic_write_single_ext(Vwrite, Vgate, array=0, row=0, col=0, mode=-1, Twidth=5
 
     #dut.dac_set('DAC_VP_PAD', 0)
 
-def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5):
+def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, vGateResetRamp, array, maxLoops=5, targetWriteTime=5.12):
     ''' 
     Program an array to a target conductance matrix using batch pic_write and pic_read operations
 
@@ -472,6 +472,17 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
     currentLoops = 0
     zeroMatrix = np.zeros((64,64))
     Vread=0.2
+    changeClock = False
+    if (targetWriteTime > 5.12):
+        changeClock = True    
+        targetClkPeriod = 1e-6*targetWriteTime/250
+        targetClkFreq = 1e3*round(1e-3/targetClkPeriod) #Round to the nearest 1kHz
+        write_width = hex(255*round(1e-6*targetWriteTime/(255/targetClkFreq))) #Round to the nearest integer 0 to 255 then make Hex
+        newDivisor = 100e6/targetClkFreq   
+    else:
+        #write_width = hex(255*round(1e-6*targetWriteTime/(255/50e6))) #Round to the nearest integer 0 to 255 then make Hex  
+        write_width = 0xff
+
     # Do initial reading
     #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
     input = [0x1<<i for i in range(64)]
@@ -488,14 +499,18 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
                     vWriteSetMatrix = zeroMatrix + vSet * (GMatrix < targetGLow)
                     #print('VWrite:', vWriteSetMatrix[0:3,0:3])
                     #print('VGate:', vGateSetMatrix[0:3,0:3])
-                    pic_write_batch(vWriteSetMatrix, vGateSetMatrix, array=array, mode=1)
+                    if changeClock:
+                        drv.clk_stop('CK_ARRAY')    
+                        drv.clk_config('CK_ARRAY', divisor=newDivisor)    
+                        drv.clk_start('CK_ARRAY')
+                    pic_write_batch(vWriteSetMatrix, vGateSetMatrix, array=array, mode=1, P_RESET=write_width)
                     #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
                     GMatrix = pic_dpe_batch(array, input, gain=-1, Vread=Vread, Tdly=1000) / Vread
                     if np.all(GMatrix >= targetGLow):
                         break
                 if np.all(GMatrix >= targetGLow):
                         break
-
+            currentLoops=currentLoops+1
         # Do RESET operations for any devices too high
         if np.any(GMatrix > targetGHigh):
             print('Now turning OFF')
@@ -504,15 +519,15 @@ def array_program(targetG, targetTolerance, vSetRamp, vResetRamp, vGateSetRamp, 
                 for vReset in vResetRamp:
                     vGateResetMatrix = zeroMatrix + vGateReset * (GMatrix > targetGHigh)
                     vWriteResetMatrix = zeroMatrix + vReset * (GMatrix > targetGHigh)
-                    pic_write_batch(vWriteResetMatrix, vGateResetMatrix, array=array, mode=0)
+                    pic_write_batch(vWriteResetMatrix, vGateResetMatrix, array=array, mode=0, P_RESET=write_width)
                     #GMatrix = pic_read_batch(array, Vread=Vread, gain=-1) / Vread
                     GMatrix = pic_dpe_batch(array, input, gain=-1, Vread=Vread, Tdly=1000) / Vread
                     if np.all(GMatrix <= targetGHigh):
                         break
                 if np.all(GMatrix <= targetGHigh):
                         break
-            
-        currentLoops=currentLoops+1
+            currentLoops=currentLoops+1
+
         print('Current loop = ', currentLoops)
     print('Completed with total loops = ', currentLoops)
     return GMatrix    
