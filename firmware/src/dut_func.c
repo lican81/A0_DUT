@@ -852,11 +852,17 @@ int A0_write_batch_ext(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_
     
     for (i=0; i<64; i++) {
         for (j=0; j<64; j++) {
-            A0_write_single_ext(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], 
+            if ( (Vwrite_raw[i*64 + j] == 0x0) || (Vgate_raw[i*64 + j] ==0x0 )) {
+                // Skip
+//                SYS_PRINT("(%d,%d) ", i, j);
+                continue;
+            } else {
+                A0_write_single_ext(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], 
                                 Vzero_raw, mode, Twidth);
+            }
         }
     }
-    
+  
     return 0;
 }
 
@@ -871,6 +877,13 @@ int A0_write_single(uint8_t arr, uint8_t row, uint8_t col,
     uint16_t data_col[4];
     
     uint8_t fifo_en, fifo_ch;
+    
+    if ( (Vwrite_raw == 0x0) || (Vgate_raw ==0x0 ) ) {
+        return -1;
+    }
+    
+    SYS_PRINT("(%d,%d) ", row, col);
+    
     int i;
     
     for (i=0; i<4; i++) {
@@ -925,7 +938,7 @@ int A0_write_single(uint8_t arr, uint8_t row, uint8_t col,
 
 int A0_write_batch(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_t * Vgate_raw) {
   
-    SYS_PRINT("\tStart Prog.\r\n", arr, mode);
+    SYS_PRINT("\tStart Prog.%d,%d\r\n", arr, mode);
     
     int i, j;
     
@@ -947,9 +960,9 @@ int A0_write_batch(uint8_t arr, uint8_t mode, uint16_t * Vwrite_raw, uint16_t * 
 //    
     for (i=0; i<64; i++) {
         for (j=0; j<64; j++) {
-            if ( (Vwrite_raw[i*64 + j] == 0x0) || (Vgate_raw[i*64 + j]) ==0x0 ) {
+            if ( (Vwrite_raw[i*64 + j] == 0x0) || (Vgate_raw[i*64 + j] ==0x0 )) {
                 // Skip
-                SYS_PRINT("(%d,%d) ", i, j);
+//                SYS_PRINT("(%d,%d) ", i, j);
                 continue;
             } else {
                 A0_write_single(arr, i, j, Vwrite_raw[i*64 + j], Vgate_raw[i*64 + j], mode);

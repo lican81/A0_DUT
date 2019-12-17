@@ -10,6 +10,7 @@ import dut_a0 as a0
 import numpy as np
 import serial
 import time
+from IPython import display
 
 dut = a0.dut
 drv = dut.drv
@@ -35,6 +36,10 @@ def with_ser(func):
 class DPE:
     ser_name = None
     N_BIT = 8
+    clk_adc = 5
+    clk_array = 5
+
+    shape = [64, 64]
 
     def __init__(self, ser_name='COM6'):
         self.ser_name = ser_name
@@ -73,6 +78,9 @@ class DPE:
         drv.clk_start('ADC_CK')
         drv.clk_start('CK_ARRAY')
 
+        self.clk_adc = Mhz
+        self.clk_array = Mhz
+
     @with_ser
     def read(self, array, Vread=0.2, gain=-1, method='slow', **kwargs):
         '''
@@ -92,7 +100,232 @@ class DPE:
             print('[ERROR] invalid mode..')
             Gmap = 0
 
+        if not np.isscalar(Gmap):
+            self.shape = Gmap.shape
+
         return Gmap
+
+    @with_ser
+    def set(self, array, Vset, Vgate, mask=1, Twidth=20e-9, 
+            verbose=False, **kwargs):
+        '''
+        Batch set function
+
+        Args:
+            array(int):      The array number, 0|1|2 for superT A0
+            Vset(int|np.array)  The set voltage(s). If it is a scalar
+                                value, all set voltages are set to the same value.
+                                Otherwise it is a set voltage matrix with
+                                each element corresponding to one device.
+            Vgate(int|np.array) The corresponding gate voltage during the 
+                                set programming operation.
+            mask(int|np.array)  If it is a scalar, then it will effectively 
+                                a scaling factor, with 1 enabling all.
+                                If it is an arary, element 1 indicates enable 
+                                for the corresponding device while 0 disable.
+            Twidth(float)       The programming pulse width in seconds
+            Verbose(bool)       Print detailed information for debug purpose.
+        '''
+
+        if np.isscalar(Vset):
+            Vset = np.ones(self.shape) * Vset
+        
+
+        if np.isscalar(Vgate):
+            Vgate = np.ones(self.shape) * Vgate
+        
+        Vset *= mask
+        Vgate *= mask
+
+        if verbose:
+            print(f'Setting {sum((Vset*Vgate).reshape(-1)!=0)} devices...')
+
+        P_RESET = 0x01 + int(Twidth * self.clk_array*1e6)
+
+        if P_RESET <= 0x01:
+            print(f'The pulse width {Twidth*1e9} ns is too small, skip..')
+        elif P_RESET <0Xff:
+            if verbose:
+                print(f'Programming with internal timing P_RESET={P_RESET}')
+            a0.pic_write_batch(Vset, Vgate, array, mode=1, P_RESET=P_RESET, 
+                               **kwargs)
+        else:
+            if verbose:
+                print(f'Programming with external timing Twidth={Twidth/1e-6:.3f} us')
+            a0.pic_write_batch_ext(Vset, Vgate, array, mode=1, Twidth=Twidth/1e-6, 
+                                   **kwargs)
+
+    @with_ser
+    def reset(self, array, Vreset, Vgate, mask=1, Twidth=20e-9,
+              verbose=False, **kwargs):
+        '''
+        Batch set function
+
+        Args:
+            array(int):      The array number, 0|1|2 for superT A0
+            Vset(int|np.array)  The reset voltage(s). If it is a scalar
+                                value, all set voltages are set to the same value.
+                                Otherwise it is a set voltage matrix with
+                                each element corresponding to one device.
+            Vgate(int|np.array) The corresponding gate voltage during the 
+                                set programming operation.
+            mask(int|np.array)  If it is a scalar, then it will effectively 
+                                a scaling factor, with 1 enabling all.
+                                If it is an arary, element 1 indicates enable 
+                                for the corresponding device while 0 disable.
+            Twidth(float)       The programming pulse width in seconds
+            Verbose(bool)       Print detailed information for debug purpose.
+        '''
+
+        if np.isscalar(Vreset):
+            Vreset = np.ones(self.shape) * Vreset
+
+        if np.isscalar(Vgate):
+            Vgate = np.ones(self.shape) * Vgate 
+
+        Vreset *= mask
+        Vgate *= mask
+
+        if verbose:
+            print(f'Resetting {sum((Vreset*Vgate).reshape(-1)!=0)} devices...')
+
+        P_RESET = 0x01 + int(Twidth * self.clk_array*1e6)
+
+        if P_RESET <= 0x01:
+            print(f'The pulse width {Twidth*1e9:.1f} ns is too small, skip..')
+        elif P_RESET <0Xff:
+            if verbose:
+                print(f'Programming with internal timing P_RESET={P_RESET}')
+            a0.pic_write_batch(Vreset, Vgate, array, mode=0, P_RESET=P_RESET, 
+                               **kwargs)
+        else:
+            if verbose:
+                print(f'Programming with external timing Twidth={Twidth/1e-6:.3f} us')
+            a0.pic_write_batch_ext(Vreset, Vgate, array, mode=0, Twidth=Twidth/1e-6, 
+                                   **kwargs)
+
+    def tune_conductance(self, array, Gtarget, **kwargs):
+        '''
+        Tune the conductance with an iterative approach
+
+        Args:
+            array(int):     The array number to program
+            Gtarget(np.array):  The target conductance matrix
+
+        '''
+        vSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [1, 3.5, 1]
+        vGateSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
+        vResetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
+        vGateResetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
+        
+        maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
+        Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
+        Msel = kwargs['Msel'] if 'Msel' in kwargs.keys() else np.ones(self.shape)
+
+        saveHistory = kwargs['saveHistory'] if 'saveHistory' in kwargs.keys() else False
+        maxRetry = kwargs['maxRetry'] if 'maxRetry' in kwargs.keys() else 5
+
+        Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 500
+        method = kwargs['method'] if 'method' in kwargs.keys() else 'slow'
+        Twidth = kwargs['Twidth'] if 'Twidth' in kwargs.keys() else 20e-9
+
+        def default_callback(data):
+            display.clear_output(wait=True)
+
+        plot_callback = kwargs['plot_callback'] if 'plot_callback' in kwargs.keys() else default_callback
+
+        assert array in [0,1,2]
+
+        if saveHistory:
+            hist_data = {
+                'Ghist': [],
+                'vSetHist': [],
+                'vGateSetHist': [],
+                'vResetHist': [],
+                'vGateResetHist': [],
+            }
+
+        vSet = np.zeros(self.shape) 
+        vGateSet = np.zeros(self.shape)
+        vReset = np.zeros(self.shape)
+        vGateReset = np.zeros(self.shape)
+
+        Mbound = np.zeros(self.shape)
+
+        # Main programming cycle
+        for s in range(maxSteps):
+            Gread = self.read(array, Tdly=Tdly, method=method)
+            
+            
+            Mset = ((Gread - Gtarget) < -Gtol) * Msel
+            Mreset = ((Gread - Gtarget) > Gtol) * Msel
+            
+            vSet = vSet * Mset
+            vGateSet = vGateSet * Mset
+            vReset = vReset * Mreset
+            vGateReset = vGateReset * Mreset
+
+        #     Pover
+                # Adjust programming parameters
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+
+                    if Mset[i,j] == 1:
+                        if vSet[i,j] == 0 or vGateSet[i,j] == 0:
+                            # Initiate
+                            vSet[i,j] = vSetRamp[0]
+                            vGateSet[i,j] = vGateSetRamp[0]
+                            Mbound[i,j] = 0
+                        else:
+                            vSet[i,j] += vSetRamp[-1]
+
+                            if vSet[i,j] > vSetRamp[1]:
+                                vGateSet[i,j] += vGateSetRamp[-1]
+
+                                if vGateSet[i,j] > vGateSetRamp[1]:
+                                    vGateSet[i,j] = vGateSetRamp[1]
+                                    vSet[i,j] = vSetRamp[1]
+                                    Mbound[i,j] += 1
+                                else:
+                                    vSet[i,j] = vSetRamp[0]
+
+
+                    if Mreset[i,j] == 1:
+                        if vReset[i,j] == 0 or vGateReset[i,j] == 0:
+                            # Initiate
+                            vReset[i,j] = vResetRamp[0]
+                            vGateReset[i,j] = vGateResetRamp[0]
+                            Mbound[i,j] = 0
+                        else:
+                            vReset[i,j] += vResetRamp[-1]
+
+                            if vReset[i,j] > vResetRamp[1]:
+                                vGateReset[i,j] += vGateResetRamp[-1]
+
+                                if vGateReset[i,j] > vGateResetRamp[1]:
+                                    vGateReset[i,j] = vGateResetRamp[1]
+                                    vReset[i,j] = vResetRamp[1]
+                                    Mbound[i,j] += 1
+                                else:
+                                    vReset[i,j] = vSetRamp[0]
+
+            if saveHistory:
+                hist_data['Ghist'].append(Gread)           
+                hist_data['vSetHist'].append(vSet)
+                hist_data['vGateSetHist'].append(vGateSet * (Mbound<=maxRetry))
+                hist_data['vResetHist'].append(vReset)
+                hist_data['vGateResetHist'].append(vGateReset * (Mbound<=maxRetry))
+            
+                plot_callback(hist_data)
+
+            print(f'St-art programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
+                f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
+            
+            # Start programming
+            self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=Twidth)
+            self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=Twidth)
+
+        return hist_data
 
     def binarize_shift(self, vectors):
         '''
