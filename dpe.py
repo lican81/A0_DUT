@@ -318,7 +318,7 @@ class DPE:
             
                 plot_callback(hist_data)
 
-            print(f'St-art programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
+            print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
                 f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
             
             # Start programming
@@ -416,6 +416,8 @@ class DPE:
                                     NORMALIZE FIRST
             mode(int):  0 -> shift and add
                         1 -> unary pulses
+            Tdly(int):  The delay time between vectors in microseconds
+                        Default value is 1000, which is 1 ms
         Returns:
             numpy.ndarray: The multiply result
         '''
@@ -441,7 +443,7 @@ class DPE:
                 inputs_dpe.append(self.vec2ints(v))
 
             outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=-1, mode=1,
-                                           col_en=self.get_col_en(c_sel))
+                                           col_en=self.get_col_en(c_sel), **kwargs)
 
             outputs_dpe = outputs_dpe[:, c_sel[0]:c_sel[1]]
             outputs_dpe_all.append(outputs_dpe)
