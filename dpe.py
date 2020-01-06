@@ -214,9 +214,9 @@ class DPE:
 
         '''
         vSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [1, 3.5, 1]
-        vGateSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
-        vResetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
-        vGateResetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
+        vGateSetRamp = kwargs['vGateSetRamp'] if 'vGateSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
+        vResetRamp = kwargs['vResetRamp'] if 'vResetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
+        vGateResetRamp = kwargs['vGateResetRamp'] if 'vGateResetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
         
         maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
         Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
