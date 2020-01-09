@@ -39,3 +39,6 @@ def plot_g_history(x, y, histdata, Gtarget, Gtol=5e-6):
     plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]-Gtol)*1e6, (Gtarget[x,y]-Gtol)*1e6], '--')
     plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]+Gtol)*1e6, (Gtarget[x,y]+Gtol)*1e6], '--')
     plt.ylabel('Conductance ($\mu$S)')
+
+def plot_iv(dpe, x, y, array=0, Vread=0.2, nPt=30):
+    pass

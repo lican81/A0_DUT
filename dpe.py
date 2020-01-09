@@ -318,7 +318,7 @@ class DPE:
             
                 plot_callback(hist_data)
 
-            print(f'St-art programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
+            print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
                 f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
             
             # Start programming
