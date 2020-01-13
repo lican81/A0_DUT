@@ -228,7 +228,8 @@ class DPE:
 
         Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 500
         method = kwargs['method'] if 'method' in kwargs.keys() else 'slow'
-        Twidth = kwargs['Twidth'] if 'Twidth' in kwargs.keys() else 20e-9
+        TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else 20e-9
+        TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else 20e-9
 
         def default_callback(data):
             display.clear_output(wait=True)
@@ -326,8 +327,8 @@ class DPE:
                 f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
             
             # Start programming
-            self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=Twidth)
-            self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=Twidth)
+            self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
+            self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
 
         return hist_data
 
