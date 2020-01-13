@@ -217,6 +217,7 @@ class DPE:
         vGateSetRamp = kwargs['vGateSetRamp'] if 'vGateSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
         vResetRamp = kwargs['vResetRamp'] if 'vResetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
         vGateResetRamp = kwargs['vGateResetRamp'] if 'vGateResetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
+        numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
         
         maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
         Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
@@ -254,8 +255,11 @@ class DPE:
 
         # Main programming cycle
         for s in range(maxSteps):
-            Gread = self.read(array, Tdly=Tdly, method=method)
-            
+            Greads = []
+            for _ in range(numReads):
+                Greads.append( self.read(array, Tdly=Tdly, method=method) )
+
+            Gread = np.mean( np.array(Greads), axis=0)
             
             Mset = ((Gread - Gtarget) < -Gtol) * Msel
             Mreset = ((Gread - Gtarget) > Gtol) * Msel
