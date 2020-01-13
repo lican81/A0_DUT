@@ -228,8 +228,10 @@ class DPE:
 
         Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 500
         method = kwargs['method'] if 'method' in kwargs.keys() else 'slow'
-        TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else 20e-9
-        TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else 20e-9
+
+        Twidth = kwargs['Twidth'] if 'Twidth' in kwargs.keys() else 20e-9
+        TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else Twidth
+        TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else Twidth
 
         def default_callback(data):
             display.clear_output(wait=True)
