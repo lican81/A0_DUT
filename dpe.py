@@ -217,6 +217,7 @@ class DPE:
         vGateSetRamp = kwargs['vGateSetRamp'] if 'vGateSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
         vResetRamp = kwargs['vResetRamp'] if 'vResetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
         vGateResetRamp = kwargs['vGateResetRamp'] if 'vGateResetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
+        numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
         
         maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
         Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
@@ -227,7 +228,8 @@ class DPE:
 
         Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 500
         method = kwargs['method'] if 'method' in kwargs.keys() else 'slow'
-        Twidth = kwargs['Twidth'] if 'Twidth' in kwargs.keys() else 20e-9
+        TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else 20e-9
+        TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else 20e-9
 
         def default_callback(data):
             display.clear_output(wait=True)
@@ -254,8 +256,11 @@ class DPE:
 
         # Main programming cycle
         for s in range(maxSteps):
-            Gread = self.read(array, Tdly=Tdly, method=method)
-            
+            Greads = []
+            for _ in range(numReads):
+                Greads.append( self.read(array, Tdly=Tdly, method=method) )
+
+            Gread = np.mean( np.array(Greads), axis=0)
             
             Mset = ((Gread - Gtarget) < -Gtol) * Msel
             Mreset = ((Gread - Gtarget) > Gtol) * Msel
@@ -322,8 +327,8 @@ class DPE:
                 f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
             
             # Start programming
-            self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=Twidth)
-            self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=Twidth)
+            self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
+            self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
 
         return hist_data
 
@@ -416,6 +421,8 @@ class DPE:
                                     NORMALIZE FIRST
             mode(int):  0 -> shift and add
                         1 -> unary pulses
+            Tdly(int):  The delay time between vectors in microseconds
+                        Default value is 1000, which is 1 ms
         Returns:
             numpy.ndarray: The multiply result
         '''
@@ -441,7 +448,7 @@ class DPE:
                 inputs_dpe.append(self.vec2ints(v))
 
             outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=-1, mode=1,
-                                           col_en=self.get_col_en(c_sel))
+                                           col_en=self.get_col_en(c_sel), **kwargs)
 
             outputs_dpe = outputs_dpe[:, c_sel[0]:c_sel[1]]
             outputs_dpe_all.append(outputs_dpe)
