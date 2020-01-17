@@ -212,6 +212,10 @@ class DPE:
             array(int):     The array number to program
             Gtarget(np.array):  The target conductance matrix
 
+        TODO: 
+        1. Two tolerances
+        2. Stop
+
         '''
         vSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [1, 3.5, 1]
         vGateSetRamp = kwargs['vGateSetRamp'] if 'vGateSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
@@ -247,6 +251,8 @@ class DPE:
                 'vGateSetHist': [],
                 'vResetHist': [],
                 'vGateResetHist': [],
+                'Gtol': Gtol,
+                'Gtarget': Gtarget,
             }
 
         vSet = np.zeros(self.shape) 
@@ -266,6 +272,13 @@ class DPE:
             
             Mset = ((Gread - Gtarget) < -Gtol) * Msel
             Mreset = ((Gread - Gtarget) > Gtol) * Msel
+
+            numLeft = sum(Mreset.reshape(-1)) + sum(Mset.reshape(-1)) - sum((Mbound>=maxRetry).reshape(-1))
+            
+            if numLeft == 0:
+                print('-'*30)
+                print('Programming completed.')
+                break
             
             vSet = vSet * Mset
             vGateSet = vGateSet * Mset
@@ -327,7 +340,8 @@ class DPE:
 
             print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
                 f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
-            
+
+            print(f'{numLeft} devices to be programmed...reset {sum(Mreset.reshape(-1))}, set {sum(Mset.reshape(-1))}')
             # Start programming
             self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
             self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
