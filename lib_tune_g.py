@@ -1,7 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_history(x, y, histdata, Gtarget, Gtol=5e-6):
+def plot_history(x, y, data):
+
+    histdata = data['hist_data']
+    Gtarget = data['Gtarget']
+    Gtol_in = data['Gtol_in']
+    Gtol_out = data['Gtol_out']
+
     vSetHist = np.array(histdata['vSetHist'])
     vGateSetHist = np.array(histdata['vGateSetHist'])
 
@@ -12,8 +18,12 @@ def plot_history(x, y, histdata, Gtarget, Gtol=5e-6):
     plt.figure(figsize=(10,5))
     plt.subplot(311)
     plt.plot(Ghist[:, x, y]*1e6, '.-')
-    plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]-Gtol)*1e6, (Gtarget[x,y]-Gtol)*1e6], '--')
-    plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]+Gtol)*1e6, (Gtarget[x,y]+Gtol)*1e6], '--')
+
+    plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]-Gtol_out)*1e6, (Gtarget[x,y]-Gtol_out)*1e6], '--', color='green', linewidth=0.5)
+    plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]+Gtol_out)*1e6, (Gtarget[x,y]+Gtol_out)*1e6], '--', color='green', linewidth=0.5)
+
+    plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]-Gtol_in)*1e6, (Gtarget[x,y]-Gtol_in)*1e6], '--', color='red', linewidth=0.5)
+    plt.plot([0, len(Ghist[:, x, y])-1], [(Gtarget[x,y]+Gtol_in)*1e6, (Gtarget[x,y]+Gtol_in)*1e6], '--', color='red', linewidth=0.5)
     plt.ylabel('Conductance ($\mu$S)')
 
     plt.subplot(312)

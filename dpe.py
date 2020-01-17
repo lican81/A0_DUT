@@ -225,6 +225,9 @@ class DPE:
         
         maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
         Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
+        Gtol_in = kwargs['Gtol_in'] if 'Gtol_in' in kwargs.keys() else Gtol
+        Gtol_out = kwargs['Gtol_out'] if 'Gtol_out' in kwargs.keys() else Gtol
+
         Msel = kwargs['Msel'] if 'Msel' in kwargs.keys() else np.ones(self.shape)
 
         saveHistory = kwargs['saveHistory'] if 'saveHistory' in kwargs.keys() else False
@@ -250,9 +253,7 @@ class DPE:
                 'vSetHist': [],
                 'vGateSetHist': [],
                 'vResetHist': [],
-                'vGateResetHist': [],
-                'Gtol': Gtol,
-                'Gtarget': Gtarget,
+                'vGateResetHist': []
             }
 
         vSet = np.zeros(self.shape) 
@@ -261,17 +262,28 @@ class DPE:
         vGateReset = np.zeros(self.shape)
 
         Mbound = np.zeros(self.shape)
+        Mset = np.ones(self.shape, dtype=np.bool)
+        Mreset = np.ones(self.shape, dtype=np.bool)
 
         # Main programming cycle
         for s in range(maxSteps):
+            # Read conductance and take average
             Greads = []
             for _ in range(numReads):
                 Greads.append( self.read(array, Tdly=Tdly, method=method) )
 
             Gread = np.mean( np.array(Greads), axis=0)
             
-            Mset = ((Gread - Gtarget) < -Gtol) * Msel
-            Mreset = ((Gread - Gtarget) > Gtol) * Msel
+            # Determine the devices to be programmed..
+            # Mset = ((Gread - Gtarget) < -Gtol) * Msel
+            # Mreset = ((Gread - Gtarget) > Gtol) * Msel
+            Mset = Mset | ((Gread - Gtarget) < (-Gtol_out))
+            Mset = Mset & ((Gread - Gtarget) < (-Gtol_in))
+            Mset = Mset * Msel
+
+            Mreset = Mreset | ((Gread - Gtarget) > (Gtol_out))
+            Mreset = Mreset & ((Gread - Gtarget) > (Gtol_in))
+            Mreset = Mreset * Msel
 
             numLeft = sum(Mreset.reshape(-1)) + sum(Mset.reshape(-1)) - sum((Mbound>=maxRetry).reshape(-1))
             
@@ -280,6 +292,7 @@ class DPE:
                 print('Programming completed.')
                 break
             
+            # Reset parameters for all devices meet the tolerance requirement
             vSet = vSet * Mset
             vGateSet = vGateSet * Mset
             vReset = vReset * Mreset
@@ -339,14 +352,16 @@ class DPE:
                 plot_callback(hist_data)
 
             print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
-                f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
+                f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol_in) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}% - ' + 
+                       f'{sum( ((np.abs(Gread-Gtarget)<Gtol_out) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
 
             print(f'{numLeft} devices to be programmed...reset {sum(Mreset.reshape(-1))}, set {sum(Mset.reshape(-1))}')
             # Start programming
             self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
             self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
 
-        return hist_data
+        # return hist_data
+        return vars()
 
     def binarize_shift(self, vectors):
         '''
