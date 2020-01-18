@@ -82,7 +82,7 @@ class DPE:
         self.clk_array = Mhz
 
     @with_ser
-    def read(self, array, Vread=0.2, gain=-1, method='slow', **kwargs):
+    def read(self, array, Vread=0.2, gain=-1, method='slow', numReads=1, **kwargs):
         '''
         Read the array conductance
 
@@ -91,14 +91,22 @@ class DPE:
         Returns:
             numpy.ndarray: The conductance map
         '''
-        if method == 'slow':
-            Gmap = a0.pic_read_batch(array, Vread=Vread, gain=gain, **kwargs) / Vread
-        elif method == 'fast':
-            input = [0x1<<i for i in range(64)]
-            Gmap = a0.pic_dpe_batch(array, input, gain=gain, Vread=Vread, **kwargs) / Vread
-        else:
-            print('[ERROR] invalid mode..')
-            Gmap = 0
+        Gmaps = []
+
+        for _ in range(numReads):
+            if method == 'slow':
+                Gmap = a0.pic_read_batch(array, Vread=Vread, gain=gain, **kwargs) / Vread
+            elif method == 'fast':
+                input = [0x1<<i for i in range(64)]
+                Gmap = a0.pic_dpe_batch(array, input, gain=gain, Vread=Vread, **kwargs) / Vread
+            else:
+                print('[ERROR] invalid mode..')
+                Gmap = 0
+                break
+
+            Gmaps.append(Gmap)
+
+        Gmap = np.mean(Gmaps, axis=0)
 
         if not np.isscalar(Gmap):
             self.shape = Gmap.shape
@@ -209,12 +217,9 @@ class DPE:
         Tune the conductance with an iterative approach
 
         Args:
-            array(int):     The array number to program
-            Gtarget(np.array):  The target conductance matrix
-
-        TODO: 
-        1. Two tolerances
-        2. Stop
+            array(int):                 The array number to program
+            Gtarget(np.array):          The target conductance matrix
+            Msel(np.array(np.bool)):    Mask for selected devices to program
 
         '''
         vSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [1, 3.5, 1]
@@ -268,12 +273,8 @@ class DPE:
         # Main programming cycle
         for s in range(maxSteps):
             # Read conductance and take average
-            Greads = []
-            for _ in range(numReads):
-                Greads.append( self.read(array, Tdly=Tdly, method=method) )
+            Gread = self.read(array, Tdly=Tdly, method=method, numReads=numReads)
 
-            Gread = np.mean( np.array(Greads), axis=0)
-            
             # Determine the devices to be programmed..
             # Mset = ((Gread - Gtarget) < -Gtol) * Msel
             # Mreset = ((Gread - Gtarget) > Gtol) * Msel
