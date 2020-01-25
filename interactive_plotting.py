@@ -39,6 +39,7 @@ num_cycles = data["numCycles"]
 num_updates = num_cycles*num_neurons+1
 #num_trials = data["numTrials"]
 num_trials = 10
+num_trials = data["numTrials"]
 start_schmidt_val = data["startSchmidtVal"]
 end_schmidt_val = data["endSchmidtVal"]
 schmidt_cycle_vector = data["SchmidtCycleVector"]

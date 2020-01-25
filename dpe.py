@@ -10,6 +10,7 @@ import dut_a0 as a0
 import numpy as np
 import serial
 import time
+from IPython import display
 
 dut = a0.dut
 drv = dut.drv
@@ -81,7 +82,7 @@ class DPE:
         self.clk_array = Mhz
 
     @with_ser
-    def read(self, array, Vread=0.2, gain=-1, method='slow', **kwargs):
+    def read(self, array, Vread=0.2, gain=-1, method='slow', numReads=1, **kwargs):
         '''
         Read the array conductance
 
@@ -90,14 +91,22 @@ class DPE:
         Returns:
             numpy.ndarray: The conductance map
         '''
-        if method == 'slow':
-            Gmap = a0.pic_read_batch(array, Vread=Vread, gain=gain, **kwargs) / Vread
-        elif method == 'fast':
-            input = [0x1<<i for i in range(64)]
-            Gmap = a0.pic_dpe_batch(array, input, gain=gain, Vread=Vread, **kwargs) / Vread
-        else:
-            print('[ERROR] invalid mode..')
-            Gmap = 0
+        Gmaps = []
+
+        for _ in range(numReads):
+            if method == 'slow':
+                Gmap = a0.pic_read_batch(array, Vread=Vread, gain=gain, **kwargs) / Vread
+            elif method == 'fast':
+                input = [0x1<<i for i in range(64)]
+                Gmap = a0.pic_dpe_batch(array, input, gain=gain, Vread=Vread, **kwargs) / Vread
+            else:
+                print('[ERROR] invalid mode..')
+                Gmap = 0
+                break
+
+            Gmaps.append(Gmap)
+
+        Gmap = np.mean(Gmaps, axis=0)
 
         if not np.isscalar(Gmap):
             self.shape = Gmap.shape
@@ -125,7 +134,7 @@ class DPE:
             Twidth(float)       The programming pulse width in seconds
             Verbose(bool)       Print detailed information for debug purpose.
         '''
-        
+
         if np.isscalar(Vset):
             Vset = np.ones(self.shape) * Vset
         
@@ -150,7 +159,7 @@ class DPE:
                                **kwargs)
         else:
             if verbose:
-                print(f'Programming with external timing Twidth={Twidth/1e-6} us')
+                print(f'Programming with external timing Twidth={Twidth/1e-6:.3f} us')
             a0.pic_write_batch_ext(Vset, Vgate, array, mode=1, Twidth=Twidth/1e-6, 
                                    **kwargs)
 
@@ -199,9 +208,161 @@ class DPE:
                                **kwargs)
         else:
             if verbose:
-                print(f'Programming with external timing Twidth={Twidth/1e-6:.1f} us')
+                print(f'Programming with external timing Twidth={Twidth/1e-6:.3f} us')
             a0.pic_write_batch_ext(Vreset, Vgate, array, mode=0, Twidth=Twidth/1e-6, 
                                    **kwargs)
+
+    def tune_conductance(self, array, Gtarget, **kwargs):
+        '''
+        Tune the conductance with an iterative approach
+
+        Args:
+            array(int):                 The array number to program
+            Gtarget(np.array):          The target conductance matrix
+            Msel(np.array(np.bool)):    Mask for selected devices to program
+
+        '''
+        vSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [1, 3.5, 1]
+        vGateSetRamp = kwargs['vGateSetRamp'] if 'vGateSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
+        vResetRamp = kwargs['vResetRamp'] if 'vResetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
+        vGateResetRamp = kwargs['vGateResetRamp'] if 'vGateResetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
+        numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
+        
+        maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
+        Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
+        Gtol_in = kwargs['Gtol_in'] if 'Gtol_in' in kwargs.keys() else Gtol
+        Gtol_out = kwargs['Gtol_out'] if 'Gtol_out' in kwargs.keys() else Gtol
+
+        Msel = kwargs['Msel'] if 'Msel' in kwargs.keys() else np.ones(self.shape)
+
+        saveHistory = kwargs['saveHistory'] if 'saveHistory' in kwargs.keys() else False
+        maxRetry = kwargs['maxRetry'] if 'maxRetry' in kwargs.keys() else 5
+
+        Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 500
+        method = kwargs['method'] if 'method' in kwargs.keys() else 'slow'
+
+        Twidth = kwargs['Twidth'] if 'Twidth' in kwargs.keys() else 20e-9
+        TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else Twidth
+        TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else Twidth
+
+        def default_callback(data):
+            display.clear_output(wait=True)
+
+        plot_callback = kwargs['plot_callback'] if 'plot_callback' in kwargs.keys() else default_callback
+
+        assert array in [0,1,2]
+
+        if saveHistory:
+            hist_data = {
+                'Ghist': [],
+                'vSetHist': [],
+                'vGateSetHist': [],
+                'vResetHist': [],
+                'vGateResetHist': []
+            }
+
+        vSet = np.zeros(self.shape) 
+        vGateSet = np.zeros(self.shape)
+        vReset = np.zeros(self.shape)
+        vGateReset = np.zeros(self.shape)
+
+        Mbound = np.zeros(self.shape)
+        Mset = np.ones(self.shape, dtype=np.bool)
+        Mreset = np.ones(self.shape, dtype=np.bool)
+
+        # Main programming cycle
+        for s in range(maxSteps):
+            # Read conductance and take average
+            Gread = self.read(array, Tdly=Tdly, method=method, numReads=numReads)
+
+            # Determine the devices to be programmed..
+            # Mset = ((Gread - Gtarget) < -Gtol) * Msel
+            # Mreset = ((Gread - Gtarget) > Gtol) * Msel
+            Mset = Mset | ((Gread - Gtarget) < (-Gtol_out))
+            Mset = Mset & ((Gread - Gtarget) < (-Gtol_in))
+            Mset = Mset * Msel
+
+            Mreset = Mreset | ((Gread - Gtarget) > (Gtol_out))
+            Mreset = Mreset & ((Gread - Gtarget) > (Gtol_in))
+            Mreset = Mreset * Msel
+
+            numLeft = sum(Mreset.reshape(-1)) + sum(Mset.reshape(-1)) - sum((Mbound>=maxRetry).reshape(-1))
+            
+            if numLeft == 0:
+                print('-'*30)
+                print('Programming completed.')
+                break
+            
+            # Reset parameters for all devices meet the tolerance requirement
+            vSet = vSet * Mset
+            vGateSet = vGateSet * Mset
+            vReset = vReset * Mreset
+            vGateReset = vGateReset * Mreset
+
+        #     Pover
+                # Adjust programming parameters
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+
+                    if Mset[i,j] == 1:
+                        if vSet[i,j] == 0 or vGateSet[i,j] == 0:
+                            # Initiate
+                            vSet[i,j] = vSetRamp[0]
+                            vGateSet[i,j] = vGateSetRamp[0]
+                            Mbound[i,j] = 0
+                        else:
+                            vSet[i,j] += vSetRamp[-1]
+
+                            if vSet[i,j] > vSetRamp[1]:
+                                vGateSet[i,j] += vGateSetRamp[-1]
+
+                                if vGateSet[i,j] > vGateSetRamp[1]:
+                                    vGateSet[i,j] = vGateSetRamp[1]
+                                    vSet[i,j] = vSetRamp[1]
+                                    Mbound[i,j] += 1
+                                else:
+                                    vSet[i,j] = vSetRamp[0]
+
+
+                    if Mreset[i,j] == 1:
+                        if vReset[i,j] == 0 or vGateReset[i,j] == 0:
+                            # Initiate
+                            vReset[i,j] = vResetRamp[0]
+                            vGateReset[i,j] = vGateResetRamp[0]
+                            Mbound[i,j] = 0
+                        else:
+                            vReset[i,j] += vResetRamp[-1]
+
+                            if vReset[i,j] > vResetRamp[1]:
+                                vGateReset[i,j] += vGateResetRamp[-1]
+
+                                if vGateReset[i,j] > vGateResetRamp[1]:
+                                    vGateReset[i,j] = vGateResetRamp[1]
+                                    vReset[i,j] = vResetRamp[1]
+                                    Mbound[i,j] += 1
+                                else:
+                                    vReset[i,j] = vSetRamp[0]
+
+            if saveHistory:
+                hist_data['Ghist'].append(Gread)           
+                hist_data['vSetHist'].append(vSet)
+                hist_data['vGateSetHist'].append(vGateSet * (Mbound<=maxRetry))
+                hist_data['vResetHist'].append(vReset)
+                hist_data['vGateResetHist'].append(vGateReset * (Mbound<=maxRetry))
+            
+                plot_callback(hist_data)
+
+            print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
+                f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol_in) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}% - ' + 
+                       f'{sum( ((np.abs(Gread-Gtarget)<Gtol_out) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
+
+            print(f'{numLeft} devices to be programmed...reset {sum(Mreset.reshape(-1))}, set {sum(Mset.reshape(-1))}')
+            # Start programming
+            self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
+            self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
+
+        # return hist_data
+        return vars()
 
     def binarize_shift(self, vectors):
         '''
@@ -292,6 +453,8 @@ class DPE:
                                     NORMALIZE FIRST
             mode(int):  0 -> shift and add
                         1 -> unary pulses
+            Tdly(int):  The delay time between vectors in microseconds
+                        Default value is 1000, which is 1 ms
         Returns:
             numpy.ndarray: The multiply result
         '''
@@ -317,7 +480,7 @@ class DPE:
                 inputs_dpe.append(self.vec2ints(v))
 
             outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=-1, mode=1,
-                                           col_en=self.get_col_en(c_sel))
+                                           col_en=self.get_col_en(c_sel), **kwargs)
 
             outputs_dpe = outputs_dpe[:, c_sel[0]:c_sel[1]]
             outputs_dpe_all.append(outputs_dpe)
