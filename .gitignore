@@ -33,3 +33,4 @@ firmware/mTCAM_DUT.X/nbproject/private/configurations.xml
 *.hex
 *.map
 *.mk
+DPEprober1_ProgramArraysCNN.ipynb
