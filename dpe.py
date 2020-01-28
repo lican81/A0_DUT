@@ -106,7 +106,7 @@ class DPE:
 
             Gmaps.append(Gmap)
 
-        Gmap = np.mean(Gmaps, axis=0)
+        Gmap = np.mean(np.array(Gmaps), axis=0)
 
         if not np.isscalar(Gmap):
             self.shape = Gmap.shape
@@ -278,12 +278,12 @@ class DPE:
             # Determine the devices to be programmed..
             # Mset = ((Gread - Gtarget) < -Gtol) * Msel
             # Mreset = ((Gread - Gtarget) > Gtol) * Msel
-            Mset = Mset | ((Gread - Gtarget) < (-Gtol_out))
-            Mset = Mset & ((Gread - Gtarget) < (-Gtol_in))
+            Mset = np.logical_or(Mset, (Gread - Gtarget) < (-Gtol_out) )
+            Mset = np.logical_and(Mset, (Gread - Gtarget) < (-Gtol_in) )
             Mset = Mset * Msel
 
-            Mreset = Mreset | ((Gread - Gtarget) > (Gtol_out))
-            Mreset = Mreset & ((Gread - Gtarget) > (Gtol_in))
+            Mreset = np.logical_or( Mreset, (Gread - Gtarget) > (Gtol_out) )
+            Mreset = np.logical_and( Mreset, (Gread - Gtarget) > (Gtol_in) )
             Mreset = Mreset * Msel
 
             numLeft = sum(Mreset.reshape(-1)) + sum(Mset.reshape(-1)) - sum((Mbound>=maxRetry).reshape(-1))
@@ -612,7 +612,7 @@ class DPE:
         for vec in vectors_bin:
             inputs_dpe = []
             for v in vec.T:
-                inputs_dpe.append(self.vec2ints(v))
+                inputs_dpe.append(self.vec2ints(v, start=r_start))
 
             outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=-1, mode=1,
                                            col_en=self.get_col_en(c_sel), **kwargs)

@@ -25,6 +25,96 @@ _gain_ratio = [
     1e6
 ]
 
+def CNN_process_image
+
+    import dut_func as dut
+    import serial
+    import time
+    import struct
+    import numpy as np
+    from bitstring import BitArray
+    import matplotlib.pyplot as plt
+    import dut_a0 as a0
+    from misc import *
+    drv = dut.drv
+
+    from lib_nn_dpe import NN_dpe
+    from lib_data import *
+    import time
+    from IPython import display
+
+    load_workspace(vars(), 'dataset/20190815-132601-weights')
+    load_workspace(vars(), 'dataset/mnist')
+    nn = NN_dpe(weights)
+    img_idx = 5
+
+    N_BIT = 8
+    image = test_images[img_idx]
+
+    vectors = nn._conv_flattern(image)
+
+    vec_int = np.round(vectors* (2**N_BIT -1))
+    vec_int = np.array(vec_int, dtype=np.uint32)
+
+    vec_list = []
+
+    for i in range(N_BIT):
+        vec_list.append( (vec_int>>i) & 0x1 )
+
+    vec_list = np.array(vec_list)
+    vec_list.shape
+
+    outputs_dpe_list = []
+    exp_out_list = []
+    soft_out_list = []
+
+    for vec in vec_list:
+        inputs_dpe = []
+        for v in vec.T:
+            in_dpe = 0
+
+            for i, el in enumerate(v):
+                if el:
+                    in_dpe |= 0x1 << i
+    #                 print(i)
+
+            inputs_dpe.append(in_dpe)
+
+        # Hardware call
+        outputs_dpe = a0.pic_dpe_batch(2, inputs_dpe, gain=-1, mode=1, col_en=[0x0000, 0x0000, 0x0000, 0x3fff])
+        outputs_dpe = outputs_dpe[:,:14]
+        
+        for c in range(outputs_dpe.shape[1]):
+            outputs_dpe[:,c] = outputs_dpe[:,c] * linear_factors_conv[c][0] + linear_factors_conv[c][1]
+        
+        exp_out_list.append(outputs_dpe)
+        soft_out_list.append( (nn.Gconv.T @ vec).T )
+        
+
+        
+        outputs_dpe_list.append( outputs_dpe[:,::2] - outputs_dpe[:,1::2] )
+
+
+    result = np.zeros( outputs_dpe_list[0].shape )
+    for i in range(N_BIT):
+        result += outputs_dpe_list[i] * (0x1<<i)
+
+    result = result / nn.Gratio / (2**N_BIT -1)
+
+
+    x = result.reshape(20,20,-1)
+    """ for i in range(7):
+        plt.figure(i)
+        plt.imshow(x[:,:,i])
+        plt.colorbar() """
+
+        
+    x1 = nn.relu(x)
+    x1 = nn.max_pooling(x1)
+    x1 = nn.flattern(x1)
+    y = nn.dense(x1)
+
+    print(y.argmax())
 
 def program_matrix_targets(arr, startRow=0, startCol=0, numRows=2, numCols=2, GMin=2e-6, GMax=200e-6):
     # startRow = 0

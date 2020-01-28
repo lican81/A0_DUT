@@ -9,6 +9,9 @@ import pickle
 import numpy as np
 from time import sleep
 
+import matplotlib
+matplotlib.use('Qt5Agg')
+
 fn = "./20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
 
 data = None
@@ -34,6 +37,8 @@ neuron_vector_history = data["neuronVectorHistory"]
 column_update_history = data["columnUpdateHistory"]
 num_cycles = data["numCycles"]
 num_updates = num_cycles*num_neurons+1
+#num_trials = data["numTrials"]
+num_trials = 10
 num_trials = data["numTrials"]
 start_schmidt_val = data["startSchmidtVal"]
 end_schmidt_val = data["endSchmidtVal"]
