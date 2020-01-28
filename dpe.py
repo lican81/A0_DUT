@@ -477,7 +477,7 @@ class DPE:
         for vec in vectors_bin:
             inputs_dpe = []
             for v in vec.T:
-                inputs_dpe.append(self.vec2ints(v))
+                inputs_dpe.append(self.vec2ints(v, start=r_start))
 
             outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=-1, mode=1,
                                            col_en=self.get_col_en(c_sel), **kwargs)
