@@ -41,7 +41,7 @@ if __name__ == '__main__':
     import sys
     from PyQt5 import QtGui
  
-    fig1 = Figure()
+    fig1 = Figure(figsize=(1.3,3))
     ax1f1 = fig1.add_subplot(111)
     ax1f1.plot(np.random.rand(5))
 
