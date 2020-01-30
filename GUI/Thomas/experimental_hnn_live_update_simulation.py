@@ -79,7 +79,9 @@ def run_memHNN(numCycles=numCycles,
 
     if fig==None:
         fig = plt.figure(0, figsize=[plt.rcParams["figure.figsize"][0] * 2., plt.rcParams["figure.figsize"][1]])
-    ax = fig.add_subplot(121)
+    else:
+        fig.clf()
+    ax = fig.add_subplot(111)
     color_idx_array = np.linspace(0, 1.0, numTrials)
     ax.set_xlabel("Time", fontsize=15)
     ax.set_ylabel("Energy", fontsize=15)
