@@ -1,37 +1,32 @@
-import sys
-from PyQt5 import QtCore 
-from PyQt5 import QtGui, QtWidgets
 
-from PyQt5.QtWidgets import *
 
-# from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QMainWindow, QApplication
-from PyQt5.QtGui import QPainter, QColor, QPen, QPainterPath, QPalette, QPixmap
-from PyQt5.QtCore import Qt, QPoint, QSize, pyqtSignal, QObject
-
-import numpy as np
-from matplotlib.image import imread
-from skimage.transform import resize
-
-import matplotlib
-matplotlib.use('Qt5Agg')
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets, uic
+import qimage2ndarray
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-import qimage2ndarray
+import numpy as np
+from skimage.transform import resize
 
-class Drawer(QWidget):
-    newPoint = pyqtSignal(QPoint)
+qtCreatorFile = "MNIST_demo.ui"
+Ui_MainWindow, QMainWindow = uic.loadUiType(qtCreatorFile)
+
+
+class DrawingWidget(QtWidgets.QWidget):
+    newPoint = QtCore.pyqtSignal(QtCore.QPoint)
+
     def __init__(self, parent=None):
-        QWidget.__init__(self, parent)
-        self.path = QPainterPath()  
-        self.pen = QPen(Qt.black, 10, Qt.SolidLine)
+        QtWidgets.QWidget.__init__(self, parent)
+        self.path = QtGui.QPainterPath()
+        self.pen = QtGui.QPen(QtCore.Qt.black, 20, QtCore.Qt.SolidLine)
 
         self.clear()
 
     def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint( QPainter.Antialiasing );
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
 
         painter.setPen(self.pen)
 
@@ -47,110 +42,97 @@ class Drawer(QWidget):
         self.update()
 
     def sizeHint(self):
-        return QSize(280, 280)
+        return QtCore.QSize(280, 280)
 
     def clear(self):
-       
         self.path.clear()
-        self.path.addRect(0,0, 280, 280)
+        self.path.addRect(0, 0, 280, 280)
         self.update()
-        
-    def save(self):
-        pixmap = QPixmap( 280, 280 )
-        pixmap.fill( Qt.white )
 
-        painter = QPainter( pixmap )
-        painter.setRenderHint( QPainter.Antialiasing )
-        painter.setPen(self.pen)
+    # def save(self):
+    #     pixmap = QtGui.QPixmap(280, 280)
+    #     pixmap.fill(Qt.white)
 
-        painter.drawPath( self.path )
-        painter.end()
-        pixmap.save( "path.png" )
+    #     painter = QtGui.QPainter(pixmap)
+    #     painter.setRenderHint(QtGui.QPainter.Antialiasing)
+    #     painter.setPen(self.pen)
 
-        self.clear()
+    #     painter.drawPath(self.path)
+    #     painter.end()
+    #     pixmap.save("path.png")
+
+    #     self.clear()
 
     def toArray(self):
-        pixmap = QPixmap( 280, 280 )
-        pixmap.fill( Qt.white )
+        pixmap = QtGui.QPixmap(280, 280)
+        pixmap.fill(QtCore.Qt.white)
 
-        painter = QPainter( pixmap )
-        painter.setRenderHint( QPainter.Antialiasing );
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
         painter.setPen(self.pen)
 
-        painter.drawPath( self.path )
+        painter.drawPath(self.path)
         painter.end()
 
-        arr = qimage2ndarray.rgb_view( pixmap.toImage() )
+        arr = qimage2ndarray.rgb_view(pixmap.toImage())
         return arr
 
-class MatPFC(FigureCanvas):
-    def __init__(self, parent=None):
-        self.__fig__ = Figure()
-        self.axes = self.__fig__.add_subplot(111)
-        FigureCanvas.__init__(self, self.__fig__)
 
-        self.setParent(parent)
+class MnistMainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self, ):
+        super(MnistMainWindow, self).__init__()
+        self.setupUi(self)
+
+        self.drawing = DrawingWidget(parent=self.drawing_digit)
+        self.btn_clear.clicked.connect(self.drawing.clear)
+
+        # Setup the digit panel
+        self.fig_digit = Figure(figsize=(3,3))
+        # self.ax_digit = self.fig_digit.add_subplot(111)
+        self.ax_digit = self.fig_digit.add_axes((0,0,1,1))
+        self.ax_digit.get_xaxis().set_visible(False)
+        self.ax_digit.get_yaxis().set_visible(False)
+
+        self.canvas_digit = FigureCanvas(self.fig_digit)
+        self.canvas_digit.setParent(self.mpl_digit)
+        
+        self.btn_classify.clicked.connect(self.classify)
 
 
-    def replot(self, img):
-        self.axes.cla()
-        # self.axes.plot(range(10), np.random.random(10), '.-', alpha=0.75)
-        # img = imread('path.png')
+        
+
+    def classify(self):
+        img = self.drawing.toArray()
+        img = self._pre_process(img)
+        
+        self.ax_digit.imshow( img )
+        self.canvas_digit.draw()
+
+        img_in = img[..., np.newaxis]
+
+    def _pre_process(img):
+        padding = 10
+
         img = np.mean(img, axis=2).astype(np.float) / 255
+        img = img[padding:-padding, padding:-padding]
 
-        padding = 5
-        img[np.r_[:padding, img.shape[0]-padding:img.shape[0]]] = 1
-        img[:, np.r_[:padding, img.shape[1]-padding:img.shape[1]]] = 1
+        img = resize(img, (24, 24), anti_aliasing=True)
+        img = 1-img
 
-        img = resize(img, (28,28), anti_aliasing=True)
-        im = self.axes.imshow(img, clim=(0,1))
-        # self.__fig__.colorbar(im, ax=self.axes)
-        
-        self.draw()
+        return img
 
-class MyWidget(QWidget):
-    def __init__(self, parent=None):
-        QWidget.__init__(self, parent)
-        self.setLayout(QVBoxLayout())
-        label = QLabel(self)
-        self.drawer = Drawer(self)
-        self.drawer.newPoint.connect(lambda p: label.setText('Coordinates: ( %d : %d )' % (p.x(), p.y())))
-
-        btn1 = QPushButton("Clear", self)
-        btn1.clicked.connect(self.drawer.clear)
-
-        btn2 = QPushButton("Save", self)
-        btn2.clicked.connect(self.drawer.save)
-        
-        self.layout().addWidget(label)
-        self.layout().addWidget(self.drawer)
-        self.layout().addWidget(btn1)
-        self.layout().addWidget(btn2)
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    import sys
+    sys.path.insert(0, '..')
 
-    frm = QWidget()
-    # frm.setWindowTitle('NavigationToolbar')
-    layout = QHBoxLayout(frm)
+    from lib_data import *
+    from lib_nn_dpe import NN_dpe
+    from dpe import DPE
 
-    w = MyWidget(frm)
-    
+    app = QtWidgets.QApplication(sys.argv)
+    main = MnistMainWindow()
 
-    wgtChart = MatPFC(frm)
-    # wgtChart.axes.plot(range(10), np.random.random(10), '.-', alpha=0.75)
 
-    def update():
-        arr = w.drawer.toArray()
-        wgtChart.replot(arr)
-
-    b = QPushButton('Update')
-    b.clicked.connect( update )
-
-    layout.addWidget(w)
-    layout.addWidget(b)
-    layout.addWidget(wgtChart)
-    
-    frm.show()
-    frm.setFocus()
+    main.show()
     sys.exit(app.exec_())
