@@ -21,7 +21,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 # import qimage2ndarray
 
 # Load UI Designer File
-qtCreatorFile = "C:\\microchip\\harmony\\v2_03b\\apps\\A0_DUT\\GUI\\MNIST_demo.ui"
+qtCreatorFile = "MNIST_demo.ui"
 Ui_MainWindow, QMainWindow = uic.loadUiType(qtCreatorFile)
 
 # All the widget names are: widget_DrawNumber, widget_ConvertDrawToInput, widget_unrolledinputvector
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     import sys
     from PyQt5 import QtGui
  
-    fig1 = Figure(figsize=(1.3,3))
+    fig1 = Figure(figsize=(4,3))
     ax1f1 = fig1.add_subplot(111)
     ax1f1.plot(np.random.rand(5))
 
