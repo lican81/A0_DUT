@@ -24,17 +24,6 @@
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="mpl_widget" native="true">
-    <property name="geometry">
-     <rect>
-      <x>50</x>
-      <y>280</y>
-      <width>12</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="verticalLayout"/>
-   </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBox_1_ST_i">
     <property name="geometry">
      <rect>
@@ -115,7 +104,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="pushButton_run">
     <property name="geometry">
      <rect>
       <x>710</x>
@@ -126,6 +115,16 @@
     </property>
     <property name="text">
      <string>Run</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="mpl_conv_weight" native="true">
+    <property name="geometry">
+     <rect>
+      <x>60</x>
+      <y>280</y>
+      <width>621</width>
+      <height>521</height>
+     </rect>
     </property>
    </widget>
   </widget>
