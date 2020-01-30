@@ -1,19 +1,44 @@
-import pylab as plt
+import sys
+sys.path.append('../')
+
+from dpe import DPE
+from lib_data import *
+import matplotlib.pyplot as plt
+import numpy as np
+from lib_nn_dpe import NN_dpe
+from IPython import display
 import pickle
+import serial
+
+import matplotlib
+matplotlib.rcParams['font.sans-serif'] = "Arial"
+dpe = DPE('COM6')
+dpe.set_clock(50)
+dpe.shape
+
+#fn = "../../20200129-172219-Prober2_HNN_20cyc_1trial_VarSchmidt.pkl"
+fn = "../20200129-193045-Prober2_HNN_3cyc_10trial_VarSchmidt.pkl"
+
+data = None
+with open(fn, "rb") as pkl_file:
+    data = pickle.load(pkl_file)
+lin_corrs = data["lin_corrs"]
+
+import pylab as plt
 import numpy as np
 from time import sleep
 import matplotlib
 
-simulation = True
+simulation = False
 
 if not simulation:
-    import dpe
+    #import dpe
     from lib_data import *
 
 # matplotlib.use('Qt5Agg')
 
-numCycles = 2
-numTrials = 3
+numCycles = 1
+numTrials = 2
 startSchmidtVal = -3.0
 endSchmidtVal = +1.4
 
@@ -31,7 +56,7 @@ def run_memHNN(numCycles=numCycles,
     if not simulation:
         #import dpe
         import scipy.io as sio
-        mat_contents = sio.loadmat('Exported60Node_GraphNum0.mat')
+        mat_contents = sio.loadmat('../Exported60Node_GraphNum0.mat')
         CMat = mat_contents['A']
 
         CMat[0, 33] = 0

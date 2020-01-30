@@ -8,7 +8,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 
 from Thomas.experimental_hnn_live_update_simulation import run_memHNN
 
-from skimage.transform import resize
+#from skimage.transform import resize
 
 qtCreatorFile = "memHNN_demo.ui"
 Ui_MainWindow, QMainWindow = uic.loadUiType(qtCreatorFile)
@@ -75,7 +75,7 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         numTrials = self.spinBox_num_trials.value()#3
         startSchmidtVal = self.doubleSpinBox_1_ST_i.value()#-3.0
         endSchmidtVal = self.doubleSpinBox_1_ST_f.value()#+1.4
-        simulation = True
+        simulation = False
         if self.verbosity>0:
             print("start experiment now")
         if True:
