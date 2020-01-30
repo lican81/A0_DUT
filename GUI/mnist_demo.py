@@ -158,11 +158,14 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
             'arr_fc': 1,
         }
 
-        self.dpe = DPE('COM3')
+        self.dpe = DPE('COM6')
         self.dpe.set_clock(50)
 
-        load_workspace(self._conf, '../20200129-164707-mnist_config')
+        # load_workspace(self._conf, '../20200129-164707-mnist_config')
 
+        load_workspace(self._conf, '../20200130-105530-mnist_config_prober1')
+        print(self._conf['arr_conv'])
+    
         self.nn = NN_dpe(self._conf['weights'])
 
 
@@ -213,7 +216,10 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         print('Convolving image...')
 
         output = self.dpe.multiply(
-            0, vectors, c_sel=[20, 34], r_start=20, mode=0, Tdly=500) / (self.nn.Gratio/2)
+            self._conf['arr_conv'], 
+            vectors, 
+            c_sel=[self._conf['c_conv'], self._conf['c_conv']+14], 
+            r_start=self._conf['r_conv'], mode=0, Tdly=500) / (self.nn.Gratio/2)
 
         output_cor = self.dpe.lin_corr(output, self._conf['lin_cor_conv'])
         x = output_cor[:, ::2] - output_cor[:, 1::2]
