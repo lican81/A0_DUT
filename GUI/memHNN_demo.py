@@ -27,15 +27,32 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         self.fig_energy = Figure() #  Figure(figsize=(3,3))
         self.add_mpl(self.fig_energy)
 
-        # Setup the digit panel
-        # self.ax_digit = self.fig_energy.add_subplot(111)
-        # self.ax_energy = self.fig_energy.add_axes((0,0,1,1))
-        # self.ax_energy.get_xaxis().set_visible(False)
-        # self.ax_energy.get_yaxis().set_visible(False)
-
-        # self.canvas_energy = FigureCanvas(self.fig_digit)
-        # self.canvas_energy.setParent(self.mpl_energy)
-
+        ST_min = -10
+        ST_max = 10
+        ST_spinbox_list = [self.doubleSpinBox_1_ST_i,
+                           self.doubleSpinBox_1_ST_f,
+                           self.doubleSpinBox_2_ST_i,
+                           self.doubleSpinBox_2_ST_f,
+                           self.doubleSpinBox_3_ST_i,
+                           self.doubleSpinBox_3_ST_f,
+                           self.doubleSpinBox_4_ST_i,
+                           self.doubleSpinBox_4_ST_f,
+                           ]
+        ST_init_list = [-3.,1.4,
+                        0.,0.,
+                        0.,0.,
+                        0.,0.]
+        for ST_spinbox,ST_init in zip(ST_spinbox_list,ST_init_list):
+            ST_spinbox.setMinimum(ST_min)
+            ST_spinbox.setMaximum(ST_max)
+            ST_spinbox.setValue(ST_init)
+            ST_spinbox.setSingleStep(0.01)
+        self.spinBox_num_trials.setValue(3)
+        self.spinBox_num_trials.setMinimum(1)
+        self.spinBox_num_trials.setMaximum(10)
+        self.spinBox_num_cycles.setValue(2)
+        self.spinBox_num_cycles.setMinimum(1)
+        self.spinBox_num_cycles.setMaximum(10)
         self.show()
 
     def add_mpl(self, fig):
@@ -54,10 +71,10 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         self.toolbar.close()
 
     def run_experiment(self,):
-        numCycles = 2
-        numTrials = 3
-        startSchmidtVal = -3.0
-        endSchmidtVal = +1.4
+        numCycles = self.spinBox_num_cycles.value()#2
+        numTrials = self.spinBox_num_trials.value()#3
+        startSchmidtVal = self.doubleSpinBox_1_ST_i.value()#-3.0
+        endSchmidtVal = self.doubleSpinBox_1_ST_f.value()#+1.4
         simulation = True
         if self.verbosity>0:
             print("start experiment now")
