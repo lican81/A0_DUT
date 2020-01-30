@@ -1,0 +1,222 @@
+import qimage2ndarray
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import sys
+from PyQt5 import QtCore
+from PyQt5 import QtGui, QtWidgets
+
+from PyQt5.QtWidgets import *
+
+# from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QMainWindow, QApplication
+from PyQt5.QtGui import QPainter, QColor, QPen, QPainterPath, QPalette, QPixmap
+from PyQt5.QtCore import Qt, QPoint, QSize, pyqtSignal, QObject
+
+import numpy as np
+from matplotlib.image import imread
+from skimage.transform import resize
+
+import matplotlib
+matplotlib.use('Qt5Agg')
+
+
+def classify_dpe(image):
+    vectors = nn._conv_flattern(image)
+
+    # Convolution hardware call
+    output = dpe.multiply(
+        0, vectors, c_sel=[20, 34], r_start=20, mode=0, Tdly=500) / (nn.Gratio/2)
+    output_cor = dpe.lin_corr(output, lin_cor_conv)
+    x = output_cor[:, ::2] - output_cor[:, 1::2]
+
+    x = x.reshape(20, 20, -1)
+
+    x1 = nn.relu(x)
+    x1 = nn.max_pooling(x1)
+    x1 = nn.flattern(x1)
+
+    x = x1
+
+    x1 = x[:57].T
+    x2 = x[57:].T
+
+    sc1 = x1.max()
+    sc2 = x2.max()
+
+    Gfc1 = nn.Gfc[:57]
+    Gfc2 = nn.Gfc[57:]
+
+    x1 = x1 / sc1
+    x2 = x2 / sc2
+
+    output1 = dpe.multiply(1, np.array([x1]).T, c_sel=[
+                           0, 20], mode=0, Tdly=500)
+    output1 = dpe.lin_corr(output1, new_lin_cor_fc1) * sc1
+
+    output2 = dpe.multiply(1, np.array([x2]).T, c_sel=[
+                           20, 40], mode=0, Tdly=500)
+    output2 = dpe.lin_corr(output2, new_lin_cor_fc2) * sc2
+
+    outputs = output1 + output2
+
+    y = outputs[:, ::2] - outputs[:, 1::2]
+
+    return y.argmax(), y
+
+
+class Drawer(QWidget):
+    newPoint = pyqtSignal(QPoint)
+
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent)
+        self.path = QPainterPath()
+        self.pen = QPen(Qt.black, 20, Qt.SolidLine)
+
+        self.clear()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        painter.setPen(self.pen)
+
+        painter.drawPath(self.path)
+
+    def mousePressEvent(self, event):
+        self.path.moveTo(event.pos())
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        self.path.lineTo(event.pos())
+        self.newPoint.emit(event.pos())
+        self.update()
+
+    def sizeHint(self):
+        return QSize(280, 280)
+
+    def clear(self):
+
+        self.path.clear()
+        self.path.addRect(0, 0, 280, 280)
+        self.update()
+
+    def save(self):
+        pixmap = QPixmap(280, 280)
+        pixmap.fill(Qt.white)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(self.pen)
+
+        painter.drawPath(self.path)
+        painter.end()
+        pixmap.save("path.png")
+
+        self.clear()
+
+    def toArray(self):
+        pixmap = QPixmap(280, 280)
+        pixmap.fill(Qt.white)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(self.pen)
+
+        painter.drawPath(self.path)
+        painter.end()
+
+        arr = qimage2ndarray.rgb_view(pixmap.toImage())
+        return arr
+
+
+class MatPFC(FigureCanvas):
+    def __init__(self, parent=None):
+        self.__fig__ = Figure()
+        self.axes = self.__fig__.add_subplot(111)
+        FigureCanvas.__init__(self, self.__fig__)
+
+        self.setParent(parent)
+
+    def replot(self, img, nn):
+        self.axes.cla()
+        # self.axes.plot(range(10), np.random.random(10), '.-', alpha=0.75)
+        # img = imread('path.png')
+        img = np.mean(img, axis=2).astype(np.float) / 255
+
+        padding = 10
+        # img[np.r_[:padding, img.shape[0]-padding:img.shape[0]]] = 1
+        # img[:, np.r_[:padding, img.shape[1]-padding:img.shape[1]]] = 1
+        img = img[padding:-padding, padding:-padding]
+
+        img = resize(img, (24, 24), anti_aliasing=True)
+        img = 1-img
+
+        _ = self.axes.imshow(img, clim=(0, 1))
+        # self.__fig__.colorbar(im, ax=self.axes)
+
+        img_in = img[..., np.newaxis]
+        digit, _ = classify_dpe(img_in)
+        self.axes.set_title(f'Result={digit}')
+
+        self.draw()
+
+
+class MyWidget(QWidget):
+    def __init__(self, parent=None):
+        QWidget.__init__(self, parent)
+        self.setLayout(QVBoxLayout())
+        label = QLabel(self)
+        self.drawer = Drawer(self)
+        self.drawer.newPoint.connect(lambda p: label.setText(
+            'Coordinates: ( %d : %d )' % (p.x(), p.y())))
+
+        btn1 = QPushButton("Clear", self)
+        btn1.clicked.connect(self.drawer.clear)
+
+        btn2 = QPushButton("Save", self)
+        btn2.clicked.connect(self.drawer.save)
+
+        self.layout().addWidget(label)
+        self.layout().addWidget(self.drawer)
+        self.layout().addWidget(btn1)
+        self.layout().addWidget(btn2)
+
+
+if __name__ == '__main__':
+    import sys
+    sys.path.insert(0, '..')
+
+    from lib_data import *
+    from lib_nn_dpe import NN_dpe
+    from dpe import DPE
+
+    dpe = DPE('COM3')
+    dpe.set_clock(50)
+
+    load_workspace(vars(), '../20200129-164707-mnist_config')
+    nn = NN_dpe(weights)
+
+    app = QApplication(sys.argv)
+
+    frm = QWidget()
+    # frm.setWindowTitle('NavigationToolbar')
+    layout = QHBoxLayout(frm)
+
+    w = MyWidget(frm)
+
+    wgtChart = MatPFC(frm)
+    # wgtChart.axes.plot(range(10), np.random.random(10), '.-', alpha=0.75)
+
+    def update():
+        arr = w.drawer.toArray()
+        wgtChart.replot(arr, nn)
+
+    b = QPushButton('Classify')
+    b.clicked.connect(update)
+
+    layout.addWidget(w)
+    layout.addWidget(b)
+    layout.addWidget(wgtChart)
+
+    frm.show()
+    frm.setFocus()
+    sys.exit(app.exec_())
