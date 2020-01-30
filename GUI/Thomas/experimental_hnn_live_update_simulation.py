@@ -22,6 +22,12 @@ if not simulation:
     import scipy.io as sio
     mat_contents = sio.loadmat('Exported60Node_GraphNum0.mat')
     CMat = mat_contents['A']
+
+    CMat[0, 33] = 0
+    CMat[33, 0] = 0
+    CMat[56, 6] = 0
+    CMat[6, 56] = 0
+
 else:
     fn = "./20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
 
@@ -30,11 +36,6 @@ else:
         data = pickle.load(pkl_file)
     CMat = data["CMat"]
 
-
-CMat[0, 33] = 0
-CMat[33, 0] = 0
-CMat[56, 6] = 0
-CMat[6, 56] = 0
 
 arr = 2
 SchmidtCycleVector = np.linspace(startSchmidtVal, endSchmidtVal, numCycles)
@@ -52,7 +53,6 @@ time_vector = np.arange(0, num_updates)
 color_idx_array = np.linspace(0, 1.0, numTrials)
 
 if not simulation:
-    noise = 0.
     lin_corrs = np.zeros_like(appliedVector1)
 
 # Make the updatable Figure - this code taken from Thomas
@@ -106,7 +106,7 @@ for cc in np.arange(numCycles):
             output2 = dpe.multiply_w_delay(arr, appliedVector2, c_sel=[ii, ii + 1], mode=1, debug=False, delay=5)
             output_corr = noise - dpe.lin_corr(output1, lin_corrs) + dpe.lin_corr(output2, lin_corrs)
         else:
-            output_corr = np.dot(-CMat[ii,:], neuronVector)
+            output_corr = -np.dot(CMat[ii, :], neuronVector)
             output_corr.shape = (-1, 1)
         for tt in np.arange(numTrials):
             threshVector = threshold - SchmidtCycleVector[cc] * neuronVector[ii, tt]

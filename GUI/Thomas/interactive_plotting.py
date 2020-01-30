@@ -95,7 +95,7 @@ for trial_index in range(num_trials): # range as we use python3, otherwise use x
 
     vec[:] = neuron_vector_history[:,trial_index,0]
     old_vec[:] = vec[:]
-    energy_value = np.dot(vec, np.dot(C_mat, vec))  # need to do this once
+    energy_value = 0.5*np.dot(vec, np.dot(C_mat, vec))  # need to do this once
 
     for tt, time in enumerate(time_vector):
         if verbose: print("Time index: ", tt)
@@ -106,7 +106,7 @@ for trial_index in range(num_trials): # range as we use python3, otherwise use x
         # energy_vector[tt] = np.dot(vec,np.dot(C_mat, vec))  # might be faster ways
         idx_update = np.where(vec != old_vec)[0]  # instead we could just cycle through indices-> this is more general.
         if len(idx_update) != 0:
-            energy_value += 2*(vec[idx_update[0]]-old_vec[idx_update[0]])*np.dot(C_mat[idx_update[0], :], old_vec)
+            energy_value += 2*(vec[idx_update[0]]-old_vec[idx_update[0]])*np.dot(0.5*C_mat[idx_update[0], :], old_vec)
         old_vec[:] = vec[:]
         energy_vector[tt] = energy_value
         if (tt % plot_refresh_rate == 0):
