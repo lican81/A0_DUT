@@ -48,7 +48,7 @@ def save_workspace( vars_all, filename='', note=''):
     print(f'to {filename}.pkl')
 
     with open(filename+'.pkl', 'wb') as f:
-        dill.dump(d, f)
+        dill.dump(d, f, 0)
 
     print('Saving ', end='')
     d = {}
