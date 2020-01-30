@@ -1,18 +1,10 @@
-from PyQt5.uic import loadUiType
-from PyQt5 import QtCore
-from PyQt5 import QtGui, QtWidgets, uic
-
 import sys
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets, uic
 import numpy as np
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt4agg import (
-    FigureCanvasQTAgg as FigureCanvas,
-    NavigationToolbar2QT as NavigationToolbar)
-
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 from skimage.transform import resize
 
@@ -25,7 +17,8 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.fig_dict = {}
 
-        self.pushButton_run.clicked.connect(self.update_figure)
+        #self.pushButton_run.clicked.connect(self.update_figure)
+        self.mpl_list_figs.itemClicked.connect(self.update_figure)
 
         self.fig_energy = Figure() #  Figure(figsize=(3,3))
         self.add_mpl(self.fig_energy)
@@ -46,15 +39,15 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
 
     def add_figure(self, name, fig):
         self.fig_dict[name] = fig
-        self.mplfigs.addItem(name)
+        self.mpl_list_figs.addItem(name)
 
     def add_mpl(self, fig):
         self.canvas = FigureCanvas(fig)
-        self.canvas.setParent(self.mpl_energy) #.addWidget(self.canvas)
+        self.mpl_vl.addWidget(self.canvas)
         self.canvas.draw()
         self.toolbar = NavigationToolbar(self.canvas,
-                                         self.mplwindow, coordinates=True)
-        self.mpl_energy.addWidget(self.toolbar)
+                                         self.mpl_energy, coordinates=True)
+        self.mpl_vl.addWidget(self.toolbar)
 
     # This is the alternate toolbar placement. Susbstitute the three lines above
     # for these lines to see the different look.
@@ -63,9 +56,9 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
     #        self.addToolBar(self.toolbar)
 
     def remove_mpl(self, ):
-        self.mpl_energy.removeWidget(self.canvas)
+        self.mpl_vl.removeWidget(self.canvas)
         self.canvas.close()
-        self.mpl_energy.removeWidget(self.toolbar)
+        self.mpl_vl.removeWidget(self.toolbar)
         self.toolbar.close()
 
 
