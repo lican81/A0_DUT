@@ -161,7 +161,7 @@ QPushButton {
                                           show_plot=True,
                                           verbosity=self.verbosity)
             self._experiment_running = False
-            self.E_target=-200.
+            self.E_target = -187.
             Emin_value = energy_vector[-1,:].min()
             E_error_fraction = np.abs((Emin_value-self.E_target)/self.E_target)
             self.energy_grid_layout_dct[1, 1].setText(r"{}".format(Emin_value))
