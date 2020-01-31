@@ -11,6 +11,15 @@ matplotlib.rcParams['font.sans-serif'] = "Arial"
 
 import numpy as np
 from skimage.transform import resize
+import Arrow_rc
+
+# To Add Image with QT Designer:
+# 1. Create image and save (.jpg, etc.)
+# 2. Make as a resource file in QT designer and place with label (see here: https://stackoverflow.com/questions/28536306/inserting-an-image-in-gui-using-qt-designer)
+# 3. Save file, compile saved resource file on command line "pyrcc5 Arrow.qrc -o Arrow_rc.py" where Arrow.qrc is the name of your saved resource file
+# 4. In .py file, import created compiled .py file, example above is "import Arrow_rc"
+# Note: images can alter spacing, so can be tweaky this way without fering to layoutnames. May change widget spacing.
+# Note: also unknown what file dependencies there are. Hopefully it's local relative to UI file, otherwise may need to reimport and save resource file
 
 qtCreatorFile = "MNIST_demo.ui"
 Ui_MainWindow, QMainWindow = uic.loadUiType(qtCreatorFile)
@@ -313,14 +322,26 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
 
     def _plot_result(self, y):
         self.ax_fc_out.cla()
-        self.ax_fc_out.bar(range(10), y.reshape(-1) / 256 * 1e6)
-        self.ax_fc_out.set_ylabel('Average current ($\mu$A)')
+        self.ax_fc_out.bar(range(10), self._result_softmax( y.reshape(-1) ))
+        self.ax_fc_out.set_ylabel('Probability)')
+        # self.ax_fc_out.set_ylabel('Average current ($\mu$A))')
         self.ax_fc_out.set_title(f'Recognized {y.argmax()}')
         self.ax_fc_out.set_xticks(np.arange(0,10,1))
         self.ax_fc_out.grid(True, alpha=0.3)
         self.fig_fc_out.tight_layout()
         self.canvas_fc_out.draw()
         self.repaint()
+
+    def _result_current(self, x):
+        return x / 256 * 1e6
+
+    def _result_softmax(self, x):
+        x = x.astype(np.double) * 1e3
+        exps = np.exp(x - np.max(x))
+        return exps / np.sum(exps)
+
+    def _result_prob(self, x):
+        return (x - x.min()) / sum(x - x.min())
 
     def _pre_process(self, img):
         padding = 10
