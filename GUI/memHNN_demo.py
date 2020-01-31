@@ -22,15 +22,36 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("mem-HNN demo")
         self.setWindowIcon(QtGui.QIcon('labs_logo.png'))
         #self.showFullScreen()
-        self.setStyleSheet("background-color: white;")
+        bg_style="background-color: white; "
+        style_str="""
+QMainWindow { background-color: white; }
+QPushButton {
+    border-width: 4px;
+    border-image: url(button.png) 4 4 4 4 stretch stretch;
+}
+        """
+        self.setStyleSheet(style_str)
+        #self.setStyleSheet("")
+
         self.verbosity = verbosity
         self.simulation = simulation
         self._experiment_running = False
 
         self.pushButton_run.clicked.connect(self.run_experiment)
+        run_button_pic = QtGui.QIcon('run_button.png')
+        self.pushButton_run.setIcon(run_button_pic)
+        self.pushButton_run.setIconSize(QtCore.QSize(50, 50))
         #self.mpl_list_figs.itemClicked.connect(self.update_figure)
 
         self.fig_energy = Figure() #  Figure(figsize=(3,3))
+        ax=self.fig_energy.add_subplot(111)
+        ax.set_title("Click RUN to see data.")
+        ax.set_xlabel("Time", fontsize=15)
+        ax.set_ylabel("Energy", fontsize=15)
+        ax.set_xlim([0, 1])
+        ax.set_ylim([-200, 100.])
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
         self.add_mpl(self.fig_energy)
 
         ST_min = -10

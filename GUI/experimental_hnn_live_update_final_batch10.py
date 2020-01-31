@@ -109,6 +109,8 @@ def run_memHNN(numCycles=numCycles,
     ax.set_ylabel("Energy", fontsize=15)
     ax.set_xlim([time_vector[0], time_vector[-1]])
     ax.set_ylim([-200, 100.])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
     trial_index = 0
     energy_vector = np.NaN * np.zeros((num_updates, numTrials))  # NaNs such that it's not plotted
