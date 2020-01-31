@@ -1,38 +1,23 @@
 import sys
 sys.path.append('../')
 
-from dpe import DPE
-from lib_data import *
-import matplotlib.pyplot as plt
-import numpy as np
-from lib_nn_dpe import NN_dpe
-from IPython import display
 import pickle
-import serial
-
 import matplotlib
 matplotlib.rcParams['font.sans-serif'] = "Arial"
-dpe = DPE('COM6')
-dpe.set_clock(50)
-dpe.shape
-
-#fn = "../../20200129-172219-Prober2_HNN_20cyc_1trial_VarSchmidt.pkl"
-fn = "./20200130-120058-memHNN_LinearCorrections.pkl"
-data = None
-with open(fn, "rb") as pkl_file:
-    data = pickle.load(pkl_file)
-lin_corrs = data["lin_corrs"]
 
 import pylab as plt
 import numpy as np
-from time import sleep
-import matplotlib
+#from time import sleep
+#import matplotlib
 
-simulation = False
+import os
+simulation = (os.environ["USERNAME"].upper()=="VANVAERE")
 
 if not simulation:
-    #import dpe
+    import serial
+    from dpe import DPE
     from lib_data import *
+    from lib_nn_dpe import NN_dpe
 
 # matplotlib.use('Qt5Agg')
 
@@ -53,7 +38,17 @@ def run_memHNN(numCycles=numCycles,
     if verbosity>0.:
         print("Enter run memHNN function.")
     if not simulation:
-        #import dpe
+        dpe_inst = DPE('COM6')
+        dpe_inst.set_clock(50)
+        dpe_inst.shape
+
+        # fn = "../../20200129-172219-Prober2_HNN_20cyc_1trial_VarSchmidt.pkl"
+        fn = "./20200130-120058-memHNN_LinearCorrections.pkl"
+        data_lc = None
+        with open(fn, "rb") as pkl_file:
+            data_lc = pickle.load(pkl_file)
+        lin_corrs = data_lc["lin_corrs"]
+
         import scipy.io as sio
         mat_contents = sio.loadmat('./Exported60Node_GraphNum0.mat')
         CMat = mat_contents['A']
@@ -149,9 +144,15 @@ def run_memHNN(numCycles=numCycles,
 
         trackColBatch = 0
         for ii in randOrderColumnBatches:
-            output1 = dpe.multiply_w_delay(arr, appliedVector1, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)], mode=1, debug=False, delay=5)
-            output2 = dpe.multiply_w_delay(arr, appliedVector2, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)], mode=1, debug=False, delay=5)
-            output_corr = noise - dpe.lin_corr(output1, lin_corrs) + dpe.lin_corr(output2, lin_corrs)
+            if not simulation:
+                output1 = dpe_inst.multiply_w_delay(arr, appliedVector1, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)],
+                                                    mode=1, debug=False, delay=5)
+                output2 = dpe_inst.multiply_w_delay(arr, appliedVector2, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)],
+                                                    mode=1, debug=False, delay=5)
+                output_corr = noise - dpe_inst.lin_corr(output1, lin_corrs) + dpe_inst.lin_corr(output2, lin_corrs)
+            else:
+                output_corr = -np.dot(CMat[(ii*sizeBatch):((ii+1)*sizeBatch), :], neuronVector).T
+                #output_corr.shape = (-1, 1)
             for tt in np.arange(numTrials):
                 threshVector = threshold - SchmidtCycleVector[cc] * neuronVector[ii*sizeBatch:(ii+1)*sizeBatch, tt]
                 # if (output_corr2[0,ii] >= threshVector[ii,0]):

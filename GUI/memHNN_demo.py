@@ -15,12 +15,12 @@ qtCreatorFile = "memHNN_demo.ui"
 Ui_MainWindow, QMainWindow = uic.loadUiType(qtCreatorFile)
 
 class MemHNNMain(QMainWindow, Ui_MainWindow):
-    def __init__(self, verbosity=0):
+    def __init__(self, verbosity=0, simulation=False):
         super(MemHNNMain, self).__init__()
         self.setupUi(self)
-        self.fig_dict = {}
 
         self.verbosity = verbosity
+        self.simulation = simulation
 
         self.pushButton_run.clicked.connect(self.run_experiment)
         #self.mpl_list_figs.itemClicked.connect(self.update_figure)
@@ -90,13 +90,15 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
                        show_plot=True,
                        verbosity = self.verbosity)
         if self.verbosity > 0:
-            print("finish experiment now")
+            print("Finish experiment now")
 
 
 if __name__ == '__main__':
-
+    import os
+    simulation = (os.environ["USERNAME"].upper()=="VANVAERE")
     app = QtWidgets.QApplication(sys.argv)
-    main = MemHNNMain(verbosity=1)
+    main = MemHNNMain(verbosity=1,
+                      simulation=simulation)
 
     sys.exit(app.exec_())
 
