@@ -8,6 +8,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 
 #from experimental_hnn_live_update_final import run_memHNN
 from experimental_hnn_live_update_final_batch10 import run_memHNN
+from time import sleep
 
 #from skimage.transform import resize
 
@@ -18,9 +19,13 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
     def __init__(self, verbosity=0, simulation=False):
         super(MemHNNMain, self).__init__()
         self.setupUi(self)
-
+        self.setWindowTitle("mem-HNN demo")
+        self.setWindowIcon(QtGui.QIcon('labs_logo.png'))
+        #self.showFullScreen()
+        self.setStyleSheet("background-color: white;")
         self.verbosity = verbosity
         self.simulation = simulation
+        self._experiment_running = False
 
         self.pushButton_run.clicked.connect(self.run_experiment)
         #self.mpl_list_figs.itemClicked.connect(self.update_figure)
@@ -80,6 +85,7 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         if self.verbosity>0:
             print("Start experiment now:")
         if True:
+            self._experiment_running = True
             run_memHNN(numCycles=numCycles,
                        numTrials=numTrials,
                        startSchmidtVal=startSchmidtVal,
@@ -89,8 +95,18 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
                        fig=self.fig_energy,
                        show_plot=True,
                        verbosity = self.verbosity)
+            self._experiment_running = False
         if self.verbosity > 0:
             print("Finish experiment now")
+
+    def keyPressEvent(self, event):
+        """Close application from escape key.
+
+        results in QMessageBox dialog from closeEvent, good but how/why?
+        """
+        if event.key() == QtCore.Qt.Key_Escape:
+            if not self._experiment_running:
+                self.close()
 
 
 if __name__ == '__main__':
