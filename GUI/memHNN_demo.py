@@ -24,6 +24,12 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         self.setWindowIcon(QtGui.QIcon('labs_logo.png'))
         # self.showFullScreen()
         self.showMaximized()
+
+        #doesn't work:
+        #sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        #sizePolicy.setHeightForWidth(True)
+        #self.setSizePolicy(sizePolicy)
+
         bg_style = "background-color: white; "
         style_str = """
 QMainWindow { background-color: white; }
@@ -98,7 +104,7 @@ QPushButton {
             for nr in range(self.nrow):
                 self.energy_table_widget.setItem(nr, nc, QtWidgets.QTableWidgetItem("Cell ({},{})".format(nr, nc)))
         #self.energy_table_widget.move(0, 0)
-
+        #self.energy_table_widget.resize()
         # table selection change
         #self.energy_table_widget.doubleClicked.connect(self.on_click)
 
@@ -140,6 +146,9 @@ QPushButton {
         if self.verbosity > 0:
             print("Finish experiment now")
 
+    def heightForWidth(self, width):
+        return width * 0.7559943582510579
+
     def closeEvent(self, event):
         """Generate 'question' dialog on clicking 'X' button in title bar.
 
@@ -179,5 +188,11 @@ if __name__ == '__main__':
     verbosity = 1
     main = MemHNNMain(verbosity=verbosity,
                       simulation=simulation)
-    if verbosity > 0: print("Start application:")
+    if verbosity > 0:
+        print("Start application:")
+        wdw_width = main.frameGeometry().width()
+        wdw_height = main.frameGeometry().height()
+        print("Window size is: {}, {}".format(wdw_width, wdw_height))
+        print("Aspect ratio {}".format((1.0*wdw_height)/wdw_width))
+
     sys.exit(app.exec_())
