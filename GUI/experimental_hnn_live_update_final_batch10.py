@@ -193,7 +193,7 @@ def run_memHNN(numCycles=numCycles,
             
             trackColBatch = trackColBatch + 1
 
-    return neuronVectorHistory, energyHistory
+    return neuronVectorHistory, energy_vector
 
 if (__name__=="__main__"):
-    run_memHNN()
+    _, energy_vector = run_memHNN()

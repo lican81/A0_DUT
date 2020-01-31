@@ -53,7 +53,7 @@ QPushButton {
 
         self.fig_energy = Figure()  # Figure(figsize=(3,3))
         ax = self.fig_energy.add_subplot(111)
-        ax.set_title("Click RUN to see data.")
+        ax.set_title("Click RUN button to see data.")
         ax.set_xlabel("Time", fontsize=15)
         ax.set_ylabel("Energy", fontsize=15)
         ax.set_xlim([0, 1])
@@ -106,18 +106,26 @@ QPushButton {
         self.energy_grid_widget.setLayout(self.energy_grid_layout)
         #self.energy_table_widget.setColumnCount(0)
         #self.energy_table_widget.setRowCount(0)
-        self.nrow = 4
-        self.ncol = 3
+        self.nrow = 3
+        self.ncol = 4
         #self.energy_grid_layout.setRowCount(self.nrow)
         #self.energy_grid_layout.setColumnCount(self.ncol)
+        self.energy_grid_layout_dct={}
         for nc in range(self.ncol):
             for nr in range(self.nrow):
                 #self.energy_table_widget.setItem(nr, nc, QtWidgets.QTableWidgetItem("Cell ({},{})".format(nr, nc)))
-                self.energy_grid_layout.addWidget(QtWidgets.QLabel("Cell ({},{})".format(nr, nc)), nr, nc, )
+                self.energy_grid_layout_dct[nr,nc] = QtWidgets.QLabel("Cell ({},{})".format(nr, nc))
+                self.energy_grid_layout.addWidget(self.energy_grid_layout_dct[nr,nc], nr, nc, )
         #self.energy_table_widget.move(0, 0)
         #self.energy_table_widget.resize()
         # table selection change
         #self.energy_table_widget.doubleClicked.connect(self.on_click)
+        self.energy_grid_layout_dct[0, 0].setText(r"")
+        self.energy_grid_layout_dct[0, 1].setText(r"User")
+        self.energy_grid_layout_dct[0, 2].setText(r"No Noise")
+        self.energy_grid_layout_dct[0, 3].setText(r"Optimal")
+        self.energy_grid_layout_dct[1, 0].setText(r"Minimal Energy")
+        self.energy_grid_layout_dct[2, 0].setText(r"Error Fraction")
 
     def add_mpl(self, fig):
         self.canvas = FigureCanvas(fig)
@@ -143,7 +151,7 @@ QPushButton {
             print("Start experiment now:")
         if True:
             self._experiment_running = True
-            _, energyHistory = run_memHNN(numCycles=numCycles,
+            _, energy_vector = run_memHNN(numCycles=numCycles,
                                           numTrials=numTrials,
                                           startSchmidtVal=startSchmidtVal,
                                           endSchmidtVal=endSchmidtVal,
@@ -153,7 +161,11 @@ QPushButton {
                                           show_plot=True,
                                           verbosity=self.verbosity)
             self._experiment_running = False
-            Emin_value = energyHistory.min()
+            self.E_target=-200.
+            Emin_value = energy_vector[-1,:].min()
+            E_error_fraction = np.abs((Emin_value-self.E_target)/self.E_target)
+            self.energy_grid_layout_dct[1, 1].setText(r"{}".format(Emin_value))
+            self.energy_grid_layout_dct[2, 1].setText(r"{}".format(E_error_fraction))
         if self.verbosity > 0:
             print("Finish experiment now")
 
