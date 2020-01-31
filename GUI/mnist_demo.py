@@ -6,6 +6,8 @@ import qimage2ndarray
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib
+matplotlib.rcParams['font.sans-serif'] = "Arial"
 
 import numpy as np
 from skimage.transform import resize
@@ -96,26 +98,26 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_digit.setParent(self.mpl_digit)
 
         # Setup convolution weight panel
-        self.fig_conv_weight = Figure(figsize=(2,2))
-        self.ax_conv_weight = self.fig_conv_weight.add_axes((0,0,1,1))
-        self.ax_conv_weight.get_xaxis().set_visible(False)
-        self.ax_conv_weight.get_yaxis().set_visible(False)
+        self.fig_conv_weight = Figure(figsize=(2,3))
+        # self.ax_conv_weight = self.fig_conv_weight.add_axes((0,0,1,1))
+        # self.ax_conv_weight.get_xaxis().set_visible(False)
+        # self.ax_conv_weight.get_yaxis().set_visible(False)
         self.canvas_conv_weight = FigureCanvas(self.fig_conv_weight)
         self.canvas_conv_weight.setParent(self.mpl_conv_weight)
 
         # Setup FC weight panel
         self.fig_fc_weight = Figure(figsize=(2,4))
-        self.ax_fc_weight = self.fig_fc_weight.add_axes((0,0,1,1))
-        self.ax_fc_weight.get_xaxis().set_visible(False)
-        self.ax_fc_weight.get_yaxis().set_visible(False)
+        # self.ax_fc_weight = self.fig_fc_weight.add_axes((0,0,1,1))
+        # self.ax_fc_weight.get_xaxis().set_visible(False)
+        # self.ax_fc_weight.get_yaxis().set_visible(False)
         self.canvas_fc_weight = FigureCanvas(self.fig_fc_weight)
         self.canvas_fc_weight.setParent(self.mpl_fc_weight)
 
         # Setup conv input panel
-        self.fig_conv_in = Figure(figsize=(1,4))
-        self.ax_conv_in = self.fig_conv_in.add_axes((0,0,1,1))
-        self.ax_conv_in.get_xaxis().set_visible(False)
-        self.ax_conv_in.get_yaxis().set_visible(False)
+        self.fig_conv_in = Figure(figsize=(3,4))
+        # self.ax_conv_in = self.fig_conv_in.add_axes((0,0,1,1))
+        # self.ax_conv_in.get_xaxis().set_visible(False)
+        # self.ax_conv_in.get_yaxis().set_visible(False)
         self.canvas_conv_in = FigureCanvas(self.fig_conv_in)
         self.canvas_conv_in.setParent(self.mpl_conv_in)
 
@@ -161,18 +163,32 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.dpe = DPE('COM3')
         self.dpe.set_clock(50)
 
-        load_workspace(self._conf, '../20200129-164707-mnist_config')
+        load_workspace(self._conf, '../20200130-100802-mnist_config')
 
+        # load_workspace(self._conf, '../20200130-105530-mnist_config_prober1')
+        # print(self._conf['arr_conv'])
+    
         self.nn = NN_dpe(self._conf['weights'])
 
 
     def read_conductance(self):
         self.statusbar.showMessage('Reading conductance...')
+        self.repaint()
+
         g_conv = self.dpe.read(self._conf['arr_conv'], method='fast')
         g_conv = g_conv[self._conf['r_conv']:self._conf['r_conv']+26,
                         self._conf['c_conv']:self._conf['c_conv']+14, ]
 
-        self.ax_conv_weight.imshow(g_conv)
+        self.fig_conv_weight.clf()
+        # self.ax_conv_weight = self.fig_conv_weight.add_axes((0,0,1,1))
+        self.ax_conv_weight = self.fig_conv_weight.add_subplot(111)
+        self.ax_conv_weight.get_xaxis().set_visible(False)
+        self.ax_conv_weight.get_yaxis().set_visible(False)
+        self.ax_conv_weight.set_title('Conductance ($\mu$S)')
+        im_conv = self.ax_conv_weight.imshow(g_conv * 1e6)
+        self.ax_conv_weight.set_aspect('auto')
+        self.fig_conv_weight.colorbar(im_conv, ax=self.ax_conv_weight)
+        self.fig_conv_weight.tight_layout()
         self.canvas_conv_weight.draw()
 
         g_fc = self.dpe.read(self._conf['arr_fc'], method='fast')
@@ -184,10 +200,19 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
 
         g_fc = np.concatenate((g_fc1, g_fc2), axis=0)
 
-        self.ax_fc_weight.imshow(g_fc)
+        self.fig_fc_weight.clf()
+        self.ax_fc_weight = self.fig_fc_weight.add_subplot(111)
+        self.ax_fc_weight.get_xaxis().set_visible(False)
+        self.ax_fc_weight.get_yaxis().set_visible(False)
+        self.ax_fc_weight.set_title('Conductance( $\mu$S)')
+        im_fc = self.ax_fc_weight.imshow(g_fc * 1e6)
+        self.ax_fc_weight.set_aspect('auto')
+        self.fig_fc_weight.colorbar(im_fc, ax=self.ax_fc_weight)
+        self.fig_fc_weight.tight_layout()
         self.canvas_fc_weight.draw()
 
         self.statusbar.showMessage('Conductance read completed.')
+
 
     def classify(self):
         for i in range(7):
@@ -206,14 +231,16 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         ## Convolution layer
         image = img[..., np.newaxis]
         vectors = self.nn._conv_flattern(image)
-        self.ax_conv_in.imshow(vectors.T)
-        self.canvas_conv_in.draw()
-        self.repaint()
+
+        self._disp_conv_in(vectors)
 
         print('Convolving image...')
 
         output = self.dpe.multiply(
-            0, vectors, c_sel=[20, 34], r_start=20, mode=0, Tdly=500) / (self.nn.Gratio/2)
+            self._conf['arr_conv'], 
+            vectors, 
+            c_sel=[self._conf['c_conv'], self._conf['c_conv']+14], 
+            r_start=self._conf['r_conv'], mode=0, Tdly=500) / (self.nn.Gratio/2)
 
         output_cor = self.dpe.lin_corr(output, self._conf['lin_cor_conv'])
         x = output_cor[:, ::2] - output_cor[:, 1::2]
@@ -241,8 +268,6 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
 
         x1 = x1 / sc1
         x2 = x2 / sc2
-        
-        print(x1.shape, x2.shape)
 
         output1 = self.dpe.multiply(self._conf['arr_fc'], np.array([x1]).T, c_sel=[
                             0, 20], mode=0, Tdly=500)
@@ -255,18 +280,47 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         outputs = output1 + output2
 
         y = outputs[:, ::2] - outputs[:, 1::2]
-        self.ax_fc_out.cla()
-        self.ax_fc_out.bar(range(10), y.reshape(-1))
-        self.ax_fc_out.set_title(f'Recognized {y.argmax()}')
-        self.canvas_fc_out.draw()
-        self.repaint()
+        
+        self._plot_result(y)
 
         print(f'Classfied digit {y.argmax()}.')
+
+    def _disp_conv_in(self, img):
+        self.fig_conv_in.clf()
+        self.ax_conv_in = self.fig_conv_in.add_subplot(111)
+
+        self.ax_conv_in.set_title('Voltage (V)')
+        self.ax_conv_in.get_xaxis().set_visible(False)
+        self.ax_conv_in.get_yaxis().set_visible(False)
+        im_conv_in = self.ax_conv_in.imshow(img.T* 0.2)
+        self.ax_conv_in.set_aspect('auto')
+        self.fig_conv_in.colorbar(im_conv_in, ax=self.ax_conv_in)
+        self.fig_conv_in.tight_layout()
+
+        self.canvas_conv_in.draw()
+        self.repaint()
+
+        # self.ax_conv_in.imshow(img.T)
+        # self.canvas_conv_in.draw()
+        # self.repaint()
+
+
 
     def _disp_conv_out(self, x):
         for i in range(7):
             self.ax_conv_outs[i].imshow(x[:,:,i])
         self.canvas_conv_out.draw()
+
+    def _plot_result(self, y):
+        self.ax_fc_out.cla()
+        self.ax_fc_out.bar(range(10), y.reshape(-1) / 256 * 1e6)
+        self.ax_fc_out.set_ylabel('Average current ($\mu$A)')
+        self.ax_fc_out.set_title(f'Recognized {y.argmax()}')
+        self.ax_fc_out.set_xticks(np.arange(0,10,1))
+        self.ax_fc_out.grid(True, alpha=0.3)
+        self.fig_fc_out.tight_layout()
+        self.canvas_fc_out.draw()
+        self.repaint()
 
     def _pre_process(self, img):
         padding = 10
