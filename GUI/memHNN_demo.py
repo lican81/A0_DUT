@@ -23,6 +23,7 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("mem-HNN demo")
         self.setWindowIcon(QtGui.QIcon('labs_logo.png'))
         # self.showFullScreen()
+        self.showMaximized()
         bg_style = "background-color: white; "
         style_str = """
 QMainWindow { background-color: white; }
@@ -81,7 +82,25 @@ QPushButton {
         self.spinBox_num_cycles.setValue(2)
         self.spinBox_num_cycles.setMinimum(1)
         self.spinBox_num_cycles.setMaximum(10)
+
+        self.init_table()
+
         self.show()
+
+    def init_table(self):
+        # Create table
+        ## self.energy_table_widget = QtWidgets.QTableWidget()
+        self.nrow = 4
+        self.ncol = 3
+        self.energy_table_widget.setRowCount(self.nrow)
+        self.energy_table_widget.setColumnCount(self.ncol)
+        for nc in range(self.ncol):
+            for nr in range(self.nrow):
+                self.energy_table_widget.setItem(nr, nc, QtWidgets.QTableWidgetItem("Cell ({},{})".format(nr, nc)))
+        #self.energy_table_widget.move(0, 0)
+
+        # table selection change
+        #self.energy_table_widget.doubleClicked.connect(self.on_click)
 
     def add_mpl(self, fig):
         self.canvas = FigureCanvas(fig)
@@ -146,7 +165,7 @@ QPushButton {
         results in QMessageBox dialog from closeEvent, good but how/why?
         """
         if event.key() == QtCore.Qt.Key_Escape:
-            #if not self._experiment_running:
+            # if not self._experiment_running:
             self.close()
             # else:
             #     print("You can only close after finishing the experiment.")
