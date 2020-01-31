@@ -76,9 +76,9 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         numTrials = self.spinBox_num_trials.value()#3
         startSchmidtVal = self.doubleSpinBox_1_ST_i.value()#-3.0
         endSchmidtVal = self.doubleSpinBox_1_ST_f.value()#+1.4
-        simulation = False
+        simulation = self.simulation
         if self.verbosity>0:
-            print("start experiment now")
+            print("Start experiment now:")
         if True:
             run_memHNN(numCycles=numCycles,
                        numTrials=numTrials,
@@ -97,8 +97,9 @@ if __name__ == '__main__':
     import os
     simulation = (os.environ["USERNAME"].upper()=="VANVAERE")
     app = QtWidgets.QApplication(sys.argv)
-    main = MemHNNMain(verbosity=1,
+    verbosity=1
+    main = MemHNNMain(verbosity=verbosity,
                       simulation=simulation)
-
+    if verbosity>0: print("Start application:")
     sys.exit(app.exec_())
 

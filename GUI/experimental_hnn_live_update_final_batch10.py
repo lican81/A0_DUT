@@ -2,8 +2,8 @@ import sys
 sys.path.append('../')
 
 import pickle
-import matplotlib
-matplotlib.rcParams['font.sans-serif'] = "Arial"
+#import matplotlib
+#matplotlib.rcParams['font.sans-serif'] = "Arial"
 
 import pylab as plt
 import numpy as np
@@ -18,8 +18,6 @@ if not simulation:
     from dpe import DPE
     from lib_data import *
     from lib_nn_dpe import NN_dpe
-
-# matplotlib.use('Qt5Agg')
 
 numCycles = 1
 numTrials = 2
@@ -37,6 +35,7 @@ def run_memHNN(numCycles=numCycles,
                verbosity=0):
     if verbosity>0.:
         print("Enter run memHNN function.")
+        print("This is a"+simulation*" simulation"+(not simulation)*("n experiment"))
     if not simulation:
         dpe_inst = DPE('COM6')
         dpe_inst.set_clock(50)
@@ -57,16 +56,18 @@ def run_memHNN(numCycles=numCycles,
         CMat[33, 0] = 0
         CMat[56, 6] = 0
         CMat[6, 56] = 0
-
+        if verbosity>0.:
+            print("Experiment: matrix loaded")
     else:
-        if figure_canvas==None:
-            fn = "./20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
-        else:
-            fn = "./Thomas/20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
+        fn = "./Thomas/20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
 
         data = None
+        if verbosity>1.:
+            print("CWD: {}".format(os.getcwd()))
         with open(fn, "rb") as pkl_file:
+            if verbosity > 1.: print("Pkl file opened.")
             data = pickle.load(pkl_file)
+            if verbosity>1.: print("Pkl file loaded.")
         CMat = data["CMat"]
         if verbosity>0.:
             print("Simulation: matrix loaded")
