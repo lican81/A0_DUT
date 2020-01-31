@@ -184,6 +184,9 @@ def run_memHNN(numCycles=numCycles,
             if show_plot:
                 fig.canvas.draw()
                 fig.canvas.flush_events()
+                if cc==0:
+                    legend_list=["Trial {}".format(1+lnum) for lnum,lines in enumerate(lines)]
+                    ax.legend(legend_list, bbox_to_anchor=(1.1, 1.1))
             if figure_canvas!=None and show_plot:
                 figure_canvas.draw()
 
