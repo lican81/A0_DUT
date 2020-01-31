@@ -28,6 +28,12 @@ QMainWindow { background-color: white; }
 QPushButton {
     border-width: 4px;
     border-image: url(button.png) 4 4 4 4 stretch stretch;
+    border-style: outset;
+    background-color: white;
+}
+QPushButton:pressed {
+    background-color: rgb(0,224, 124);
+    border-style: inset;
 }
         """
         self.setStyleSheet(style_str)
