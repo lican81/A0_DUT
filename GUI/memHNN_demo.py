@@ -6,7 +6,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
-from experimental_hnn_live_update_final import run_memHNN
+#from experimental_hnn_live_update_final import run_memHNN
+from experimental_hnn_live_update_final_batch10 import run_memHNN
 
 #from skimage.transform import resize
 

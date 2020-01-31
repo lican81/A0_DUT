@@ -78,6 +78,8 @@ def run_memHNN(numCycles=numCycles,
 
 
     arr = 2
+    sizeBatch = 12
+    numBatches = 60/sizeBatch
     SchmidtCycleVector = np.linspace(startSchmidtVal, endSchmidtVal, numCycles)
     threshold = 0
     noise = 0
@@ -110,7 +112,7 @@ def run_memHNN(numCycles=numCycles,
     ax.set_xlabel("Time", fontsize=15)
     ax.set_ylabel("Energy", fontsize=15)
     ax.set_xlim([time_vector[0], time_vector[-1]])
-    ax.set_ylim([-200, 300.])
+    ax.set_ylim([-200, 100.])
 
     trial_index = 0
     energy_vector = np.NaN * np.zeros((num_updates, numTrials))  # NaNs such that it's not plotted
@@ -141,33 +143,37 @@ def run_memHNN(numCycles=numCycles,
         print("Run experiment.")
     for cc in np.arange(numCycles):
         # print('Cycle number', cc)
-        randOrderColumns = np.arange(60)
-        np.random.shuffle(randOrderColumns)
+        
+        randOrderColumnBatches = np.arange(numBatches).astype(int)
+        np.random.shuffle(randOrderColumnBatches)
 
-        trackCol = 0
-        for ii in randOrderColumns:
-            output1 = dpe.multiply_w_delay(arr, appliedVector1, c_sel=[ii, ii + 1], mode=1, debug=False, delay=5)
-            output2 = dpe.multiply_w_delay(arr, appliedVector2, c_sel=[ii, ii + 1], mode=1, debug=False, delay=5)
+        trackColBatch = 0
+        for ii in randOrderColumnBatches:
+            output1 = dpe.multiply_w_delay(arr, appliedVector1, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)], mode=1, debug=False, delay=5)
+            output2 = dpe.multiply_w_delay(arr, appliedVector2, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)], mode=1, debug=False, delay=5)
             output_corr = noise - dpe.lin_corr(output1, lin_corrs) + dpe.lin_corr(output2, lin_corrs)
             for tt in np.arange(numTrials):
-                threshVector = threshold - SchmidtCycleVector[cc] * neuronVector[ii, tt]
+                threshVector = threshold - SchmidtCycleVector[cc] * neuronVector[ii*sizeBatch:(ii+1)*sizeBatch, tt]
                 # if (output_corr2[0,ii] >= threshVector[ii,0]):
                 # if (output_corr >= threshVector[ii,0]):
-                if (output_corr[tt, 0] >= threshVector):
-                    appliedVector1[ii, tt] = 1
-                    appliedVector2[ii, tt] = 0
-                    neuronVector[ii, tt] = 1
-                else:
-                    appliedVector1[ii, tt] = 0
-                    appliedVector2[ii, tt] = 1
-                    neuronVector[ii, tt] = -1
-                neuronVectorHistory[:, tt, 60 * cc + trackCol + 1] = neuronVector[:, tt]
-                thisEnergy[tt] = 0.5 * np.dot(neuronVector[:, tt].T, (CMat @ neuronVector[:, tt]))
-                # thisEnergy = 0.5*np.dot(neuronVector[:,tt], np.dot(CMat, neuronVector[:,tt]))
-                energyHistory[60 * cc + trackCol + 1, tt] = thisEnergy[tt]
-                energy_vector[60 * cc + trackCol + 1, tt] = thisEnergy[tt]
+                for columnIndex in np.arange(sizeBatch):
+                    actualColumn = ii*sizeBatch + columnIndex
+                    if (output_corr[tt, columnIndex] >= threshVector[columnIndex]):
+                        appliedVector1[actualColumn, tt] = 1
+                        appliedVector2[actualColumn, tt] = 0
+                        neuronVector[actualColumn, tt] = 1
+                    else:
+                        appliedVector1[actualColumn, tt] = 0
+                        appliedVector2[actualColumn, tt] = 1
+                        neuronVector[actualColumn, tt] = -1
+                    #neuronVectorHistory[:, tt, 60 * cc + trackCol + 1] = neuronVector[:, tt]
+                    thisEnergy[tt] = 0.5 * np.dot(neuronVector[:, tt].T, (CMat @ neuronVector[:, tt]))
+                    # thisEnergy = 0.5*np.dot(neuronVector[:,tt], np.dot(CMat, neuronVector[:,tt]))
+                    #energyHistory[60 * cc + trackCol + 1, tt] = thisEnergy[tt]
+                    energy_vector[60 * cc + trackColBatch*sizeBatch + columnIndex + 1, tt] = thisEnergy[tt]
+                    columnUpdateHistory[0, 60 * cc + trackColBatch*sizeBatch + columnIndex + 1] = actualColumn
 
-                # line1.set_ydata(energy_vector[:,0])  # wonder whether we can update one point at a time
+                    # line1.set_ydata(energy_vector[:,0])  # wonder whether we can update one point at a time
             for lnum, line in enumerate(lines):
                 # line.set_data(xlist[lnum], ylist[lnum]) # set data for each line separately.
                 line.set_ydata(energy_vector[:, lnum])  # wonder whether we can update one point at a time
@@ -177,8 +183,8 @@ def run_memHNN(numCycles=numCycles,
             if figure_canvas!=None and show_plot:
                 figure_canvas.draw()
 
-            columnUpdateHistory[0, 60 * cc + trackCol + 1] = ii
-            trackCol = trackCol + 1
+            
+            trackColBatch = trackColBatch + 1
 
     return neuronVectorHistory, energyHistory
 
