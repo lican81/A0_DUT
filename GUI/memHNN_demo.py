@@ -70,13 +70,14 @@ QPushButton {
                            self.doubleSpinBox_2_ST_f,
                            self.doubleSpinBox_3_ST_i,
                            self.doubleSpinBox_3_ST_f,
-                           self.doubleSpinBox_4_ST_i,
-                           self.doubleSpinBox_4_ST_f,
+                           #self.doubleSpinBox_4_ST_i,
+                           #self.doubleSpinBox_4_ST_f,
                            ]
         ST_init_list = [-3., 1.4,
                         0., 0.,
                         0., 0.,
-                        0., 0.]
+                        #0., 0.
+                        ]
         for ST_spinbox, ST_init in zip(ST_spinbox_list, ST_init_list):
             ST_spinbox.setMinimum(ST_min)
             ST_spinbox.setMaximum(ST_max)
@@ -94,15 +95,25 @@ QPushButton {
         self.show()
 
     def init_table(self):
+        #self.energy_grid_widget.setParent(None) # hacky to get rid of this - TODO: rewrite code without qtdesigner.
+        #self.energy_grid_widget = QtWidgets.QWidget(self.centralwidget)
+        #self.energy_grid_widget.setParent(self.centralwidget)
+        #self.energy_grid_widget.setGeometry(QtCore.QRect(710, 280, 671, 521))
+        #self.energy_grid_widget.setObjectName("energy_table_widget")
         # Create table
         ## self.energy_table_widget = QtWidgets.QTableWidget()
+        self.energy_grid_layout = QtWidgets.QGridLayout()
+        self.energy_grid_widget.setLayout(self.energy_grid_layout)
+        #self.energy_table_widget.setColumnCount(0)
+        #self.energy_table_widget.setRowCount(0)
         self.nrow = 4
         self.ncol = 3
-        self.energy_table_widget.setRowCount(self.nrow)
-        self.energy_table_widget.setColumnCount(self.ncol)
+        #self.energy_grid_layout.setRowCount(self.nrow)
+        #self.energy_grid_layout.setColumnCount(self.ncol)
         for nc in range(self.ncol):
             for nr in range(self.nrow):
-                self.energy_table_widget.setItem(nr, nc, QtWidgets.QTableWidgetItem("Cell ({},{})".format(nr, nc)))
+                #self.energy_table_widget.setItem(nr, nc, QtWidgets.QTableWidgetItem("Cell ({},{})".format(nr, nc)))
+                self.energy_grid_layout.addWidget(QtWidgets.QLabel("Cell ({},{})".format(nr, nc)), nr, nc, )
         #self.energy_table_widget.move(0, 0)
         #self.energy_table_widget.resize()
         # table selection change
