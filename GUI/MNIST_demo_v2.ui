@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1746</width>
-    <height>939</height>
+    <width>1998</width>
+    <height>984</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -121,42 +121,32 @@
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="mpl_fc_in" native="true">
-    <property name="geometry">
-     <rect>
-      <x>400</x>
-      <y>530</y>
-      <width>91</width>
-      <height>271</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QWidget" name="mpl_conv_in" native="true">
     <property name="geometry">
      <rect>
       <x>410</x>
       <y>120</y>
-      <width>271</width>
-      <height>361</height>
+      <width>141</width>
+      <height>341</height>
      </rect>
     </property>
    </widget>
    <widget class="QWidget" name="mpl_conv_weight" native="true">
     <property name="geometry">
      <rect>
-      <x>750</x>
+      <x>630</x>
       <y>120</y>
-      <width>201</width>
-      <height>261</height>
+      <width>191</width>
+      <height>301</height>
      </rect>
     </property>
    </widget>
    <widget class="QWidget" name="mpl_conv_out" native="true">
     <property name="geometry">
      <rect>
-      <x>1010</x>
+      <x>880</x>
       <y>120</y>
-      <width>611</width>
+      <width>161</width>
       <height>301</height>
      </rect>
     </property>
@@ -164,19 +154,19 @@
    <widget class="QWidget" name="mpl_fc_weight" native="true">
     <property name="geometry">
      <rect>
-      <x>760</x>
-      <y>470</y>
+      <x>1110</x>
+      <y>120</y>
       <width>191</width>
-      <height>341</height>
+      <height>381</height>
      </rect>
     </property>
    </widget>
    <widget class="QWidget" name="mpl_fc_out" native="true">
     <property name="geometry">
      <rect>
-      <x>1000</x>
-      <y>520</y>
-      <width>671</width>
+      <x>1370</x>
+      <y>140</y>
+      <width>621</width>
       <height>311</height>
      </rect>
     </property>
@@ -197,7 +187,7 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>500</x>
+      <x>420</x>
       <y>90</y>
       <width>111</width>
       <height>31</height>
@@ -210,9 +200,9 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>1200</x>
+      <x>880</x>
       <y>90</y>
-      <width>251</width>
+      <width>161</width>
       <height>31</height>
      </rect>
     </property>
@@ -223,8 +213,8 @@
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>770</x>
-      <y>440</y>
+      <x>1120</x>
+      <y>90</y>
       <width>171</width>
       <height>31</height>
      </rect>
@@ -236,8 +226,8 @@
    <widget class="QLabel" name="label_6">
     <property name="geometry">
      <rect>
-      <x>1250</x>
-      <y>490</y>
+      <x>1560</x>
+      <y>110</y>
       <width>201</width>
       <height>21</height>
      </rect>
@@ -249,7 +239,7 @@
    <widget class="QLabel" name="label_3">
     <property name="geometry">
      <rect>
-      <x>770</x>
+      <x>640</x>
       <y>90</y>
       <width>181</width>
       <height>31</height>
@@ -262,8 +252,8 @@
    <widget class="QPushButton" name="btn_read">
     <property name="geometry">
      <rect>
-      <x>780</x>
-      <y>830</y>
+      <x>640</x>
+      <y>430</y>
       <width>161</width>
       <height>41</height>
      </rect>
@@ -298,7 +288,7 @@
    <widget class="QPushButton" name="btn_classify">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>130</x>
       <y>470</y>
       <width>221</width>
       <height>71</height>
@@ -346,6 +336,130 @@
     </property>
     <property name="text">
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/Arrow/Arrow.jpg&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>260</y>
+      <width>61</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>59</width>
+      <height>37</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/Arrow/Arrow.jpg&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>260</y>
+      <width>61</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>59</width>
+      <height>37</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/Arrow/Arrow.jpg&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_10">
+    <property name="geometry">
+     <rect>
+      <x>1050</x>
+      <y>260</y>
+      <width>61</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>59</width>
+      <height>37</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/Arrow/Arrow.jpg&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_11">
+    <property name="geometry">
+     <rect>
+      <x>1310</x>
+      <y>260</y>
+      <width>61</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>59</width>
+      <height>37</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/Arrow/Arrow.jpg&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_12">
+    <property name="geometry">
+     <rect>
+      <x>360</x>
+      <y>500</y>
+      <width>1061</width>
+      <height>441</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>846</width>
+      <height>313</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/CNN/CNN-01.jpg&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_result">
+    <property name="geometry">
+     <rect>
+      <x>1470</x>
+      <y>470</y>
+      <width>341</width>
+      <height>101</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>340</width>
+      <height>100</height>
+     </size>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>18</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
   </widget>

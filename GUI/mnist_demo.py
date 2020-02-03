@@ -11,8 +11,18 @@ matplotlib.rcParams['font.sans-serif'] = "Arial"
 
 import numpy as np
 from skimage.transform import resize
+import Arrow_rc
 
-qtCreatorFile = "MNIST_demo.ui"
+# To Add Image with QT Designer:
+# 1. Create image and save (.jpg, etc.)
+# 2. Make as a resource file in QT designer and place with label (see here: https://stackoverflow.com/questions/28536306/inserting-an-image-in-gui-using-qt-designer)
+# 3. Save file, compile saved resource file on command line "pyrcc5 Arrow.qrc -o Arrow_rc.py" where Arrow.qrc is the name of your saved resource file
+# 4. In .py file, import created compiled .py file, example above is "import Arrow_rc"
+# Note: images can alter spacing, so can be tweaky this way without fering to layoutnames. May change widget spacing.
+# Note: also unknown what file dependencies there are. Hopefully it's local relative to UI file, otherwise may need to reimport and save resource file
+
+# qtCreatorFile = "MNIST_demo.ui"
+qtCreatorFile = "MNIST_demo_V2.ui"
 Ui_MainWindow, QMainWindow = uic.loadUiType(qtCreatorFile)
 
 
@@ -85,6 +95,8 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         super(MnistMainWindow, self).__init__()
         self.setupUi(self)
 
+        self.mpl_digit.hide()
+
         self.drawing = DrawingWidget(parent=self.drawing_digit)
         self.btn_clear.clicked.connect(self.drawing.clear)
 
@@ -114,7 +126,7 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_fc_weight.setParent(self.mpl_fc_weight)
 
         # Setup conv input panel
-        self.fig_conv_in = Figure(figsize=(3,4))
+        self.fig_conv_in = Figure(figsize=(2,3))
         # self.ax_conv_in = self.fig_conv_in.add_axes((0,0,1,1))
         # self.ax_conv_in.get_xaxis().set_visible(False)
         # self.ax_conv_in.get_yaxis().set_visible(False)
@@ -122,10 +134,10 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_conv_in.setParent(self.mpl_conv_in)
 
         # Setup conv output panel
-        self.fig_conv_out = Figure(figsize=(6,3))
+        self.fig_conv_out = Figure(figsize=(2,3))
         self.ax_conv_outs = [None] * 7
         for i in range(7):
-            self.ax_conv_outs[i] = self.fig_conv_out.add_subplot(2,4,i+1)
+            self.ax_conv_outs[i] = self.fig_conv_out.add_subplot(4,2,i+1)
             self.ax_conv_outs[i].get_xaxis().set_visible(False)
             self.ax_conv_outs[i].get_yaxis().set_visible(False)
 
@@ -224,9 +236,9 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         img = self.drawing.toArray()
         img = self._pre_process(img)
         
-        self.ax_digit.imshow( img )
-        self.canvas_digit.draw()
-        self.repaint()
+        # self.ax_digit.imshow( img )
+        # self.canvas_digit.draw()
+        # self.repaint()
 
         ## Convolution layer
         image = img[..., np.newaxis]
@@ -312,15 +324,33 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_conv_out.draw()
 
     def _plot_result(self, y):
+        digit = y.argmax()
+        ys = self._result_softmax(y.reshape(-1))
+
         self.ax_fc_out.cla()
-        self.ax_fc_out.bar(range(10), y.reshape(-1) / 256 * 1e6)
-        self.ax_fc_out.set_ylabel('Average current ($\mu$A)')
-        self.ax_fc_out.set_title(f'Recognized {y.argmax()}')
+        self.ax_fc_out.bar(range(10), ys, color='grey' )
+        self.ax_fc_out.bar([digit], ys[digit], color='green' )
+        self.ax_fc_out.set_ylabel('Probability)')
+        # self.ax_fc_out.set_ylabel('Average current ($\mu$A))')
+        # self.ax_fc_out.set_title(f'Recognized {y.argmax()}')
         self.ax_fc_out.set_xticks(np.arange(0,10,1))
         self.ax_fc_out.grid(True, alpha=0.3)
         self.fig_fc_out.tight_layout()
         self.canvas_fc_out.draw()
         self.repaint()
+
+        self.label_result.setText(f'Recognized : {digit}')
+
+    def _result_current(self, x):
+        return x / 256 * 1e6
+
+    def _result_softmax(self, x):
+        x = x.astype(np.double) * 1e3
+        exps = np.exp(x - np.max(x))
+        return exps / np.sum(exps)
+
+    def _result_prob(self, x):
+        return (x - x.min()) / sum(x - x.min())
 
     def _pre_process(self, img):
         padding = 10
