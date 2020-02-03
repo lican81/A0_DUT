@@ -126,7 +126,7 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_fc_weight.setParent(self.mpl_fc_weight)
 
         # Setup conv input panel
-        self.fig_conv_in = Figure(figsize=(3,4))
+        self.fig_conv_in = Figure(figsize=(2,3))
         # self.ax_conv_in = self.fig_conv_in.add_axes((0,0,1,1))
         # self.ax_conv_in.get_xaxis().set_visible(False)
         # self.ax_conv_in.get_yaxis().set_visible(False)
@@ -339,7 +339,7 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_fc_out.draw()
         self.repaint()
 
-        self.label_result.setText(f'Recognized {digit}')
+        self.label_result.setText(f'Recognized : {digit}')
 
     def _result_current(self, x):
         return x / 256 * 1e6
