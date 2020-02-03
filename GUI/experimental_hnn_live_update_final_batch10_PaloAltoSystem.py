@@ -1,41 +1,23 @@
 import sys
 sys.path.append('../')
 
-from dpe import DPE
-from lib_data import *
-import matplotlib.pyplot as plt
-import numpy as np
-from lib_nn_dpe import NN_dpe
-from IPython import display
 import pickle
-import serial
-
-import matplotlib
-matplotlib.rcParams['font.sans-serif'] = "Arial"
-dpe = DPE('COM10')
-dpe.set_clock(50)
-dpe.shape
-
-#fn = "../../20200129-172219-Prober2_HNN_20cyc_1trial_VarSchmidt.pkl"
-#fn = "./20200130-120058-memHNN_LinearCorrections.pkl"
-fn = "./20200131-115824-memHNN_LinearCorrectionsChip42_Prober2System.pkl"
-data = None
-with open(fn, "rb") as pkl_file:
-    data = pickle.load(pkl_file)
-lin_corrs = data["lin_corrs"]
+#import matplotlib
+#matplotlib.rcParams['font.sans-serif'] = "Arial"
 
 import pylab as plt
 import numpy as np
-from time import sleep
-import matplotlib
+#from time import sleep
+#import matplotlib
 
-simulation = False
+import os
+simulation = (os.environ["USERNAME"].upper()=="VANVAERE")
 
 if not simulation:
-    #import dpe
+    import serial
+    from dpe import DPE
     from lib_data import *
-
-# matplotlib.use('Qt5Agg')
+    from lib_nn_dpe import NN_dpe
 
 numCycles = 1
 numTrials = 2
@@ -53,8 +35,19 @@ def run_memHNN(numCycles=numCycles,
                verbosity=0):
     if verbosity>0.:
         print("Enter run memHNN function.")
+        print("This is a"+simulation*" simulation"+(not simulation)*("n experiment"))
     if not simulation:
-        #import dpe
+        dpe_inst = DPE('COM10')
+        dpe_inst.set_clock(50)
+        dpe_inst.shape
+
+        # fn = "../../20200129-172219-Prober2_HNN_20cyc_1trial_VarSchmidt.pkl"
+        fn = "./20200130-120058-memHNN_LinearCorrections.pkl"
+        data_lc = None
+        with open(fn, "rb") as pkl_file:
+            data_lc = pickle.load(pkl_file)
+        lin_corrs = data_lc["lin_corrs"]
+
         import scipy.io as sio
         mat_contents = sio.loadmat('./Exported60Node_GraphNum0.mat')
         CMat = mat_contents['A']
@@ -63,23 +56,25 @@ def run_memHNN(numCycles=numCycles,
         CMat[33, 0] = 0
         #CMat[56, 6] = 0
         #CMat[6, 56] = 0
-
+        if verbosity>0.:
+            print("Experiment: matrix loaded")
     else:
-        if figure_canvas==None:
-            fn = "./20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
-        else:
-            fn = "./Thomas/20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
+        fn = "./Thomas/20191113-222550-Prober2_HNN_15cyc_100trials_Neg3_0Pos1_4.pkl"
 
         data = None
+        if verbosity>1.:
+            print("CWD: {}".format(os.getcwd()))
         with open(fn, "rb") as pkl_file:
+            if verbosity > 1.: print("Pkl file opened.")
             data = pickle.load(pkl_file)
+            if verbosity>1.: print("Pkl file loaded.")
         CMat = data["CMat"]
         if verbosity>0.:
             print("Simulation: matrix loaded")
 
 
     arr = 2
-    sizeBatch = 12
+    sizeBatch = 10
     numBatches = 60/sizeBatch
     SchmidtCycleVector = np.linspace(startSchmidtVal, endSchmidtVal, numCycles)
     threshold = 0
@@ -114,6 +109,8 @@ def run_memHNN(numCycles=numCycles,
     ax.set_ylabel("Energy", fontsize=15)
     ax.set_xlim([time_vector[0], time_vector[-1]])
     ax.set_ylim([-200, 100.])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
     trial_index = 0
     energy_vector = np.NaN * np.zeros((num_updates, numTrials))  # NaNs such that it's not plotted
@@ -150,9 +147,15 @@ def run_memHNN(numCycles=numCycles,
 
         trackColBatch = 0
         for ii in randOrderColumnBatches:
-            output1 = dpe.multiply_w_delay(arr, appliedVector1, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)], mode=1, debug=False, delay=5)
-            output2 = dpe.multiply_w_delay(arr, appliedVector2, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)], mode=1, debug=False, delay=5)
-            output_corr = noise - dpe.lin_corr(output1, lin_corrs) + dpe.lin_corr(output2, lin_corrs)
+            if not simulation:
+                output1 = dpe_inst.multiply_w_delay(arr, appliedVector1, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)],
+                                                    mode=1, debug=False, delay=5)
+                output2 = dpe_inst.multiply_w_delay(arr, appliedVector2, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)],
+                                                    mode=1, debug=False, delay=5)
+                output_corr = noise - dpe_inst.lin_corr(output1, lin_corrs) + dpe_inst.lin_corr(output2, lin_corrs)
+            else:
+                output_corr = -np.dot(CMat[(ii*sizeBatch):((ii+1)*sizeBatch), :], neuronVector).T
+                #output_corr.shape = (-1, 1)
             for tt in np.arange(numTrials):
                 threshVector = threshold - SchmidtCycleVector[cc] * neuronVector[ii*sizeBatch:(ii+1)*sizeBatch, tt]
                 # if (output_corr2[0,ii] >= threshVector[ii,0]):
@@ -181,13 +184,16 @@ def run_memHNN(numCycles=numCycles,
             if show_plot:
                 fig.canvas.draw()
                 fig.canvas.flush_events()
+                if cc==0:
+                    legend_list=["Trial {}".format(1+lnum) for lnum,lines in enumerate(lines)]
+                    ax.legend(legend_list, bbox_to_anchor=(1.1, 1.1))
             if figure_canvas!=None and show_plot:
                 figure_canvas.draw()
 
             
             trackColBatch = trackColBatch + 1
 
-    return neuronVectorHistory, energyHistory
+    return neuronVectorHistory, energy_vector
 
 if (__name__=="__main__"):
-    run_memHNN()
+    _, energy_vector = run_memHNN()

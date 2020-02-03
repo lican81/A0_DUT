@@ -8,6 +8,9 @@
             <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_ports.c</file>
             <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/dut_func.h</file>
             <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/app.c</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/system_config/default/system_config.h</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/usb_com.h</file>
+            <file>file:/C:/microchip/harmony/v2_06/apps/A0_DUT/firmware/src/usb_com.c</file>
         </group>
     </open-files>
 </project-private>
