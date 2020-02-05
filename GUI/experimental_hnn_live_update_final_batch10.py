@@ -23,11 +23,13 @@ numCycles = 1
 numTrials = 2
 startSchmidtVal = -3.0
 endSchmidtVal = +1.4
+sizeBatch = 12
 
 def run_memHNN(numCycles=numCycles,
                numTrials=numTrials,
                startSchmidtVal=startSchmidtVal,
                endSchmidtVal=endSchmidtVal,
+               sizeBatch = sizeBatch,
                simulation=simulation,
                figure_canvas=None,
                fig=None,
@@ -88,7 +90,7 @@ def run_memHNN(numCycles=numCycles,
     columnUpdateHistory = np.zeros((1, numCycles * numCols + 1))
     energyHistory = np.zeros((numCycles * numCols + 1, numTrials))
     num_updates = numCycles * numCols + 1
-    time_vector = np.arange(0, num_updates)
+    time_vector = np.arange(0, num_updates)/sizeBatch
     color_idx_array = np.linspace(0, 1.0, numTrials)
 
     #if not simulation:
@@ -105,6 +107,7 @@ def run_memHNN(numCycles=numCycles,
     else:
         fig.clf()
     ax = fig.add_subplot(111)
+    ax.set_title("Analog in-memory optimization for a 60 node network.", fontsize=15, fontweight="bold")
     color_idx_array = np.linspace(0, 1.0, numTrials)
     ax.set_xlabel("Time", fontsize=15)
     ax.set_ylabel("Energy", fontsize=15)

@@ -21,6 +21,7 @@ class MemHNNMain(QMainWindow, Ui_MainWindow):
         super(MemHNNMain, self).__init__()
         self.setupUi(self)
         self.setWindowTitle("mem-HNN demo")
+        #self.setWindowTitle("mem-HNN demo: analog in-memory optimization of the Max-cut task for a 60 node network.")
         self.setWindowIcon(QtGui.QIcon('labs_logo.png'))
         # self.showFullScreen()
         self.showMaximized()
@@ -54,7 +55,7 @@ QPushButton {
 
         self.fig_energy = Figure()  # Figure(figsize=(3,3))
         ax = self.fig_energy.add_subplot(111)
-        ax.set_title("Click RUN button to see data.")
+        ax.set_title("Click RUN button to see data for 60 node Max-Cut.", fontsize=15)
         ax.set_xlabel("Time", fontsize=15)
         ax.set_ylabel("Energy", fontsize=15)
         ax.set_xlim([0, 1])
@@ -63,8 +64,10 @@ QPushButton {
         ax.spines['right'].set_visible(False)
         self.add_mpl(self.fig_energy)
 
-        ST_min = -10
-        ST_max = 10
+        self.ST_conversion_factor = -10./2.0
+        self.ST_offset = 0.5
+        ST_min = 0.#-10
+        ST_max = 15
         ST_spinbox_list = [self.doubleSpinBox_1_ST_i,
                            self.doubleSpinBox_1_ST_f,
                            self.doubleSpinBox_2_ST_i,
@@ -74,27 +77,30 @@ QPushButton {
                            #self.doubleSpinBox_4_ST_i,
                            #self.doubleSpinBox_4_ST_f,
                            ]
-        ST_init_list = [-3., 1.4,
+        ST_init_list = [-1.5, 0.5,
                         0., 0.,
-                        0., 0.,
+                        -1.5, 0.5,
                         #0., 0.
                         ]
         ST_mn_mx_list = [(ST_min,ST_max), (ST_min,ST_max),
-                         (0.,0.), (0.,0.),
-                         (0.,0.), (0.,0.),
+                         (0., 0.), (0., 0.),
+                         (10., 10.), (0., 0.),
                         #0., 0.
                         ]
         for ST_spinbox, ST_init, (ST_min_l, ST_max_l) in zip(ST_spinbox_list, ST_init_list, ST_mn_mx_list):
             ST_spinbox.setMinimum(ST_min_l)
             ST_spinbox.setMaximum(ST_max_l)
-            ST_spinbox.setValue(ST_init)
-            ST_spinbox.setSingleStep(0.01)
-        self.spinBox_num_trials.setValue(3)
+            ST_spinbox.setValue((ST_init-self.ST_offset)*self.ST_conversion_factor)
+            ST_spinbox.setSingleStep(0.05)
+        self.spinBox_num_trials.setValue(2)
         self.spinBox_num_trials.setMinimum(1)
         self.spinBox_num_trials.setMaximum(10)
-        self.spinBox_num_cycles.setValue(2)
+        self.spinBox_num_cycles.setValue(10)
         self.spinBox_num_cycles.setMinimum(1)
-        self.spinBox_num_cycles.setMaximum(10)
+        self.spinBox_num_cycles.setMaximum(20)
+        self.spinBox_batch_size.setValue(12)
+        self.spinBox_batch_size.setMinimum(12)
+        self.spinBox_batch_size.setMaximum(12)
 
         #misc about ref solutions:
         self.E_target = -187.
@@ -170,8 +176,9 @@ QPushButton {
     def run_experiment(self, ):
         numCycles = self.spinBox_num_cycles.value()  # 2
         numTrials = self.spinBox_num_trials.value()  # 3
-        startSchmidtVal = self.doubleSpinBox_1_ST_i.value()  # -3.0
-        endSchmidtVal = self.doubleSpinBox_1_ST_f.value()  # +1.4
+        startSchmidtVal = self.doubleSpinBox_1_ST_i.value()/self.ST_conversion_factor + self.ST_offset  # -3.0
+        endSchmidtVal = self.doubleSpinBox_1_ST_f.value()/self.ST_conversion_factor + self.ST_offset  # +1.4
+        sizeBatch = self.spinBox_batch_size.value()
         simulation = self.simulation
         if self.verbosity > 0:
             print("Start experiment now:")
@@ -181,6 +188,7 @@ QPushButton {
                                           numTrials=numTrials,
                                           startSchmidtVal=startSchmidtVal,
                                           endSchmidtVal=endSchmidtVal,
+                                          sizeBatch=sizeBatch,
                                           simulation=simulation,
                                           figure_canvas=self.canvas,  # None,
                                           fig=self.fig_energy,
