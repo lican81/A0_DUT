@@ -95,10 +95,13 @@ QPushButton {
         self.spinBox_num_trials.setValue(2)
         self.spinBox_num_trials.setMinimum(1)
         self.spinBox_num_trials.setMaximum(10)
-        self.spinBox_num_cycles.setValue(10)
-        self.spinBox_num_cycles.setMinimum(10)
-        self.spinBox_num_cycles.setMaximum(20)
-        self.spinBox_num_cycles.setSingleStep(5)
+        #self.spinBox_num_cycles.setValue(10)
+        #self.spinBox_num_cycles.setMinimum(10)
+        #self.spinBox_num_cycles.setMaximum(20)
+        #self.spinBox_num_cycles.setSingleStep(5)
+        # Doesn't work:
+        # tmp_index = self.comboBox_num_cycles.findText("10", QtCore.QtMatchFixedString)  # finds the index of the item you want
+        self.comboBox_num_cycles.setCurrentIndex(1)
         self.spinBox_batch_size.setValue(12)
         self.spinBox_batch_size.setMinimum(12)
         self.spinBox_batch_size.setMaximum(12)
@@ -176,7 +179,7 @@ QPushButton {
         self.toolbar.close()
 
     def run_experiment(self, ):
-        numCycles = self.spinBox_num_cycles.value()  # 2
+        numCycles = int(self.comboBox_num_cycles.currentText())#self.spinBox_num_cycles.value()  # 2
         numTrials = self.spinBox_num_trials.value()  # 3
         startSchmidtVal = self.doubleSpinBox_1_ST_i.value() / self.ST_conversion_factor + self.ST_offset  # -3.0
         endSchmidtVal = self.doubleSpinBox_1_ST_f.value() / self.ST_conversion_factor + self.ST_offset  # +1.4

@@ -135,17 +135,7 @@
      <rect>
       <x>1170</x>
       <y>60</y>
-      <width>42</width>
-      <height>22</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QSpinBox" name="spinBox_num_cycles">
-    <property name="geometry">
-     <rect>
-      <x>1170</x>
-      <y>200</y>
-      <width>42</width>
+      <width>61</width>
       <height>22</height>
      </rect>
     </property>
@@ -256,7 +246,7 @@
      <rect>
       <x>1170</x>
       <y>130</y>
-      <width>42</width>
+      <width>61</width>
       <height>22</height>
      </rect>
     </property>
@@ -273,6 +263,36 @@
     <property name="text">
      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Batch size&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_num_cycles">
+    <property name="geometry">
+     <rect>
+      <x>1170</x>
+      <y>200</y>
+      <width>61</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>2</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>10</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>15</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>20</string>
+     </property>
+    </item>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
