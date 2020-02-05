@@ -91,7 +91,7 @@ QPushButton {
             ST_spinbox.setMinimum(ST_min_l)
             ST_spinbox.setMaximum(ST_max_l)
             ST_spinbox.setValue((ST_init - self.ST_offset) * self.ST_conversion_factor)
-            ST_spinbox.setSingleStep(0.05)
+            ST_spinbox.setSingleStep(0.5)
         self.spinBox_num_trials.setValue(2)
         self.spinBox_num_trials.setMinimum(1)
         self.spinBox_num_trials.setMaximum(10)
@@ -114,6 +114,11 @@ QPushButton {
         self.init_table()
 
         self.show()
+
+    def init_graph_plot(self):
+        self.num_neurons = 60
+        self.node_angles = np.linspace(0, 2, self.num_neurons + 1)[:-1] * np.pi
+        self.node_pos = (np.cos(self.node_angles), np.sin(self.node_angles))
 
     def init_table(self):
         # self.energy_grid_widget.setParent(None) # hacky to get rid of this - TODO: rewrite code without qtdesigner.

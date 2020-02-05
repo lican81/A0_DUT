@@ -136,9 +136,10 @@ def run_memHNN(numCycles=numCycles,
         idx_opt = np.random.randint(energy_vector_opt.shape[1])
         energy_vector_nn_plot[0] = energy_vector_nn[0, idx_nn]
         energy_vector_opt_plot[0] = energy_vector_nn[0, idx_opt]
+        line_target, = ax.plot(time_vector_nn, -188*np.ones_like(time_vector_nn), ":", color="black", alpha=0.6, linewidth=1.5)
         line_nn, = ax.plot(time_vector_nn, energy_vector_nn_plot, "-", color="silver", alpha=0.5, linewidth=1.5)
         line_opt, = ax.plot(time_vector_opt, energy_vector_opt_plot, "-", color="gray", alpha=0.5, linewidth=1.5)
-        legend_list+=['No Noise', 'Optimal']
+        legend_list+=['Target','No Noise', 'Optimal']
 
     lines = []
     #if load_reference_data:
