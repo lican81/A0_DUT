@@ -32,7 +32,8 @@ def run_memHNN(numCycles=numCycles,
                figure_canvas=None,
                fig=None,
                show_plot=True,
-               verbosity=0):
+               verbosity=0,
+               load_reference_data=True):
     if verbosity>0.:
         print("Enter run memHNN function.")
         print("This is a"+simulation*" simulation"+(not simulation)*("n experiment"))
@@ -96,8 +97,8 @@ def run_memHNN(numCycles=numCycles,
     # Make the updatable Figure - this code taken from Thomas
     if figure_canvas==None and show_plot:
         plt.ion()
-    plt.rcParams['lines.linewidth'] = 2.0  # instead of 1.5
-    color_map = 'jet'  # 'cool' #try also 'prism', check here: https://matplotlib.org/examples/color/colormaps_reference.html
+    plt.rcParams['lines.linewidth'] = 2.5  # instead of 1.5
+    color_map = 'summer' #'jet'  # 'cool' #try also 'prism', check here: https://matplotlib.org/examples/color/colormaps_reference.html
 
     if fig==None:
         fig = plt.figure(0, figsize=[plt.rcParams["figure.figsize"][0] * 2., plt.rcParams["figure.figsize"][1]])
@@ -114,6 +115,16 @@ def run_memHNN(numCycles=numCycles,
 
     trial_index = 0
     energy_vector = np.NaN * np.zeros((num_updates, numTrials))  # NaNs such that it's not plotted
+
+    legend_list=[]
+    if load_reference_data:
+        energy_vector_nn = np.loadtxt('memhnn_data_nonoise.txt')
+        energy_vector_opt = np.loadtxt('memhnn_data_optimal.txt')
+        time_vector_nn=np.arange(0,energy_vector_nn.shape[0])
+        time_vector_opt = np.arange(0, energy_vector_opt.shape[0])
+        ax.plot(time_vector_nn, energy_vector_nn[:, 0], "-", color="silver", alpha=0.5, linewidth=1.5)
+        ax.plot(time_vector_opt, energy_vector_opt[:, 1], "-", color="gray", alpha=0.5, linewidth=1.5)
+        legend_list+=['No Noise', 'Optimal']
 
     lines = []
     for tt in np.arange(numTrials):
@@ -185,7 +196,7 @@ def run_memHNN(numCycles=numCycles,
                 fig.canvas.draw()
                 fig.canvas.flush_events()
                 if cc==0:
-                    legend_list=["Trial {}".format(1+lnum) for lnum,lines in enumerate(lines)]
+                    legend_list+=["User: Trial {}".format(1+lnum) for lnum,lines in enumerate(lines)]
                     ax.legend(legend_list, bbox_to_anchor=(1.1, 1.1))
             if figure_canvas!=None and show_plot:
                 figure_canvas.draw()

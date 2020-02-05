@@ -126,7 +126,8 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_fc_weight.setParent(self.mpl_fc_weight)
 
         # Setup conv input panel
-        self.fig_conv_in = Figure(figsize=(2,3))
+
+        self.fig_conv_in = Figure(figsize=(1.5,3))
         # self.ax_conv_in = self.fig_conv_in.add_axes((0,0,1,1))
         # self.ax_conv_in.get_xaxis().set_visible(False)
         # self.ax_conv_in.get_yaxis().set_visible(False)
@@ -134,7 +135,7 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.canvas_conv_in.setParent(self.mpl_conv_in)
 
         # Setup conv output panel
-        self.fig_conv_out = Figure(figsize=(2,3))
+        self.fig_conv_out = Figure(figsize=(1.7,3))
         self.ax_conv_outs = [None] * 7
         for i in range(7):
             self.ax_conv_outs[i] = self.fig_conv_out.add_subplot(4,2,i+1)
@@ -321,6 +322,7 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
     def _disp_conv_out(self, x):
         for i in range(7):
             self.ax_conv_outs[i].imshow(x[:,:,i])
+        self.fig_conv_out.tight_layout()
         self.canvas_conv_out.draw()
 
     def _plot_result(self, y):

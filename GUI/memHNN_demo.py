@@ -17,7 +17,7 @@ Ui_MainWindow, QMainWindow = uic.loadUiType(qtCreatorFile)
 
 
 class MemHNNMain(QMainWindow, Ui_MainWindow):
-    def __init__(self, verbosity=0, simulation=False):
+    def __init__(self, verbosity=0, simulation=False, save_data=True):
         super(MemHNNMain, self).__init__()
         self.setupUi(self)
         self.setWindowTitle("mem-HNN demo")
@@ -43,6 +43,7 @@ QPushButton {
 
         self.verbosity = verbosity
         self.simulation = simulation
+        self.save_data = save_data
         self._experiment_running = False
 
         self.pushButton_run.clicked.connect(self.run_experiment)
@@ -78,9 +79,14 @@ QPushButton {
                         0., 0.,
                         #0., 0.
                         ]
-        for ST_spinbox, ST_init in zip(ST_spinbox_list, ST_init_list):
-            ST_spinbox.setMinimum(ST_min)
-            ST_spinbox.setMaximum(ST_max)
+        ST_mn_mx_list = [(ST_min,ST_max), (ST_min,ST_max),
+                         (0.,0.), (0.,0.),
+                         (0.,0.), (0.,0.),
+                        #0., 0.
+                        ]
+        for ST_spinbox, ST_init, (ST_min_l, ST_max_l) in zip(ST_spinbox_list, ST_init_list, ST_mn_mx_list):
+            ST_spinbox.setMinimum(ST_min_l)
+            ST_spinbox.setMaximum(ST_max_l)
             ST_spinbox.setValue(ST_init)
             ST_spinbox.setSingleStep(0.01)
         self.spinBox_num_trials.setValue(3)
@@ -90,7 +96,13 @@ QPushButton {
         self.spinBox_num_cycles.setMinimum(1)
         self.spinBox_num_cycles.setMaximum(10)
 
+        #misc about ref solutions:
+        self.E_target = -187.
+        self.Emin_value_NN = -150.
+        self.Emin_value_opt = self.E_target
+
         self.init_table()
+
 
         self.show()
 
@@ -120,12 +132,26 @@ QPushButton {
         #self.energy_table_widget.resize()
         # table selection change
         #self.energy_table_widget.doubleClicked.connect(self.on_click)
+        self.myFont = QtGui.QFont()
+        self.myFont.setBold(True)
         self.energy_grid_layout_dct[0, 0].setText(r"")
         self.energy_grid_layout_dct[0, 1].setText(r"User")
+        self.energy_grid_layout_dct[0, 1].setFont(self.myFont)
         self.energy_grid_layout_dct[0, 2].setText(r"No Noise")
+        self.energy_grid_layout_dct[0, 2].setFont(self.myFont)
         self.energy_grid_layout_dct[0, 3].setText(r"Optimal")
+        self.energy_grid_layout_dct[0, 3].setFont(self.myFont)
         self.energy_grid_layout_dct[1, 0].setText(r"Minimal Energy")
-        self.energy_grid_layout_dct[2, 0].setText(r"Error Fraction")
+        self.energy_grid_layout_dct[1, 0].setFont(self.myFont)
+        self.energy_grid_layout_dct[2, 0].setText(r"Error Percentage")
+        self.energy_grid_layout_dct[2, 0].setFont(self.myFont)
+
+        self.energy_grid_layout_dct[1, 1].setText(r"{}".format(0.))
+        self.energy_grid_layout_dct[2, 1].setText(r"{0:.1f}".format(100))
+        self.energy_grid_layout_dct[1, 2].setText(r"{}".format(self.Emin_value_NN))
+        self.energy_grid_layout_dct[2, 2].setText(r"{0:.1f}".format(100 * (self.Emin_value_NN-self.E_target)/np.abs(self.E_target)))
+        self.energy_grid_layout_dct[1, 3].setText(r"{}".format(self.Emin_value_opt))
+        self.energy_grid_layout_dct[2, 3].setText(r"{0:.1f}".format(100 * (self.Emin_value_opt-self.E_target)/np.abs(self.E_target)))
 
     def add_mpl(self, fig):
         self.canvas = FigureCanvas(fig)
@@ -160,12 +186,13 @@ QPushButton {
                                           fig=self.fig_energy,
                                           show_plot=True,
                                           verbosity=self.verbosity)
+            if self.save_data:
+                np.savetxt("memhnn_data_current.txt", energy_vector)
             self._experiment_running = False
-            self.E_target = -187.
             Emin_value = energy_vector[-1,:].min()
             E_error_fraction = np.abs((Emin_value-self.E_target)/self.E_target)
             self.energy_grid_layout_dct[1, 1].setText(r"{}".format(Emin_value))
-            self.energy_grid_layout_dct[2, 1].setText(r"{}".format(E_error_fraction))
+            self.energy_grid_layout_dct[2, 1].setText(r"{0:.1f}".format(100*E_error_fraction))
         if self.verbosity > 0:
             print("Finish experiment now")
 

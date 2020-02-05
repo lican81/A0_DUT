@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1535</width>
+    <width>1833</width>
     <height>1026</height>
    </rect>
   </property>
@@ -17,7 +17,7 @@
    <widget class="QDoubleSpinBox" name="doubleSpinBox_1_ST_i">
     <property name="geometry">
      <rect>
-      <x>300</x>
+      <x>390</x>
       <y>60</y>
       <width>62</width>
       <height>22</height>
@@ -27,7 +27,7 @@
    <widget class="QDoubleSpinBox" name="doubleSpinBox_2_ST_i">
     <property name="geometry">
      <rect>
-      <x>300</x>
+      <x>390</x>
       <y>130</y>
       <width>62</width>
       <height>22</height>
@@ -37,7 +37,7 @@
    <widget class="QDoubleSpinBox" name="doubleSpinBox_3_ST_i">
     <property name="geometry">
      <rect>
-      <x>300</x>
+      <x>390</x>
       <y>200</y>
       <width>62</width>
       <height>22</height>
@@ -47,7 +47,7 @@
    <widget class="QDoubleSpinBox" name="doubleSpinBox_1_ST_f">
     <property name="geometry">
      <rect>
-      <x>570</x>
+      <x>660</x>
       <y>60</y>
       <width>62</width>
       <height>22</height>
@@ -57,7 +57,7 @@
    <widget class="QDoubleSpinBox" name="doubleSpinBox_2_ST_f">
     <property name="geometry">
      <rect>
-      <x>570</x>
+      <x>660</x>
       <y>130</y>
       <width>62</width>
       <height>22</height>
@@ -67,7 +67,7 @@
    <widget class="QDoubleSpinBox" name="doubleSpinBox_3_ST_f">
     <property name="geometry">
      <rect>
-      <x>570</x>
+      <x>660</x>
       <y>200</y>
       <width>62</width>
       <height>22</height>
@@ -77,8 +77,8 @@
    <widget class="QPushButton" name="pushButton_run">
     <property name="geometry">
      <rect>
-      <x>1260</x>
-      <y>40</y>
+      <x>1310</x>
+      <y>310</y>
       <width>241</width>
       <height>111</height>
      </rect>
@@ -90,7 +90,7 @@
    <widget class="QWidget" name="mpl_energy" native="true">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>150</x>
       <y>280</y>
       <width>1011</width>
       <height>611</height>
@@ -107,7 +107,7 @@
    <widget class="QLabel" name="label_ST_end">
     <property name="geometry">
      <rect>
-      <x>570</x>
+      <x>660</x>
       <y>10</y>
       <width>181</width>
       <height>31</height>
@@ -120,7 +120,7 @@
    <widget class="QLabel" name="label_ST_start">
     <property name="geometry">
      <rect>
-      <x>300</x>
+      <x>390</x>
       <y>10</y>
       <width>251</width>
       <height>31</height>
@@ -133,7 +133,7 @@
    <widget class="QSpinBox" name="spinBox_num_trials">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>1120</x>
       <y>60</y>
       <width>42</width>
       <height>22</height>
@@ -143,7 +143,7 @@
    <widget class="QSpinBox" name="spinBox_num_cycles">
     <property name="geometry">
      <rect>
-      <x>1030</x>
+      <x>1120</x>
       <y>130</y>
       <width>42</width>
       <height>22</height>
@@ -153,7 +153,7 @@
    <widget class="QLabel" name="label_n_o_trials">
     <property name="geometry">
      <rect>
-      <x>830</x>
+      <x>920</x>
       <y>50</y>
       <width>199</width>
       <height>47</height>
@@ -166,7 +166,7 @@
    <widget class="QLabel" name="label_num_cycles">
     <property name="geometry">
      <rect>
-      <x>830</x>
+      <x>920</x>
       <y>120</y>
       <width>199</width>
       <height>47</height>
@@ -179,7 +179,7 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>60</x>
+      <x>150</x>
       <y>40</y>
       <width>212</width>
       <height>201</height>
@@ -212,11 +212,30 @@
    <widget class="QWidget" name="energy_grid_widget" native="true">
     <property name="geometry">
      <rect>
-      <x>1100</x>
-      <y>280</y>
+      <x>1310</x>
+      <y>450</y>
       <width>401</width>
-      <height>611</height>
+      <height>371</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>1230</x>
+      <y>40</y>
+      <width>401</width>
+      <height>211</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap>max-cut.png</pixmap>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
   </widget>
@@ -225,7 +244,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1535</width>
+     <width>1833</width>
      <height>18</height>
     </rect>
    </property>
