@@ -19,7 +19,7 @@ if not simulation:
     from lib_data import *
     from lib_nn_dpe import NN_dpe
 
-numCycles = 1
+numCycles = 10
 numTrials = 2
 startSchmidtVal = -1.5
 endSchmidtVal = +0.4

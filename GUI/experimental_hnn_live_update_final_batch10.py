@@ -19,11 +19,11 @@ if not simulation:
     from lib_data import *
     from lib_nn_dpe import NN_dpe
 
-numCycles = 1
+numCycles = 10
 numTrials = 2
 startSchmidtVal = -3.0
 endSchmidtVal = +1.4
-sizeBatch = 12
+sizeBatch = 10
 
 def run_memHNN(numCycles=numCycles,
                numTrials=numTrials,
@@ -44,12 +44,17 @@ def run_memHNN(numCycles=numCycles,
         dpe_inst.set_clock(50)
         dpe_inst.shape
 
-        # fn = "../../20200129-172219-Prober2_HNN_20cyc_1trial_VarSchmidt.pkl"
-        fn = "./20200130-120058-memHNN_LinearCorrections.pkl"
+        # # fn = "../../20200129-172219-Prober2_HNN_20cyc_1trial_VarSchmidt.pkl"
+        # fn = "./20200130-120058-memHNN_LinearCorrections.pkl"
+        # data_lc = None
+        # with open(fn, "rb") as pkl_file:
+        #     data_lc = pickle.load(pkl_file)
+        # lin_corrs = data_lc["lin_corrs"]
+        fn = "../20200204-172148-memHNN_LinearCorrections10AtATime_Prober1System.pkl"
         data_lc = None
         with open(fn, "rb") as pkl_file:
             data_lc = pickle.load(pkl_file)
-        lin_corrs = data_lc["lin_corrs"]
+        lin_corrs = data_lc["lin_corrs10AtATime"]
 
         import scipy.io as sio
         mat_contents = sio.loadmat('./Exported60Node_GraphNum0.mat')
@@ -77,7 +82,6 @@ def run_memHNN(numCycles=numCycles,
 
 
     arr = 2
-    sizeBatch = 12
     numBatches = 60//sizeBatch
     SchmidtCycleVector = np.linspace(startSchmidtVal, endSchmidtVal, numCycles)
     threshold = 0
@@ -91,7 +95,8 @@ def run_memHNN(numCycles=numCycles,
     energyHistory = np.zeros((numCycles * numCols + 1, numTrials))
     num_updates = numCycles * numCols + 1
     num_timesteps = numCycles * numBatches + 1
-    time_vector = np.linspace(0, numCycles * numBatches, num_timesteps)
+    #time_vector = np.linspace(0, numCycles * numBatches, num_timesteps)
+    time_vector = np.arange(0, num_updates)
     color_idx_array = np.linspace(0, 1.0, numTrials)
 
     #if not simulation:
@@ -110,7 +115,7 @@ def run_memHNN(numCycles=numCycles,
     ax = fig.add_subplot(111)
     ax.set_title("Analog in-memory optimization for a 60 node network.", fontsize=15, fontweight="bold")
     color_idx_array = np.linspace(0, 1.0, numTrials)
-    ax.set_xlabel("Time", fontsize=15)
+    ax.set_xlabel("Time (node updates)", fontsize=15)
     ax.set_ylabel("Energy", fontsize=15)
     ax.set_xlim([time_vector[0], time_vector[-1]])
     ax.set_ylim([-200, 100.])
@@ -118,12 +123,12 @@ def run_memHNN(numCycles=numCycles,
     ax.spines['right'].set_visible(False)
 
     trial_index = 0
-    energy_vector = np.NaN * np.zeros((num_timesteps, numTrials))  # NaNs such that it's not plotted
+    energy_vector = np.NaN * np.zeros((num_updates, numTrials))  # NaNs such that it's not plotted
 
     legend_list=[]
     if load_reference_data:
-        energy_vector_nn = np.loadtxt('memhnn_data_nonoise.txt')
-        energy_vector_opt = np.loadtxt('memhnn_data_optimal.txt')
+        energy_vector_nn = np.loadtxt('Energy_{}_2.txt'.format(numCycles))#'memhnn_data_nonoise.txt')
+        energy_vector_opt = np.loadtxt('Energy_{}_1.txt'.format(numCycles))
         num_updates_nn = energy_vector_nn.shape[0]
         num_updates_opt = energy_vector_opt.shape[0]
         time_vector_nn=np.arange(0,num_updates_nn)
@@ -177,11 +182,14 @@ def run_memHNN(numCycles=numCycles,
         trackColBatch = 0
         for ii in randOrderColumnBatches:
             if not simulation:
+                colStart = np.around(ii*sizeBatch).astype(int)
+                colEnd = np.around((ii+1)*sizeBatch).astype(int)
                 output1 = dpe_inst.multiply_w_delay(arr, appliedVector1, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)],
                                                     mode=1, debug=False, delay=5)
                 output2 = dpe_inst.multiply_w_delay(arr, appliedVector2, c_sel=[(ii*sizeBatch), ((ii+1)*sizeBatch)],
                                                     mode=1, debug=False, delay=5)
-                output_corr = noise - dpe_inst.lin_corr(output1, lin_corrs) + dpe_inst.lin_corr(output2, lin_corrs)
+                #output_corr = noise - dpe_inst.lin_corr(output1, lin_corrs) + dpe_inst.lin_corr(output2, lin_corrs)
+                output_corr = noise - dpe_inst.lin_corr(output1, lin_corrs[colStart:colEnd]) + dpe_inst.lin_corr(output2, lin_corrs[colStart:colEnd])  
             else:
                 output_corr = -np.dot(CMat[(ii*sizeBatch):((ii+1)*sizeBatch), :], neuronVector).T
                 #output_corr.shape = (-1, 1)
@@ -203,7 +211,7 @@ def run_memHNN(numCycles=numCycles,
                     thisEnergy[tt] = 0.5 * np.dot(neuronVector[:, tt].T, (CMat @ neuronVector[:, tt]))
                     # thisEnergy = 0.5*np.dot(neuronVector[:,tt], np.dot(CMat, neuronVector[:,tt]))
                     #energyHistory[60 * cc + trackCol + 1, tt] = thisEnergy[tt]
-                    idx_upd = cc*numBatches + trackColBatch + 1
+                    idx_upd = 60 * cc + trackColBatch*sizeBatch + columnIndex + 1 #cc*numBatches + trackColBatch + 1
                     energy_vector[idx_upd, tt] = thisEnergy[tt]
                     columnUpdateHistory[0, 60 * cc + trackColBatch*sizeBatch + columnIndex + 1] = actualColumn
                     if load_reference_data:
