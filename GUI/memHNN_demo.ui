@@ -163,7 +163,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Number of cycles&lt;/span&gt;&lt;/p&gt;&lt;p&gt;(duration = 60 x #cycles / batch)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Time&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
     </property>
    </widget>
    <widget class="QWidget" name="layoutWidget">
@@ -275,22 +275,17 @@
     </property>
     <item>
      <property name="text">
-      <string>2</string>
+      <string>120</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>10</string>
+      <string>600</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>15</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>20</string>
+      <string>900</string>
      </property>
     </item>
    </widget>
