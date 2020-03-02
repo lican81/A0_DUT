@@ -3,6 +3,6 @@
     <file>Arrow.jpg</file>
   </qresource>
   <qresource prefix="CNN">
-    <file>CNN-01.jpg</file>
+    <file>graphics/CNN.jpg</file>
   </qresource>
 </RCC>
