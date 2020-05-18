@@ -229,6 +229,8 @@ class DPE:
         numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
         
         maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
+
+        GtolType = kwargs['GtolType'] if 'GtolType' in kwargs.keys() else 'abs'
         Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
         Gtol_in = kwargs['Gtol_in'] if 'Gtol_in' in kwargs.keys() else Gtol
         Gtol_out = kwargs['Gtol_out'] if 'Gtol_out' in kwargs.keys() else Gtol
@@ -245,6 +247,22 @@ class DPE:
         TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else Twidth
         TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else Twidth
 
+
+        #If 'relative' tolerance type is used, compute Gtol matrix
+        if GtolType == 'rel':
+            RelTolIn = Gtol_in; 
+            RelTolOut = Gtol_out; 
+
+            Gtol_out = Gtarget * RelTolOut; 
+            Gtol_in = Gtarget * RelTolIn; 
+
+            print(f'Tolerance type set to relative');
+            idxMsel = np.array(Msel,dtype=bool); 
+            print(f'Gtol_in: MIN {np.min(Gtol_in[idxMsel])} MAX {np.max(Gtol_in[idxMsel])}');
+            print(f'Gtol_out: MIN {np.min(Gtol_out[idxMsel])} MAX {np.max(Gtol_out[idxMsel])}');   
+
+            time.sleep(5); 
+
         def default_callback(data):
             display.clear_output(wait=True)
 
@@ -252,7 +270,7 @@ class DPE:
 
         assert array in [0,1,2]
 
-        if saveHistory:
+        if saveHistory: 
             hist_data = {
                 'Ghist': [],
                 'vSetHist': [],

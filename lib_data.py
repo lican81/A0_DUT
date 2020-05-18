@@ -29,7 +29,7 @@ def load(filename=''):
     with open(filename+'.pkl', 'rb') as f:
         return dill.load(f)
 
-def save_workspace( vars_all, filename='', note=''):
+def save_workspace( vars_all, filename='', note='', skip_mat=False):
     if filename == '':
         currentDT = datetime.datetime.now()
         filename = currentDT.strftime("%Y%m%d-%H%M%S") + f'-{note}'
@@ -50,21 +50,22 @@ def save_workspace( vars_all, filename='', note=''):
     with open(filename+'.pkl', 'wb') as f:
         dill.dump(d, f, 0)
 
-    print('Saving ', end='')
-    d = {}
-    for k in vars_all.keys():
-        if k.startswith('_'):
-            continue
-        if isinstance( (vars_all[k]), types_to_mat):  
-            d[k] = vars_all[k]
-            print(f'{k}({type(vars_all[k])}), ', end='')
-    print(f'to {filename}.mat')
+    if not skip_mat:
+        print('Saving ', end='')
+        d = {}
+        for k in vars_all.keys():
+            if k.startswith('_'):
+                continue
+            if isinstance( (vars_all[k]), types_to_mat):  
+                d[k] = vars_all[k]
+                print(f'{k}({type(vars_all[k])}), ', end='')
+        print(f'to {filename}.mat')
 
-    try:
-        sio.savemat(filename+'.mat', d)
-    except Exception as e:
-        print('something is wrong saving workspace to mat')
-        print(e)
+        try:
+            sio.savemat(filename+'.mat', d)
+        except Exception as e:
+            print('something is wrong saving workspace to mat')
+            print(e)
 
 
 def load_workspace( vars_all, filename=''):
