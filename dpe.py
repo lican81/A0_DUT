@@ -381,141 +381,188 @@ class DPE:
 
         # return hist_data
         return vars()
-    
-    def tune_conductance_limited(self, array, Gtarget, **kwargs):
-        '''
-        Tune the conductance with an iterative approach
+    # def tune_conductance_old(self, array, Gtarget, **kwargs):
+    #     '''
+    #     Tune the conductance with an iterative approach
 
-        Args:
-            array(int):     The array number to program
-            Gtarget(np.array):  The target conductance matrix
+    #     Args:
+    #         array(int):                 The array number to program
+    #         Gtarget(np.array):          The target conductance matrix
+    #         Msel(np.array(np.bool)):    Mask for selected devices to program
 
-        '''
-        vSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [1, 3.5, 1]
-        vGateSetRamp = kwargs['vGateSetRamp'] if 'vGateSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
-        vResetRamp = kwargs['vResetRamp'] if 'vResetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
-        vGateResetRamp = kwargs['vGateResetRamp'] if 'vGateResetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
-        numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
+    #     '''
+    #     vSetRamp = kwargs['vSetRamp'] if 'vSetRamp' in kwargs.keys() else [1, 3.5, 1]
+    #     vGateSetRamp = kwargs['vGateSetRamp'] if 'vGateSetRamp' in kwargs.keys() else [0.5, 1.4, 0.05]
+    #     vResetRamp = kwargs['vResetRamp'] if 'vResetRamp' in kwargs.keys() else [0.3, 1.5, 0.05]
+    #     vGateResetRamp = kwargs['vGateResetRamp'] if 'vGateResetRamp' in kwargs.keys() else [5.0, 5.5, 0.5]
+    #     numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
         
-        maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
-        Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
-        Msel = kwargs['Msel'] if 'Msel' in kwargs.keys() else np.ones(self.shape)
+    #     maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
+    #     Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
+    #     Gtol_in = kwargs['Gtol_in'] if 'Gtol_in' in kwargs.keys() else Gtol
+    #     Gtol_out = kwargs['Gtol_out'] if 'Gtol_out' in kwargs.keys() else Gtol
 
-        saveHistory = kwargs['saveHistory'] if 'saveHistory' in kwargs.keys() else False
-        maxRetry = kwargs['maxRetry'] if 'maxRetry' in kwargs.keys() else 5
+    #     Msel = kwargs['Msel'] if 'Msel' in kwargs.keys() else np.ones(self.shape)
 
-        Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 500
-        method = kwargs['method'] if 'method' in kwargs.keys() else 'slow'
-        TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else 20e-9
-        TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else 20e-9
-        TargetYield = kwargs['TargetYield'] if 'TargetYield' in kwargs.keys() else 100
+    #     saveHistory = kwargs['saveHistory'] if 'saveHistory' in kwargs.keys() else False
+    #     maxRetry = kwargs['maxRetry'] if 'maxRetry' in kwargs.keys() else 5
 
-        def default_callback(data):
-            display.clear_output(wait=True)
+    #     Tdly = kwargs['Tdly'] if 'Tdly' in kwargs.keys() else 500
+    #     method = kwargs['method'] if 'method' in kwargs.keys() else 'slow'
 
-        plot_callback = kwargs['plot_callback'] if 'plot_callback' in kwargs.keys() else default_callback
+    #     Twidth = kwargs['Twidth'] if 'Twidth' in kwargs.keys() else 20e-9
+    #     TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else Twidth
+    #     TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else Twidth
 
-        assert array in [0,1,2]
+    #     def default_callback(data):
+    #         display.clear_output(wait=True)
 
-        if saveHistory:
-            hist_data = {
-                'Ghist': [],
-                'vSetHist': [],
-                'vGateSetHist': [],
-                'vResetHist': [],
-                'vGateResetHist': [],
-            }
+    #     plot_callback = kwargs['plot_callback'] if 'plot_callback' in kwargs.keys() else default_callback
 
-        vSet = np.zeros(self.shape) 
-        vGateSet = np.zeros(self.shape)
-        vReset = np.zeros(self.shape)
-        vGateReset = np.zeros(self.shape)
+    #     assert array in [0,1,2]
 
-        Mbound = np.zeros(self.shape)
+    #     if saveHistory:
+    #         hist_data = {
+    #             'Ghist': [],
+    #             'vSetHist': [],
+    #             'vGateSetHist': [],
+    #             'vResetHist': [],
+    #             'vGateResetHist': []
+    #         }
 
-        # Main programming cycle        
-        for s in range(maxSteps):
-            Greads = []
-            for _ in range(numReads):
-                Greads.append( self.read(array, Tdly=Tdly, method=method) )
+    #     vSet = np.zeros(self.shape) 
+    #     vGateSet = np.zeros(self.shape)
+    #     vReset = np.zeros(self.shape)
+    #     vGateReset = np.zeros(self.shape)
 
-            Gread = np.mean( np.array(Greads), axis=0)
+    #     Mbound = np.zeros(self.shape)
+    #     Mset = np.ones(self.shape, dtype=np.bool)
+    #     Mreset = np.ones(self.shape, dtype=np.bool)
+
+    #     # Main programming cycle
+    #     for s in range(maxSteps):
+    #         # Read conductance and take average
+    #         Gread = self.read(array, Tdly=Tdly, method=method, numReads=numReads)
+
+    #         # Determine the devices to be programmed..
+    #         Mset = ((Gread - Gtarget) < -Gtol) * Msel
+    #         Mreset = ((Gread - Gtarget) > Gtol) * Msel
+    #         #Mset = Mset | ((Gread - Gtarget) < (-Gtol_out))
+    #         #Mset = Mset & ((Gread - Gtarget) < (-Gtol_in))
+    #         #Mset = Mset * Msel
+
+    #         #Mreset = Mreset | ((Gread - Gtarget) > (Gtol_out))
+    #         #Mreset = Mreset & ((Gread - Gtarget) > (Gtol_in))
+    #         #Mreset = Mreset * Msel
+
+    #         numLeft = sum(Mreset.reshape(-1)) + sum(Mset.reshape(-1)) - sum((Mbound>=maxRetry).reshape(-1))
             
-            Mset = ((Gread - Gtarget) < -Gtol) * Msel
-            Mreset = ((Gread - Gtarget) > Gtol) * Msel
+    #         if numLeft == 0:
+    #             print('-'*30)
+    #             print('Programming completed.')
+    #             break
             
-            vSet = vSet * Mset
-            vGateSet = vGateSet * Mset
-            vReset = vReset * Mreset
-            vGateReset = vGateReset * Mreset
+    #         # Reset parameters for all devices meet the tolerance requirement
+    #         vSet = vSet * Mset
+    #         vGateSet = vGateSet * Mset
+    #         vReset = vReset * Mreset
+    #         vGateReset = vGateReset * Mreset
 
-        #     Pover
-                # Adjust programming parameters
-            for i in range(self.shape[0]):
-                for j in range(self.shape[1]):
+    #     #     Pover
+    #             # Adjust programming parameters
+    #         for i in range(self.shape[0]):
+    #             for j in range(self.shape[1]):
 
-                    if Mset[i,j] == 1:
-                        if vSet[i,j] == 0 or vGateSet[i,j] == 0:
-                            # Initiate
-                            vSet[i,j] = vSetRamp[0]
-                            vGateSet[i,j] = vGateSetRamp[0]
-                            Mbound[i,j] = 0
-                        else:
-                            vSet[i,j] += vSetRamp[-1]
+    #                 if Mset[i,j] == 1:
+    #                     if vSet[i,j] == 0 or vGateSet[i,j] == 0:
+    #                         # Initiate
+    #                         vSet[i,j] = vSetRamp[0]
+    #                         vGateSet[i,j] = vGateSetRamp[0]
+    #                         Mbound[i,j] = 0
+    #                     else:
+    #                         vSet[i,j] += vSetRamp[-1]
 
-                            if vSet[i,j] > vSetRamp[1]:
-                                vGateSet[i,j] += vGateSetRamp[-1]
+    #                         if vSet[i,j] > vSetRamp[1]:
+    #                             vGateSet[i,j] += vGateSetRamp[-1]
 
-                                if vGateSet[i,j] > vGateSetRamp[1]:
-                                    vGateSet[i,j] = vGateSetRamp[1]
-                                    vSet[i,j] = vSetRamp[1]
-                                    Mbound[i,j] += 1
-                                else:
-                                    vSet[i,j] = vSetRamp[0]
+    #                             if vGateSet[i,j] > vGateSetRamp[1]:
+    #                                 vGateSet[i,j] = vGateSetRamp[1]
+    #                                 vSet[i,j] = vSetRamp[1]
+    #                                 Mbound[i,j] += 1
+    #                             else:
+    #                                 vSet[i,j] = vSetRamp[0]
 
 
-                    if Mreset[i,j] == 1:
-                        if vReset[i,j] == 0 or vGateReset[i,j] == 0:
-                            # Initiate
-                            vReset[i,j] = vResetRamp[0]
-                            vGateReset[i,j] = vGateResetRamp[0]
-                            Mbound[i,j] = 0
-                        else:
-                            vReset[i,j] += vResetRamp[-1]
+    #                 if Mreset[i,j] == 1:
+    #                     if vReset[i,j] == 0 or vGateReset[i,j] == 0:
+    #                         # Initiate
+    #                         vReset[i,j] = vResetRamp[0]
+    #                         vGateReset[i,j] = vGateResetRamp[0]
+    #                         Mbound[i,j] = 0
+    #                     else:
+    #                         vReset[i,j] += vResetRamp[-1]
 
-                            if vReset[i,j] > vResetRamp[1]:
-                                vGateReset[i,j] += vGateResetRamp[-1]
+    #                         if vReset[i,j] > vResetRamp[1]:
+    #                             vGateReset[i,j] += vGateResetRamp[-1]
 
-                                if vGateReset[i,j] > vGateResetRamp[1]:
-                                    vGateReset[i,j] = vGateResetRamp[1]
-                                    vReset[i,j] = vResetRamp[1]
-                                    Mbound[i,j] += 1
-                                else:
-                                    vReset[i,j] = vSetRamp[0]
+    #                             if vGateReset[i,j] > vGateResetRamp[1]:
+    #                                 vGateReset[i,j] = vGateResetRamp[1]
+    #                                 vReset[i,j] = vResetRamp[1]
+    #                                 Mbound[i,j] += 1
+    #                             else:
+    #                                 vReset[i,j] = vSetRamp[0]
 
-            if saveHistory:
-                hist_data['Ghist'].append(Gread)           
-                hist_data['vSetHist'].append(vSet)
-                hist_data['vGateSetHist'].append(vGateSet * (Mbound<=maxRetry))
-                hist_data['vResetHist'].append(vReset)
-                hist_data['vGateResetHist'].append(vGateReset * (Mbound<=maxRetry))
+    #         if saveHistory:
+    #             hist_data['Ghist'].append(Gread)           
+    #             hist_data['vSetHist'].append(vSet)
+    #             hist_data['vGateSetHist'].append(vGateSet * (Mbound<=maxRetry))
+    #             hist_data['vResetHist'].append(vReset)
+    #             hist_data['vGateResetHist'].append(vGateReset * (Mbound<=maxRetry))
             
-                plot_callback(hist_data)
+    #             plot_callback(hist_data)
 
-            print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
-                f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
+    #         print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
+    #             f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol_in) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}% - ' + 
+    #                    f'{sum( ((np.abs(Gread-Gtarget)<Gtol_out) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
+
+    #         print(f'{numLeft} devices to be programmed...reset {sum(Mreset.reshape(-1))}, set {sum(Mset.reshape(-1))}')
+    #         # Start programming
+    #         self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
+    #         self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
+
+    #     # return hist_data
+    #     return vars()
+
+    #                             if vGateReset[i,j] > vGateResetRamp[1]:
+    #                                 vGateReset[i,j] = vGateResetRamp[1]
+    #                                 vReset[i,j] = vResetRamp[1]
+    #                                 Mbound[i,j] += 1
+    #                             else:
+    #                                 vReset[i,j] = vSetRamp[0]
+
+    #         if saveHistory:
+    #             hist_data['Ghist'].append(Gread)           
+    #             hist_data['vSetHist'].append(vSet)
+    #             hist_data['vGateSetHist'].append(vGateSet * (Mbound<=maxRetry))
+    #             hist_data['vResetHist'].append(vReset)
+    #             hist_data['vGateResetHist'].append(vGateReset * (Mbound<=maxRetry))
+            
+    #             plot_callback(hist_data)
+
+    #         print(f'Start programming, step={s}, maxBound={sum((Mbound>=maxRetry).reshape(-1))} ' +
+    #             f'yield= {sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100:.2f}%')
             
             
-            currYield = sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100
-            if (currYield>=TargetYield):
-                print(f'Reached target yield')
-                break
+    #         currYield = sum( ((np.abs(Gread-Gtarget)<Gtol) * Msel).reshape(-1)) / sum(Msel.reshape(-1))*100
+    #         if (currYield>=TargetYield):
+    #             print(f'Reached target yield')
+    #             break
         
-            # Start programming
-            self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
-            self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
+    #         # Start programming
+    #         self.set(array, vSet, vGateSet * (Mbound<=maxRetry), verbose=True, Twidth=TwidthSet)
+    #         self.reset(array, vReset, vGateReset * (Mbound<=maxRetry), verbose=True, Twidth=TwidthReset)
 
-        return hist_data
+    #     return hist_data
         
     def binarize_shift(self, vectors):
         '''

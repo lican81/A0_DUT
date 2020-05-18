@@ -141,7 +141,7 @@ for visualization_index in range(num_visualizations): # range as we use python3,
         line_set.append(line1)
         vec_set[:, ti] = neuron_vector_history[:, trial_index, 0]
         old_vec_set[:, ti] = vec_set[:, ti]
-        energy_value_set[ti] = np.dot(vec_set[:, ti], np.dot(C_mat, vec_set[:, ti]))  # need to do this once
+        energy_value_set[ti] = np.dot(vec_set[:, ti], np.dot(0.5*C_mat, vec_set[:, ti]))  # need to do this once
 
     #run experiment
     for tt, time in enumerate(time_vector):
@@ -152,7 +152,7 @@ for visualization_index in range(num_visualizations): # range as we use python3,
             # energy_vector[tt] = np.dot(vec,np.dot(C_mat, vec))  # might be faster ways
             idx_update = np.where(vec_set[:, ti] != old_vec_set[:, ti])[0]  # instead we could just cycle through indices-> this is more general.
             if len(idx_update) != 0:
-                energy_value_set[ti] += 2*(vec_set[idx_update[0], ti]-old_vec_set[idx_update[0], ti])*np.dot(C_mat[idx_update[0], :], old_vec_set[:, ti])
+                energy_value_set[ti] += 2*(vec_set[idx_update[0], ti]-old_vec_set[idx_update[0], ti])*np.dot(0.5*C_mat[idx_update[0], :], old_vec_set[:, ti])
             old_vec_set[:, ti] = vec_set[:, ti]
             energy_vector_set[tt, ti] = energy_value_set[ti]
         #finish all calculations then update

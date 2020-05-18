@@ -10,6 +10,8 @@ PyQt5
 dill
 scipy
 bitstring
+scikit-image
+qimage2ndarray
 
 
 ####### example-requirements.txt #######

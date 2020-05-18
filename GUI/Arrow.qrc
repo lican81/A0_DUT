@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="Arrow">
+    <file>Arrow.jpg</file>
+  </qresource>
+  <qresource prefix="CNN">
+    <file>graphics/CNN.jpg</file>
+  </qresource>
+</RCC>
