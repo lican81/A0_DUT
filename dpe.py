@@ -229,6 +229,8 @@ class DPE:
         numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
         
         maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
+
+        GtolType = kwargs['GtolType'] if 'GtolType' in kwargs.keys() else 'abs'
         Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
         Gtol_in = kwargs['Gtol_in'] if 'Gtol_in' in kwargs.keys() else Gtol
         Gtol_out = kwargs['Gtol_out'] if 'Gtol_out' in kwargs.keys() else Gtol
@@ -252,7 +254,7 @@ class DPE:
 
         assert array in [0,1,2]
 
-        if saveHistory:
+        if saveHistory: 
             hist_data = {
                 'Ghist': [],
                 'vSetHist': [],
