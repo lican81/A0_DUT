@@ -133,12 +133,13 @@ class DPE:
         if n_sel == 0:
             print('Select zero device, skip reading..')
         elif n_sel > 10:
-            print(f'[WARINING] read {n_sel} devices with single mode, expect' + \
+            print(f'[WARINING] read {int(n_sel)} devices with single mode, expect' + \
                   f' very long reading time')
 
         for r in range(self.shape[0]):
-            for c in range(self.range[1]):
-                Imap[r, c] = a0.pic_read_single(Vread, array=array, row=r, col=c, gain=gain)
+            for c in range(self.shape[1]):
+                if Msel[r, c] == 1:
+                    Imap[r, c] = a0.pic_read_single(Vread=Vread, array=array, row=r, col=c, gain=gain)
 
         return Imap
 
