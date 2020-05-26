@@ -32,7 +32,7 @@ class DrawingWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.path = QtGui.QPainterPath()
-        self.pen = QtGui.QPen(QtCore.Qt.black, 20, QtCore.Qt.SolidLine)
+        self.pen = QtGui.QPen(QtCore.Qt.black, 15, QtCore.Qt.SolidLine)
 
         self.clear()
 
@@ -95,19 +95,24 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         super(MnistMainWindow, self).__init__()
         self.setupUi(self)
 
-        self.mpl_digit.hide()
+        # self.mpl_digit.hide()
 
         self.drawing = DrawingWidget(parent=self.drawing_digit)
-        self.btn_clear.clicked.connect(self.drawing.clear)
+
+        def func_btn_clear():
+            self.label_result.setText('')
+            self.drawing.clear()
+            
+        self.btn_clear.clicked.connect(func_btn_clear)
 
         # Setup the digit panel
-        self.fig_digit = Figure(figsize=(3,3))
-        # self.ax_digit = self.fig_digit.add_subplot(111)
-        self.ax_digit = self.fig_digit.add_axes((0,0,1,1))
-        self.ax_digit.get_xaxis().set_visible(False)
-        self.ax_digit.get_yaxis().set_visible(False)
-        self.canvas_digit = FigureCanvas(self.fig_digit)
-        self.canvas_digit.setParent(self.mpl_digit)
+        # self.fig_digit = Figure(figsize=(3,3))
+        # # self.ax_digit = self.fig_digit.add_subplot(111)
+        # self.ax_digit = self.fig_digit.add_axes((0,0,1,1))
+        # self.ax_digit.get_xaxis().set_visible(False)
+        # self.ax_digit.get_yaxis().set_visible(False)
+        # self.canvas_digit = FigureCanvas(self.fig_digit)
+        # self.canvas_digit.setParent(self.mpl_digit)
 
         # Setup convolution weight panel
         self.fig_conv_weight = Figure(figsize=(2,3))
@@ -173,20 +178,19 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
             'arr_fc': 1,
         }
 
-        self.dpe = DPE('COM3')
+        self.dpe = DPE('COM11')
         self.dpe.set_clock(50)
 
-        load_workspace(self._conf, '../20200130-100802-mnist_config')
+        # load_workspace(self._conf, '../20200130-100802-mnist_config')
 
-        # load_workspace(self._conf, '../20200130-105530-mnist_config_prober1')
+        load_workspace(self._conf, '../20200206-122734-mnist_config_prober1')
         # print(self._conf['arr_conv'])
     
         self.nn = NN_dpe(self._conf['weights'])
 
 
     def read_conductance(self):
-        self.statusbar.showMessage('Reading conductance...')
-        self.repaint()
+        self._disp('Reading conductance')
 
         g_conv = self.dpe.read(self._conf['arr_conv'], method='fast')
         g_conv = g_conv[self._conf['r_conv']:self._conf['r_conv']+26,
@@ -224,7 +228,7 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.fig_fc_weight.tight_layout()
         self.canvas_fc_weight.draw()
 
-        self.statusbar.showMessage('Conductance read completed.')
+        self._disp('Conductance read completed.')
 
 
     def classify(self):
@@ -244,10 +248,9 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         ## Convolution layer
         image = img[..., np.newaxis]
         vectors = self.nn._conv_flattern(image)
-
+        
         self._disp_conv_in(vectors)
-
-        print('Convolving image...')
+        self._disp('Convolving image...')
 
         output = self.dpe.multiply(
             self._conf['arr_conv'], 
@@ -260,9 +263,7 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         x = x.reshape(20, 20, -1)
 
         self._disp_conv_out(x)
-        self.repaint()
-
-        print('Convolution completed, start fully connected layer...')
+        self._disp('Activating fully connected layer...')
 
         ## Fully connected layer
         x1 = self.nn.relu(x)
@@ -295,8 +296,8 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         y = outputs[:, ::2] - outputs[:, 1::2]
         
         self._plot_result(y)
-
-        print(f'Classfied digit {y.argmax()}.')
+        self._disp(f'Recognized : {y.argmax()}')
+        # print(f'Classfied digit {y.argmax()}.')
 
     def _disp_conv_in(self, img):
         self.fig_conv_in.clf()
@@ -317,6 +318,11 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         # self.canvas_conv_in.draw()
         # self.repaint()
 
+    def _disp(self, text):
+        print(text)
+        self.label_result.setText(text)
+        self.statusbar.showMessage(text)
+        self.repaint()
 
 
     def _disp_conv_out(self, x):
@@ -340,8 +346,6 @@ class MnistMainWindow(QMainWindow, Ui_MainWindow):
         self.fig_fc_out.tight_layout()
         self.canvas_fc_out.draw()
         self.repaint()
-
-        self.label_result.setText(f'Recognized : {digit}')
 
     def _result_current(self, x):
         return x / 256 * 1e6
