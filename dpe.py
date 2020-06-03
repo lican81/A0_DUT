@@ -97,8 +97,10 @@ class DPE:
             if method == 'slow':
                 Gmap = a0.pic_read_batch(array, Vread=Vread, gain=gain, **kwargs) / Vread
             elif method == 'fast':
-                input = [0x1<<i for i in range(64)]
+                input = [0x1 << i for i in range(self.shape[0])]
                 Gmap = a0.pic_dpe_batch(array, input, gain=gain, Vread=Vread, **kwargs) / Vread
+            elif method == 'single':
+                Gmap = self._read_single(array, Vread=Vread, gain=gain, **kwargs) / Vread
             else:
                 print('[ERROR] invalid mode..')
                 Gmap = 0
@@ -112,6 +114,34 @@ class DPE:
             self.shape = Gmap.shape
 
         return Gmap
+
+    def _read_single(self, array, Vread=0.2, gain=-1, **kwargs):
+        '''
+        Read the conductance one-by-one.
+
+        This method is extremely slow, but appears to be more stable for now.
+
+        Args:
+            Msel(np.ndarray):   The mask for devices to read.
+        Returns:
+            numpy.ndarray:      The current map
+        '''
+        Msel = kwargs['Msel'] if 'Msel' in kwargs.keys() else np.zeros(self.shape)
+        Imap = np.zeros(self.shape)
+
+        n_sel = Msel.reshape(-1).sum()
+        if n_sel == 0:
+            print('Select zero device, skip reading..')
+        elif n_sel > 10:
+            print(f'[WARINING] read {int(n_sel)} devices with single mode, expect' + \
+                  f' very long reading time')
+
+        for r in range(self.shape[0]):
+            for c in range(self.shape[1]):
+                if Msel[r, c] == 1:
+                    Imap[r, c] = a0.pic_read_single(Vread=Vread, array=array, row=r, col=c, gain=gain)
+
+        return Imap
 
     @with_ser
     def set(self, array, Vset, Vgate, mask=1, Twidth=20e-9, 
@@ -229,6 +259,8 @@ class DPE:
         numReads = kwargs['numReads'] if 'numReads' in kwargs.keys() else 1
         
         maxSteps = kwargs['maxSteps'] if 'maxSteps' in kwargs.keys() else 200
+
+        GtolType = kwargs['GtolType'] if 'GtolType' in kwargs.keys() else 'abs'
         Gtol = kwargs['Gtol'] if 'Gtol' in kwargs.keys() else 4e-6
         Gtol_in = kwargs['Gtol_in'] if 'Gtol_in' in kwargs.keys() else Gtol
         Gtol_out = kwargs['Gtol_out'] if 'Gtol_out' in kwargs.keys() else Gtol
@@ -245,6 +277,22 @@ class DPE:
         TwidthSet = kwargs['TwidthSet'] if 'TwidthSet' in kwargs.keys() else Twidth
         TwidthReset = kwargs['TwidthReset'] if 'TwidthReset' in kwargs.keys() else Twidth
 
+
+        #If 'relative' tolerance type is used, compute Gtol matrix
+        if GtolType == 'rel':
+            RelTolIn = Gtol_in; 
+            RelTolOut = Gtol_out; 
+
+            Gtol_out = Gtarget * RelTolOut; 
+            Gtol_in = Gtarget * RelTolIn; 
+
+            print(f'Tolerance type set to relative');
+            idxMsel = np.array(Msel,dtype=bool); 
+            print(f'Gtol_in: MIN {np.min(Gtol_in[idxMsel])} MAX {np.max(Gtol_in[idxMsel])}');
+            print(f'Gtol_out: MIN {np.min(Gtol_out[idxMsel])} MAX {np.max(Gtol_out[idxMsel])}');   
+
+            time.sleep(5); 
+
         def default_callback(data):
             display.clear_output(wait=True)
 
@@ -252,7 +300,7 @@ class DPE:
 
         assert array in [0,1,2]
 
-        if saveHistory:
+        if saveHistory: 
             hist_data = {
                 'Ghist': [],
                 'vSetHist': [],
@@ -273,13 +321,14 @@ class DPE:
         # Main programming cycle
         for s in range(maxSteps):
             # Read conductance and take average
-            Gread = self.read(array, Tdly=Tdly, method=method, numReads=numReads)
+            Gread = self.read(array, Tdly=Tdly, method=method, numReads=numReads, 
+                              Msel=Msel)  # Msel parameter only applies to single read
 
             # Determine the devices to be programmed..
             # Mset = ((Gread - Gtarget) < -Gtol) * Msel
             # Mreset = ((Gread - Gtarget) > Gtol) * Msel
-            Mset = np.logical_or(Mset, (Gread - Gtarget) < (-Gtol_out) )
-            Mset = np.logical_and(Mset, (Gread - Gtarget) < (-Gtol_in) )
+            Mset = np.logical_or(Mset, (Gread - Gtarget) < (-Gtol_out))
+            Mset = np.logical_and(Mset, (Gread - Gtarget) < (-Gtol_in))
             Mset = Mset * Msel
 
             Mreset = np.logical_or( Mreset, (Gread - Gtarget) > (Gtol_out) )
