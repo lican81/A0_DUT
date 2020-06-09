@@ -34,7 +34,9 @@ def correct_ecc(y1, ecc, verbose=False):
     n_corrected = 0
     n_error = 0
 
-    for yy in y1:
+    y1_ecc = y1.copy()
+
+    for yy in y1_ecc:
         ecc_loc, ecc_range = ecc.decode(yy)
         
         if ecc_loc != -1:
@@ -49,9 +51,9 @@ def correct_ecc(y1, ecc, verbose=False):
                 n_error += 1
 
     if verbose:
-        return y1, (n_detected, n_corrected, n_error)
+        return y1_ecc, (n_detected, n_corrected, n_error)
     else:
-        return y1
+        return y1_ecc
 
 def dense(x, nn, finalGfc):
     x = x.reshape(20, 20, -1)
