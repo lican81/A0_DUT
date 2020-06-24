@@ -673,7 +673,7 @@ class DPE:
 
     @with_ser
     def multiply(self, array, vectors, r_start=0, c_sel=[0, 14],
-                 mode=0, **kwargs):
+                 mode=0, gain=-1, **kwargs):
         '''
         The core of the DPE operation
 
@@ -710,7 +710,7 @@ class DPE:
             for v in vec.T:
                 inputs_dpe.append(self.vec2ints(v, start=r_start))
 
-            outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=-1, mode=1,
+            outputs_dpe = a0.pic_dpe_batch(array, inputs_dpe, gain=gain, mode=1,
                                            col_en=self.get_col_en(c_sel), **kwargs)
 
             outputs_dpe = outputs_dpe[:, c_sel[0]:c_sel[1]]
