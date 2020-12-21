@@ -32,6 +32,61 @@ _sh_default = [
     100
 ]
 
+'''
+The parameters may be different for each device. You can try and decide which is best for your device. If you don't want to change it,
+you can delete or change the decorator above each function.
+'''
+
+def read_corr(Vref):
+    def middle(func):
+        def wrapper(*args,**kwargs):
+            raw_adc=func(*args,**kwargs,raw='True')
+            g=raw_adc>>10
+            VADC_read_first=dut.adc2volt(raw_adc)
+            secondVRefHiCmp=4.0+(2.25-VADC_read_first)
+            dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp)
+            VADC_read_sec = dut.adc2volt(func(*args,**kwargs,raw='True'))
+            finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
+            dut.dac_set('DAC_VREF_HI_CMP', 4.0)
+            rdcurr=(finalADCOut-0.5)/_gain_ratio[g]
+            return rdcurr
+        return wrapper
+    return middle
+
+
+def read_corr_batch(func):
+    def wrapper(*args,**kwargs):
+        Imap=np.zeros((64,64))
+        raw_adc=func(*args,**kwargs,raw='True')
+        gain=raw_adc>>10
+        Ratio=np.zeros(gain.shape)
+        for g in range(len(_gain_ratio)):
+            Ratio[gain==g]=_gain_ratio[g]
+        Vadc_read=dut.adc2volt(raw_adc)
+        I=(Vadc_read-0.5)/Ratio
+        index4=np.where(np.logical_and(Vadc_read>=2.0,Vadc_read<2.5))
+        index3=np.where(np.logical_and(Vadc_read>=1.5,Vadc_read<2.0))
+        index2=np.where(np.logical_and(Vadc_read>=1.0,Vadc_read<1.5))
+        index1=np.where(np.logical_and(Vadc_read>=0.5,Vadc_read<1.0))
+        index5=np.where(np.logical_and(Vadc_read>=2.5,Vadc_read<3.0))
+        index6=np.where(np.logical_and(Vadc_read>=3.0,Vadc_read<3.5))
+        index7=np.where(np.logical_and(Vadc_read>=3.5,Vadc_read<=4.0))
+        Imap[index4]=I[index4]
+        VRefHi=[1.0,1.5,2.0,3.0,3.5,4.0]
+        Index=[index1,index2,index3,index5,index6,index7]
+        for i in range(6):
+            dut.dac_set('DAC_VREF_HI_CMP', 4.0+(2.5-VRefHi[i]))
+            raw_adc_corr=func(*args,**kwargs,raw='True')
+            gain_corr=raw_adc_corr>>10
+            ratio=np.zeros(gain_corr.shape)
+            for g in range(len(_gain_ratio)):
+                ratio[gain==g]=_gain_ratio[g]
+                
+            I_corr=((dut.adc2volt(raw_adc_corr)-(2.5-VRefHi[i]))-0.5)/ratio
+            Imap[Index[i]]=I_corr[Index[i]]
+        dut.dac_set('DAC_VREF_HI_CMP',4.0)   
+        return Imap
+    return wrapper
 
 def adc2current(data, Vref):
     '''
@@ -101,6 +156,7 @@ def pic_read_config(**kwargs):
     dut.reset_dpe()
 
 
+@read_corr(2.25)
 def pic_read_single(array, row, col, skip_conf=False, raw=False,
                     **kwargs):
     '''
@@ -124,6 +180,7 @@ def pic_read_single(array, row, col, skip_conf=False, raw=False,
     else:
         return adc2current(value, Vref)
 
+@read_corr(2.25)
 def pic_read_single_test(array, row, col, skip_conf=False, raw=False,
                     **kwargs):
     '''
@@ -152,6 +209,7 @@ def pic_read_single_test(array, row, col, skip_conf=False, raw=False,
     else:
         return adc2current(value, Vref)
 
+@read_corr_batch
 def pic_read_batch(array, raw=False, **kwargs):
     '''
     Read a entire array.
@@ -203,6 +261,7 @@ def pic_dpe_cols(array, col_en=[0xffff, 0xffff, 0xffff, 0xffff]):
     dut.load_vectors(array=array, data=data_load)
 
 
+@read_corr_batch
 def pic_dpe_batch(array, input, skip_conf=False, raw=False,
                   col_en=[0xffff, 0xffff, 0xffff, 0xffff],
                   **kwargs):
@@ -962,6 +1021,7 @@ def read_single(Vread, Vgate, array=0, row=0, col=0, gain=0):
     return volt / _gain_ratio[gain]
 
 
+@read_corr(2.25)
 def read_single_int(Vread, Vgate, array=0, row=0, col=0, 
                     gain=0, Tsh=-1, Vref=0.5,
                     raw=False):
