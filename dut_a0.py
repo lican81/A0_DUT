@@ -43,7 +43,7 @@ def read_corr(Vref):
             raw_adc=func(*args,**kwargs,raw='True')
             g=raw_adc>>10
             VADC_read_first=dut.adc2volt(raw_adc)
-            secondVRefHiCmp=4.0+(2.25-VADC_read_first)
+            secondVRefHiCmp=4.0+(Vref-VADC_read_first)
             dut.dac_set('DAC_VREF_HI_CMP', secondVRefHiCmp)
             VADC_read_sec = dut.adc2volt(func(*args,**kwargs,raw='True'))
             finalADCOut = VADC_read_sec - (secondVRefHiCmp - 4.0) 
