@@ -32,6 +32,7 @@ _sh_default = [
     100
 ]
 
+
 '''
 The parameters may be different for each device. You can try and decide which is best for your device. If you don't want to change it,
 you can delete or change the decorator above each function.
