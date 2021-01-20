@@ -57,8 +57,8 @@ def read_corr(Vref):
 
 def read_corr_batch(func):
     def wrapper(*args,**kwargs):
-        Imap=np.zeros((64,64))
         raw_adc=func(*args,**kwargs,raw='True')
+        Imap=np.zeros(raw_adc.shape)
         gain=raw_adc>>10
         Ratio=np.zeros(gain.shape)
         for g in range(len(_gain_ratio)):
